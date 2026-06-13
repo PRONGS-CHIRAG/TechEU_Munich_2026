@@ -1,27 +1,28 @@
-import json
-import os
 import re
 from backend.schemas import StructuredRequirements, SellerOffer, ValidationResult
+from backend.data_access import get_buyer_scenarios
 
-_SCENARIOS_PATH = os.path.join(os.path.dirname(__file__), "../../data/buyer_scenarios.json")
-
-
-def _load_scenario_lookup() -> dict:
-    try:
-        with open(os.path.abspath(_SCENARIOS_PATH)) as f:
-            return {s["request_id"]: s["structured_requirements"] for s in json.load(f) if "request_id" in s}
-    except (FileNotFoundError, KeyError):
-        return {}
+_scenario_lookup_cache: dict | None = None
 
 
-_SCENARIO_LOOKUP = _load_scenario_lookup()
+def _get_scenario_lookup() -> dict:
+    global _scenario_lookup_cache
+    if _scenario_lookup_cache is None:
+        scenarios = get_buyer_scenarios()
+        _scenario_lookup_cache = {
+            s["request_id"]: s["structured_requirements"]
+            for s in scenarios
+            if "request_id" in s and "structured_requirements" in s
+        }
+    return _scenario_lookup_cache
 
 
 def extract_requirements(request) -> dict:
     if isinstance(request, dict):
         request_id = request.get("request_id")
-        if request_id and request_id in _SCENARIO_LOOKUP:
-            return dict(_SCENARIO_LOOKUP[request_id])
+        lookup = _get_scenario_lookup()
+        if request_id and request_id in lookup:
+            return dict(lookup[request_id])
         raw_request = request.get("raw_request", "")
     else:
         raw_request = request

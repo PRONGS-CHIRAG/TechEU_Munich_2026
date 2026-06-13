@@ -1,5 +1,8 @@
 def get_initial_offer(seller_id: str, requirements: dict, inventory: list) -> dict | None:
-    seller_items = [i for i in inventory if i.get("seller_id") == seller_id]
+    seller_items = [
+        i for i in inventory
+        if i.get("seller_id") == seller_id and i.get("availability") != "out_of_stock"
+    ]
     if not seller_items:
         return None
 
@@ -14,7 +17,10 @@ def get_initial_offer(seller_id: str, requirements: dict, inventory: list) -> di
 
 
 def request_alternative(seller_id: str, requirements: dict, inventory: list, current_offer: dict) -> dict | None:
-    seller_items = [i for i in inventory if i.get("seller_id") == seller_id]
+    seller_items = [
+        i for i in inventory
+        if i.get("seller_id") == seller_id and i.get("availability") != "out_of_stock"
+    ]
     max_len = requirements.get("max_length_mm", 300)
     max_pwr = requirements.get("max_power_watts", 250)
     budget = requirements.get("budget_eur", 650)

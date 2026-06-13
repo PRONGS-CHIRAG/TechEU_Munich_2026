@@ -1,20 +1,9 @@
-import json
-import os
 from backend.agents.seller_agent import get_initial_offer, request_alternative
-
-INVENTORY_PATH = os.path.join(os.path.dirname(__file__), "../../data/seller_inventory.json")
-
-
-def _load_inventory() -> list:
-    try:
-        with open(os.path.abspath(INVENTORY_PATH)) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
+from backend.data_access import get_seller_inventory
 
 
 def run_negotiation(requirements: dict, matched_suppliers: list) -> tuple[list, list]:
-    inventory = _load_inventory()
+    inventory = get_seller_inventory()
     logs = []
     final_offers = []
 

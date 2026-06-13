@@ -1,18 +1,4 @@
-import json
-import os
-from typing import List
-
-
-REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "../../data/seller_registry.json")
-INVENTORY_PATH = os.path.join(os.path.dirname(__file__), "../../data/seller_inventory.json")
-
-
-def _load_json(path: str) -> list:
-    try:
-        with open(os.path.abspath(path)) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
+from backend.data_access import get_seller_registry, get_seller_inventory
 
 
 def _score_seller(seller: dict, inventory: list, requirements: dict) -> float:
@@ -47,8 +33,8 @@ def _score_reason(compatible: list, score: float) -> str:
 
 
 def match_suppliers(requirements: dict) -> list:
-    registry = _load_json(REGISTRY_PATH)
-    inventory = _load_json(INVENTORY_PATH)
+    registry = get_seller_registry()
+    inventory = get_seller_inventory()
 
     scored = []
     for seller in registry:
