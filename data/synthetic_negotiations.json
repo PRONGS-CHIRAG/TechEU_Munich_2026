@@ -1,0 +1,110 @@
+[
+  {
+    "negotiation_id": "NEG-001",
+    "seller_id": "vendor_a",
+    "seller_name": "Vendor A",
+    "rounds": [
+      {
+        "round": 1,
+        "speaker": "buyer",
+        "message": "Hello Vendor A. We need a GPU for an AI workstation. Budget €650, max 300 mm, delivery within 7 days.",
+        "pioneer_labels": [],
+        "risk_level": "low"
+      },
+      {
+        "round": 1,
+        "speaker": "seller",
+        "message": "We recommend the RTX 4080 at €700. Length 320 mm, 320W, 2-year warranty, 5-day delivery.",
+        "pioneer_labels": ["technical_info"],
+        "risk_level": "low"
+      },
+      {
+        "round": 2,
+        "speaker": "buyer",
+        "message": "The RTX 4080 exceeds our size, power, and budget constraints. Can you offer a smaller, lower-power alternative?",
+        "pioneer_labels": [],
+        "risk_level": "low"
+      },
+      {
+        "round": 2,
+        "speaker": "seller",
+        "message": "We also have the RTX 4070 at €590, 285 mm length, 200W. Delivery in 6 days.",
+        "pioneer_labels": ["technical_info", "price_concession"],
+        "risk_level": "low"
+      }
+    ],
+    "outcome": "passed"
+  },
+  {
+    "negotiation_id": "NEG-002",
+    "seller_id": "vendor_b",
+    "seller_name": "Vendor B",
+    "rounds": [
+      {
+        "round": 1,
+        "speaker": "buyer",
+        "message": "Hello Vendor B. We need a GPU for an AI workstation. Budget €650, max 300 mm, delivery within 7 days.",
+        "pioneer_labels": [],
+        "risk_level": "low"
+      },
+      {
+        "round": 1,
+        "speaker": "seller",
+        "message": "We have the RTX 4070 Super Compact at €670. Length 267 mm, 220W, 2-year warranty, 5-day delivery.",
+        "pioneer_labels": ["technical_info"],
+        "risk_level": "low"
+      },
+      {
+        "round": 2,
+        "speaker": "buyer",
+        "message": "Price is €20 above budget. Can you offer at €650?",
+        "pioneer_labels": [],
+        "risk_level": "low"
+      },
+      {
+        "round": 2,
+        "speaker": "seller",
+        "message": "We can offer the RTX 4070 Super Compact (Promo) at €640 including delivery. Same specs, 2-year warranty.",
+        "pioneer_labels": ["price_concession", "final_offer"],
+        "risk_level": "low"
+      }
+    ],
+    "outcome": "passed"
+  },
+  {
+    "negotiation_id": "NEG-003",
+    "seller_id": "vendor_c",
+    "seller_name": "Vendor C",
+    "rounds": [
+      {
+        "round": 1,
+        "speaker": "buyer",
+        "message": "Hello Vendor C. We need a GPU under €650, max 300 mm, delivery within 7 days.",
+        "pioneer_labels": [],
+        "risk_level": "low"
+      },
+      {
+        "round": 1,
+        "speaker": "seller",
+        "message": "We can offer the RTX 4070 Ti at €690, 295 mm, 285W. Delivery in 3 days. 2-year warranty.",
+        "pioneer_labels": ["technical_info", "delivery_condition"],
+        "risk_level": "low"
+      },
+      {
+        "round": 2,
+        "speaker": "buyer",
+        "message": "Price exceeds our budget and power exceeds limit. Can you suggest a compatible alternative?",
+        "pioneer_labels": [],
+        "risk_level": "low"
+      },
+      {
+        "round": 2,
+        "speaker": "seller",
+        "message": "We can reduce to €650, but warranty is only 6 months.",
+        "pioneer_labels": ["price_concession", "warranty_risk"],
+        "risk_level": "medium"
+      }
+    ],
+    "outcome": "negotiable"
+  }
+]

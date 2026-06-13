@@ -174,75 +174,52 @@ Use this repository structure:
 ```text
 pactum/
 │
-├── streamlit_app.py
-│   └── Main Streamlit dashboard and demo entrypoint.
-│
+├── streamlit_app.py          ✓ scaffolded — full dashboard wired to run_demo()
 ├── README.md
-│   └── Human-readable setup, demo flow, and hackathon pitch notes.
-│
 ├── CLAUDE.md
-│   └── Persistent Claude Code instructions for this repo.
-│
-├── requirements.txt
-│   └── Python dependencies for Streamlit, APIs, testing, and utilities.
-│
-├── .env.example
-│   └── Environment variable names only; never include real secrets.
+├── PLAN.md
+├── requirements.txt          ✓ created
+├── .env                      ✓ created (git-ignored)
+├── .env.example              ✓ created
+├── .gitignore                ✓ created
 │
 ├── backend/
-│   ├── orchestrator.py
-│   │   └── Main workflow controller; route tasks, maintain state, return demo_result.
-│   ├── schemas.py
-│   │   └── Shared dataclasses, TypedDicts, or Pydantic models.
+│   ├── __init__.py           ✓
+│   ├── orchestrator.py       ✓ scaffolded — run_demo() end-to-end flow
+│   ├── schemas.py            ✓ scaffolded — all TypedDicts
 │   └── agents/
-│       ├── procurement_intelligence.py
-│       │   └── Requirement extraction and deterministic technical validation.
-│       ├── supplier_matching.py
-│       │   └── Local supplier matching, scoring, and Tavily fallback trigger.
-│       ├── buyer_agent.py
-│       │   └── Buyer-side negotiation logic.
-│       ├── seller_agent.py
-│       │   └── Synthetic seller behavior and offer generation.
-│       ├── human_escalation.py
-│       │   └── Escalation rules and approval question generation.
-│       └── audit_summary.py
-│           └── Final explanation, rejected-offer summary, and recommendation narrative.
+│       ├── __init__.py       ✓
+│       ├── procurement_intelligence.py  ✓ scaffolded — extract_requirements() + validate_offer()
+│       ├── supplier_matching.py         ✓ scaffolded — BM25-style scoring from local JSON
+│       ├── buyer_agent.py               ✓ scaffolded — 2-round negotiation loop
+│       ├── seller_agent.py              ✓ scaffolded — inventory search + alternative logic
+│       ├── human_escalation.py          ✓ scaffolded — escalation triggers + question
+│       └── audit_summary.py             ✓ scaffolded — human-readable summary narrative
 │
 ├── integrations/
-│   ├── pioneer_client.py
-│   │   └── Pioneer synthetic data and inference wrapper.
-│   ├── tavily_client.py
-│   │   └── Tavily search/enrichment wrapper.
-│   ├── fal_client.py
-│   │   └── fal visual deal card wrapper.
-│   └── fallback_outputs.py
-│       └── Static fallback responses for demo mode and API failure.
+│   ├── __init__.py           ✓
+│   ├── pioneer_client.py     ✓ scaffolded — HTTP wrapper + fallback
+│   ├── tavily_client.py      ✓ scaffolded — TavilyClient wrapper + fallback
+│   ├── fal_client.py         ✓ scaffolded — fal_client wrapper + fallback
+│   └── fallback_outputs.py   ✓ scaffolded — static fallbacks for all three APIs
 │
 ├── data/
-│   ├── buyer_scenarios.json
-│   │   └── Demo buyer requests and structured scenarios.
-│   ├── seller_registry.json
-│   │   └── Seller metadata, reliability, region, and specialization.
-│   ├── seller_inventory.json
-│   │   └── Product inventory for seller agents.
-│   ├── synthetic_negotiations.json
-│   │   └── Example negotiation turns and Pioneer labels.
-│   └── tavily_fallback_results.json
-│       └── Saved Tavily-like enrichment results for demo mode.
+│   ├── buyer_scenarios.json        ✓ 3 buyer scenarios
+│   ├── seller_registry.json        ✓ 5 seller profiles
+│   ├── seller_inventory.json       ✓ 9 products across vendors
+│   ├── synthetic_negotiations.json ✓ 3 full negotiation examples with Pioneer labels
+│   └── tavily_fallback_results.json ✓ saved fallback search results
 │
 ├── assets/
-│   ├── fal_deal_card.png
-│   │   └── Saved fallback deal card for demo mode.
-│   └── screenshots/
-│       └── Demo screenshots, Aikido screenshot, pitch visuals.
+│   ├── fal_deal_card.png     (place fallback image here before demo)
+│   └── screenshots/          ✓ directory created
 │
 ├── security/
-│   └── aikido_notes.md
-│       └── Aikido scan notes, security assumptions, and mitigation summary.
+│   └── aikido_notes.md       ✓ created
 │
 └── tests/
-    └── test_validation.py
-        └── Minimum tests for deterministic validation and orchestration contracts.
+    ├── __init__.py           ✓
+    └── test_validation.py    ✓ 4 tests for deterministic validation
 ```
 
 ---
@@ -864,14 +841,18 @@ Prioritize in this order:
 
 ### 18-hour workflow
 
-#### Hour 0–1: Alignment and setup
+#### Hour 0–1: Alignment and setup ✓ COMPLETE
 
-* Confirm Pactum name.
-* Confirm GPU procurement scenario.
-* Create repo and branches.
-* Finalize JSON contracts.
-* Add `.env.example`.
-* Add `requirements.txt`.
+* Confirm Pactum name. ✓
+* Confirm GPU procurement scenario. ✓
+* Create repo and branches. ✓ (main exists; feature branches to create)
+* Finalize JSON contracts. ✓ (see Section 8)
+* Add `.env.example`. ✓
+* Add `requirements.txt`. ✓
+* Create full folder structure and file scaffolds. ✓
+* Add synthetic data files (`data/*.json`). ✓
+* Add fallback outputs for Pioneer, Tavily, fal. ✓
+* Add deterministic validation tests. ✓
 
 #### Hour 1–3: Parallel build block 1
 
@@ -985,6 +966,61 @@ Pactum is not a single agent calling tools. It is a modular orchestration layer 
 
 ---
 
-## 13. How to Work in This Repo
+## 13. Implementation Status
 
-Work demo-first. Start by running `streamlit run streamlit_app.py`, then follow the data flow from `streamlit_app.py` into `backend/orchestrator.py` and the agents in `backend/agents/`. Keep the orchestrator as a router, not a worker. Keep deterministic validation separate from Pioneer inference. Use `DEMO_MODE=true` and fallback outputs whenever live APIs risk slowing or breaking the demo. Make small, reviewable changes on the correct feature branch, merge through `staging-demo`, and protect `main` as the stable final presentation branch.
+### What is scaffolded and working (Hour 0–1 complete)
+
+All files exist and the end-to-end demo flow runs in `DEMO_MODE=true` with no API keys.
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `streamlit_app.py` | Scaffolded | Full UI wired to `run_demo()` |
+| `backend/orchestrator.py` | Scaffolded | `run_demo()` routes all agents |
+| `backend/schemas.py` | Complete | All TypedDicts match Section 8 contracts |
+| `procurement_intelligence.py` | Working | Regex-based extraction + deterministic validation |
+| `supplier_matching.py` | Working | BM25-style scoring from `data/seller_registry.json` |
+| `buyer_agent.py` | Working | 2-round negotiation loop per seller |
+| `seller_agent.py` | Working | Inventory search + alternative offer logic |
+| `human_escalation.py` | Working | Always escalates for human approval |
+| `audit_summary.py` | Working | Narrative summary of all sellers and outcome |
+| `pioneer_client.py` | Stubbed | HTTP wrapper; falls back to regex-based labels |
+| `tavily_client.py` | Stubbed | TavilyClient wrapper; falls back to saved JSON |
+| `fal_client.py` | Stubbed | fal_client wrapper; falls back to `assets/fal_deal_card.png` |
+| `fallback_outputs.py` | Complete | Static fallbacks for all three APIs |
+| `data/*.json` | Complete | 5 sellers, 9 products, 3 scenarios, negotiation examples |
+| `tests/test_validation.py` | Complete | 4 passing tests for deterministic validation |
+| `.env` / `.env.example` | Complete | All 8 env vars; `.env` is git-ignored |
+
+### What each developer needs to do next
+
+**Phillip (feature/frontend-dashboard)**
+- Polish `streamlit_app.py` — add Pactum branding, better layout, agent status indicators.
+- Do not change `run_demo()` call signature or result keys.
+
+**Developer 2 (feature/orchestrator-agents)**
+- Improve `extract_requirements()` with LLM or smarter parsing if needed.
+- Improve negotiation loop (more rounds, counter-offer logic).
+- Do not break `run_demo()` return shape.
+
+**Developer 3 (feature/integrations-data)**
+- Add real Pioneer API calls to `pioneer_client.py` when key is available.
+- Add real Tavily calls to `tavily_client.py` when key is available.
+- Add real fal generation to `fal_client.py` when key is available.
+- Save a fallback `assets/fal_deal_card.png` before demo.
+- Run Aikido scan and update `security/aikido_notes.md`.
+
+---
+
+## 14. How to Work in This Repo
+
+Work demo-first. The scaffold already runs — start with `streamlit run streamlit_app.py` and verify the end-to-end flow before adding features. Follow the data flow from `streamlit_app.py` → `backend/orchestrator.py` → agents in `backend/agents/`. Keep the orchestrator as a router, not a worker. Keep deterministic validation separate from Pioneer inference. Use `DEMO_MODE=true` and fallback outputs whenever live APIs risk slowing or breaking the demo. Make small, reviewable changes on the correct feature branch, merge through `staging-demo`, and protect `main` as the stable final presentation branch.
+
+### Quick start for new developers
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+DEMO_MODE=true streamlit run streamlit_app.py
+```
+
+The app runs fully in demo mode — no API keys required.

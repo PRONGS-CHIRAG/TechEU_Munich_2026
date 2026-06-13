@@ -1,0 +1,56 @@
+[
+  {
+    "request_id": "REQ-001",
+    "buyer_company": "NovaCompute GmbH",
+    "industry": "AI infrastructure",
+    "raw_request": "We need a GPU for an AI workstation. It should fit inside our compact case, not consume too much power, stay under €650, arrive within a week, and include warranty.",
+    "region": "Germany",
+    "priority": "technical_fit",
+    "structured_requirements": {
+      "product_type": "GPU",
+      "use_case": "AI workstation",
+      "max_length_mm": 300,
+      "max_power_watts": 250,
+      "budget_eur": 650,
+      "max_delivery_days": 7,
+      "warranty_required": true,
+      "minimum_warranty_years": 1
+    }
+  },
+  {
+    "request_id": "REQ-002",
+    "buyer_company": "DataFlow AG",
+    "industry": "Data analytics",
+    "raw_request": "Need a compact GPU under €500 for a small form factor PC used for data processing. Must arrive within 5 days.",
+    "region": "Germany",
+    "priority": "budget",
+    "structured_requirements": {
+      "product_type": "GPU",
+      "use_case": "data processing",
+      "max_length_mm": 260,
+      "max_power_watts": 200,
+      "budget_eur": 500,
+      "max_delivery_days": 5,
+      "warranty_required": true,
+      "minimum_warranty_years": 1
+    }
+  },
+  {
+    "request_id": "REQ-003",
+    "buyer_company": "VisionLabs UG",
+    "industry": "Computer vision",
+    "raw_request": "Looking for a high-performance GPU under €700. Delivery time is flexible but must have at least 2-year warranty.",
+    "region": "Germany",
+    "priority": "performance",
+    "structured_requirements": {
+      "product_type": "GPU",
+      "use_case": "computer vision",
+      "max_length_mm": 350,
+      "max_power_watts": 350,
+      "budget_eur": 700,
+      "max_delivery_days": 14,
+      "warranty_required": true,
+      "minimum_warranty_years": 2
+    }
+  }
+]

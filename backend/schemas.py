@@ -1,0 +1,94 @@
+from typing import TypedDict, Optional
+
+
+class BuyerRequest(TypedDict):
+    request_id: str
+    raw_request: str
+    region: str
+    priority: str
+
+
+class StructuredRequirements(TypedDict):
+    product_type: str
+    use_case: str
+    max_length_mm: int
+    max_power_watts: int
+    budget_eur: float
+    max_delivery_days: int
+    warranty_required: bool
+    minimum_warranty_years: int
+
+
+class SellerOffer(TypedDict):
+    seller_id: str
+    seller_name: str
+    product: str
+    length_mm: int
+    power_watts: int
+    price_eur: float
+    delivery_days: int
+    warranty_years: int
+    availability: str
+
+
+class MatchedSupplier(TypedDict):
+    seller_id: str
+    seller_name: str
+    match_score: float
+    reason: str
+
+
+class ValidationResult(TypedDict):
+    seller_id: str
+    status: str  # passed | rejected | negotiable | missing_information
+    failed_constraints: list
+    score: int
+    next_action: str
+
+
+class PioneerInferenceResult(TypedDict):
+    message: str
+    labels: list
+    risk_level: str  # low | medium | high | unknown
+    extracted_fields: dict
+
+
+class ConversationLogItem(TypedDict):
+    seller_id: str
+    speaker: str  # buyer | seller
+    message: str
+    round: int
+    pioneer_labels: list
+    risk_level: str
+
+
+class EscalationResult(TypedDict):
+    escalate: bool
+    reason: str
+    question_for_human: str
+
+
+class FinalRecommendation(TypedDict):
+    recommended_seller: str
+    recommended_product: str
+    price_eur: float
+    delivery_days: int
+    technical_status: str
+    risk_level: str
+    reason: str
+    human_approval_required: bool
+
+
+class DemoResult(TypedDict):
+    request: dict
+    structured_requirements: dict
+    matched_suppliers: list
+    conversation_logs: list
+    pioneer_labels: list
+    validation_results: list
+    tavily_enrichment: dict
+    escalation_result: dict
+    audit_summary: str
+    final_recommendation: dict
+    deal_card_path: str
+    demo_mode: bool

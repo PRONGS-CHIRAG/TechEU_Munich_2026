@@ -1,0 +1,21 @@
+{
+  "source": "tavily_fallback",
+  "query": "GPU AI workstation compact Germany under €650",
+  "results": [
+    {
+      "title": "RTX 4070 Super Compact Review — TechSpec DB",
+      "url": "https://example.com/rtx4070-compact",
+      "content": "The RTX 4070 Super Compact measures 267 mm and draws 220W TDP. Ideal for compact workstation builds. Available from multiple German distributors under €670."
+    },
+    {
+      "title": "Best GPUs for Compact AI Workstations 2024",
+      "url": "https://example.com/compact-gpu-guide",
+      "content": "For compact AI workstations requiring GPUs under 300 mm, top picks include RTX 4070 Super Compact (267 mm, 220W) and RTX 4060 Ti (240 mm, 165W)."
+    },
+    {
+      "title": "German B2B GPU Supplier Comparison",
+      "url": "https://example.com/gpu-suppliers-de",
+      "content": "Leading German GPU distributors for B2B include Vendor A, Vendor B, and Vendor C. Vendor B specializes in compact workstation components with fast delivery."
+    }
+  ]
+}

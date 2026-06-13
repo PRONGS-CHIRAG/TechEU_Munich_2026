@@ -1,0 +1,92 @@
+[
+  {
+    "seller_id": "vendor_a",
+    "product": "RTX 4080",
+    "length_mm": 320,
+    "power_watts": 320,
+    "price_eur": 700,
+    "delivery_days": 5,
+    "warranty_years": 2,
+    "availability": "in_stock"
+  },
+  {
+    "seller_id": "vendor_a",
+    "product": "RTX 4070",
+    "length_mm": 285,
+    "power_watts": 200,
+    "price_eur": 590,
+    "delivery_days": 6,
+    "warranty_years": 2,
+    "availability": "in_stock"
+  },
+  {
+    "seller_id": "vendor_b",
+    "product": "RTX 4070 Super Compact",
+    "length_mm": 267,
+    "power_watts": 220,
+    "price_eur": 670,
+    "delivery_days": 5,
+    "warranty_years": 2,
+    "availability": "in_stock"
+  },
+  {
+    "seller_id": "vendor_b",
+    "product": "RTX 4060 Ti Compact",
+    "length_mm": 240,
+    "power_watts": 165,
+    "price_eur": 430,
+    "delivery_days": 4,
+    "warranty_years": 2,
+    "availability": "in_stock"
+  },
+  {
+    "seller_id": "vendor_b",
+    "product": "RTX 4070 Super Compact (Promo)",
+    "length_mm": 267,
+    "power_watts": 220,
+    "price_eur": 640,
+    "delivery_days": 5,
+    "warranty_years": 2,
+    "availability": "in_stock"
+  },
+  {
+    "seller_id": "vendor_c",
+    "product": "RTX 4070 Ti",
+    "length_mm": 295,
+    "power_watts": 285,
+    "price_eur": 690,
+    "delivery_days": 3,
+    "warranty_years": 2,
+    "availability": "in_stock"
+  },
+  {
+    "seller_id": "vendor_c",
+    "product": "RX 7800 XT",
+    "length_mm": 280,
+    "power_watts": 263,
+    "price_eur": 510,
+    "delivery_days": 3,
+    "warranty_years": 1,
+    "availability": "in_stock"
+  },
+  {
+    "seller_id": "vendor_d",
+    "product": "RTX 4060",
+    "length_mm": 240,
+    "power_watts": 115,
+    "price_eur": 310,
+    "delivery_days": 10,
+    "warranty_years": 1,
+    "availability": "in_stock"
+  },
+  {
+    "seller_id": "vendor_e",
+    "product": "RTX A2000",
+    "length_mm": 168,
+    "power_watts": 70,
+    "price_eur": 450,
+    "delivery_days": 7,
+    "warranty_years": 3,
+    "availability": "in_stock"
+  }
+]

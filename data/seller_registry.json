@@ -1,0 +1,42 @@
+[
+  {
+    "seller_id": "vendor_a",
+    "seller_name": "Vendor A",
+    "specialization": "high-performance GPUs",
+    "region": "Germany",
+    "reliability_score": 0.82,
+    "negotiation_style": "firm"
+  },
+  {
+    "seller_id": "vendor_b",
+    "seller_name": "Vendor B",
+    "specialization": "workstation components",
+    "region": "Germany",
+    "reliability_score": 0.88,
+    "negotiation_style": "cooperative"
+  },
+  {
+    "seller_id": "vendor_c",
+    "seller_name": "Vendor C",
+    "specialization": "fast delivery components",
+    "region": "Germany",
+    "reliability_score": 0.79,
+    "negotiation_style": "flexible"
+  },
+  {
+    "seller_id": "vendor_d",
+    "seller_name": "Vendor D",
+    "specialization": "budget components",
+    "region": "Austria",
+    "reliability_score": 0.71,
+    "negotiation_style": "aggressive"
+  },
+  {
+    "seller_id": "vendor_e",
+    "seller_name": "Vendor E",
+    "specialization": "enterprise hardware",
+    "region": "Switzerland",
+    "reliability_score": 0.91,
+    "negotiation_style": "formal"
+  }
+]
