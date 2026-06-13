@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 from backend.schemas import BuyerRequest, DemoResult
-from backend.agents.procurement_intelligence import extract_requirements, validate_offer
+from backend.agents.procurement_intelligence import extract_requirements, validate_offer, compute_value_score
 from backend.agents.supplier_matching import match_suppliers
 from backend.agents.buyer_agent import run_negotiation
 from backend.agents.human_escalation import check_escalation
@@ -23,7 +23,7 @@ DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
 def run_demo(request: dict) -> dict:
     demo_mode = DEMO_MODE
 
-    structured_requirements = extract_requirements(request.get("raw_request", ""))
+    structured_requirements = extract_requirements(request)
 
     matched_suppliers = match_suppliers(structured_requirements)
 
@@ -47,15 +47,19 @@ def run_demo(request: dict) -> dict:
 
     validation_results = [validate_offer(structured_requirements, offer) for offer in raw_offers]
 
-    escalation_result = check_escalation(validation_results, structured_requirements)
-
-    audit_summary = generate_summary(
-        structured_requirements, matched_suppliers, conversation_logs, validation_results, escalation_result
-    )
+    for offer, result in zip(raw_offers, validation_results):
+        if result["status"] == "passed":
+            result["score"] = compute_value_score(structured_requirements, offer)
 
     passed = [v for v in validation_results if v["status"] == "passed"]
     best = max(passed, key=lambda v: v["score"]) if passed else None
     best_offer = next((o for o in raw_offers if best and o["seller_id"] == best["seller_id"]), None)
+
+    escalation_result = check_escalation(validation_results, structured_requirements, best_offer)
+
+    audit_summary = generate_summary(
+        structured_requirements, matched_suppliers, conversation_logs, validation_results, escalation_result, raw_offers
+    )
 
     if best_offer:
         final_recommendation = {

@@ -854,26 +854,30 @@ Prioritize in this order:
 * Add fallback outputs for Pioneer, Tavily, fal. ✓
 * Add deterministic validation tests. ✓
 
-#### Hour 1–3: Parallel build block 1
+#### Hour 1–3: Parallel build block 1 ✓ COMPLETE (Developer 2)
 
 * Phillip: build frontend skeleton using mock data.
-* Developer 2: build backend and agent skeletons.
+* Developer 2: ✓ negotiation loop live (premium-open → buyer counter → seller concession), value scoring, escalation enriched with price/delivery, `seller_name` crash fixed.
 * Developer 3: build synthetic data and integration stubs.
 
-#### Hour 3–5: Parallel build block 2
+#### Hour 3–5: Parallel build block 2 ✓ COMPLETE (Developer 2)
 
 * Phillip: connect UI to mock outputs and add status labels.
-* Developer 2: implement local negotiation and validation loop.
+* Developer 2: ✓ scenario lookup for exact canonical requirements, richer audit narrative, specific supplier reasons, multi-violation round-2 counters, violation-aware seller alternatives, "best we can do" honesty when no alternative exists.
 * Developer 3: add Pioneer/Tavily/fal wrappers and fallback responses.
 
-#### Hour 5–7: First integration merge
+#### Hour 5–7: First integration merge ✓ COMPLETE
 
-* Merge data, backend, and frontend into `staging-demo`.
-* Achieve minimum flow:
-
-```text
-Buyer request → requirements → matched sellers → validation → recommendation
-```
+* ✓ `staging-demo` branch created from `main`, `feature/orchestrator-agents` fast-forward merged (no conflicts).
+* ✓ `streamlit_app.py` fully wired to `run_demo()` with all integration fixes:
+  - Scenario selector (REQ-001/002/003 + Custom) — canonical Supabase lookup for known scenarios, regex for custom text.
+  - `st.session_state` result persistence — page never resets on radio click.
+  - Interactive approval: Approve/Reject radio with confirmation message.
+  - Validation table resolves `seller_id` → full `seller_name` from `matched_suppliers`.
+  - Pioneer labels shown only on seller messages (buyer message label clutter removed).
+  - `st.metric` reason moved to `st.caption` (was broken as delta arg).
+* ✓ Minimum flow working end-to-end in browser:
+  `Buyer request → requirements → matched sellers → negotiation timeline → validation → audit → recommendation → human approval`
 
 #### Hour 7–10: Parallel build block 3
 
@@ -968,20 +972,20 @@ Pactum is not a single agent calling tools. It is a modular orchestration layer 
 
 ## 13. Implementation Status
 
-### What is scaffolded and working (Hour 0–1 complete)
+### What is scaffolded and working (Hour 0–1 complete, Hour 1–3 Developer 2 complete)
 
 All files exist and the end-to-end demo flow runs in `DEMO_MODE=true` with no API keys.
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| `streamlit_app.py` | Scaffolded | Full UI wired to `run_demo()` |
-| `backend/orchestrator.py` | Scaffolded | `run_demo()` routes all agents |
+| `streamlit_app.py` | Working / Integrated | Scenario selector, session_state persistence, interactive approval, validated seller names |
+| `backend/orchestrator.py` | Working | Applies value scores, passes `best_offer` to escalation |
 | `backend/schemas.py` | Complete | All TypedDicts match Section 8 contracts |
-| `procurement_intelligence.py` | Working | Regex-based extraction + deterministic validation |
+| `procurement_intelligence.py` | Working | Regex extraction + deterministic validation + `compute_value_score()` |
 | `supplier_matching.py` | Working | BM25-style scoring from `data/seller_registry.json` |
-| `buyer_agent.py` | Working | 2-round negotiation loop per seller |
-| `seller_agent.py` | Working | Inventory search + alternative offer logic |
-| `human_escalation.py` | Working | Always escalates for human approval |
+| `buyer_agent.py` | Working | 2-round negotiation loop; enriches offers with `seller_name` |
+| `seller_agent.py` | Working | Premium-open strategy; concession logic via `request_alternative()` |
+| `human_escalation.py` | Working | Escalation question includes price, delivery, and score |
 | `audit_summary.py` | Working | Narrative summary of all sellers and outcome |
 | `pioneer_client.py` | Stubbed | HTTP wrapper; falls back to regex-based labels |
 | `tavily_client.py` | Stubbed | TavilyClient wrapper; falls back to saved JSON |
@@ -991,16 +995,30 @@ All files exist and the end-to-end demo flow runs in `DEMO_MODE=true` with no AP
 | `tests/test_validation.py` | Complete | 4 passing tests for deterministic validation |
 | `.env` / `.env.example` | Complete | All 8 env vars; `.env` is git-ignored |
 
+### Key behaviors after Hour 1–3 (Developer 2)
+
+* **Negotiation fires visibly:** sellers open with their most premium compatible card; buyer counters on price; seller concedes to a cheaper alternative. Judges see a real negotiation log.
+* **Defensible recommendation:** passing offers are scored by `compute_value_score()` (penalises high price −15pts, slow delivery −10pts). Cheaper and faster offers win. Flat 100-score tie-break eliminated.
+* **Informative escalation:** human approval question shows score, price, and delivery days (e.g. "scored 84/100 (€430, 4-day delivery)").
+* **No runtime crash:** offers are enriched with `seller_name` before being passed to the orchestrator's `final_recommendation` block.
+
 ### What each developer needs to do next
 
 **Phillip (feature/frontend-dashboard)**
 - Polish `streamlit_app.py` — add Pactum branding, better layout, agent status indicators.
 - Do not change `run_demo()` call signature or result keys.
 
-**Developer 2 (feature/orchestrator-agents)**
-- Improve `extract_requirements()` with LLM or smarter parsing if needed.
-- Improve negotiation loop (more rounds, counter-offer logic).
-- Do not break `run_demo()` return shape.
+**Developer 2 (feature/orchestrator-agents)** — Hour 1–3 and Hour 3–5 complete
+- ✓ Negotiation loop fires: premium-open → buyer counter → seller concession.
+- ✓ Value scoring: `compute_value_score()` ranks passing offers by price (−15) and delivery (−10).
+- ✓ Escalation question shows score, price, and delivery days.
+- ✓ `seller_name` KeyError crash fixed.
+- ✓ `extract_requirements()` uses lookup table keyed on `request_id` for exact canonical values (REQ-001/002/003); falls back to keyword/regex for unknown requests.
+- ✓ `audit_summary` builds per-vendor narrative from structured offer data (product, price, delivery, warranty, rejection reasons).
+- ✓ Supplier match reasons are specific: product count, min price, fastest delivery.
+- ✓ Round-2 buyer counter covers price, delivery, and warranty violations in one message.
+- ✓ `request_alternative()` searches fully-compliant alternatives first; returns `None` (not current offer) when nothing better exists — seller says "best we can do" honestly.
+- Next (Hour 5–7): merge into `staging-demo` with Phillip and Developer 3.
 
 **Developer 3 (feature/integrations-data)**
 - Add real Pioneer API calls to `pioneer_client.py` when key is available.
