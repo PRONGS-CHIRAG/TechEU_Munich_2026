@@ -32,9 +32,27 @@ PASSING_VERDICTS = ("good", "borderline")
 
 PENDING_HUMAN_ALERT_TIMEOUT_S = 300.0
 
+TRANSCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "../data/transcripts")
+
 
 def _event(event_type: str, stage: str, data, session_id: str | None = None) -> dict:
     return {"type": event_type, "stage": stage, "data": data, "ts": int(time.time() * 1000), "session_id": session_id}
+
+
+def _load_transcript(request_id: str) -> list[dict] | None:
+    """Loads a saved {type, stage, data} event list for replay mode.
+
+    Returns None if no transcript exists for this request_id, so the caller
+    can fall back to a live run.
+    """
+    if not request_id:
+        return None
+    path = os.path.join(TRANSCRIPTS_DIR, f"{request_id}.json")
+    try:
+        with open(os.path.abspath(path)) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
 
 
 def _adapt_tavily(tavily_raw: dict) -> dict:
@@ -126,6 +144,15 @@ def run_demo_stream(request: dict) -> Generator[dict, None, None]:
         return _event(event_type, stage, data, session_id)
 
     try:
+        # Replay mode: a saved transcript reproduces a real prior Gemini run
+        # without any live API calls (CTO-facing safety net).
+        if demo_mode:
+            transcript = _load_transcript(request.get("request_id", ""))
+            if transcript is not None:
+                for raw_event in transcript:
+                    yield event(raw_event["type"], raw_event["stage"], raw_event["data"])
+                return
+
         structured_requirements = extract_requirements(request)
         yield event("requirements", "requirements", structured_requirements)
 
@@ -172,6 +199,7 @@ def run_demo_stream(request: dict) -> Generator[dict, None, None]:
                     label_result = classify_message(log["message"])
                 log["pioneer_labels"] = label_result.get("labels", [])
                 log["risk_level"] = label_result.get("risk_level", "unknown")
+                log["extracted_fields"] = label_result.get("extracted_fields", {})
                 pioneer_labels.append(label_result)
 
         def _enrich(result: dict, offer: dict) -> dict:
@@ -292,22 +320,6 @@ def run_demo_stream(request: dict) -> Generator[dict, None, None]:
 
     except Exception as exc:
         yield event("error", "error", {"message": str(exc)})
-
-
-def _adapt_tavily(raw: dict) -> dict:
-    results = raw.get("results", [])
-    return {
-        "triggered": bool(results),
-        "reason": raw.get("query", ""),
-        "results": [
-            {
-                "title": r.get("title", ""),
-                "snippet": r.get("content", ""),
-                "source": r.get("url", ""),
-            }
-            for r in results
-        ],
-    }
 
 
 def run_demo(request: dict) -> dict:

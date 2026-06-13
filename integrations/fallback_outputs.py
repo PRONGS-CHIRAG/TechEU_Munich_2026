@@ -26,7 +26,7 @@ def fallback_pioneer_labels(message: str) -> dict:
         risk = "medium"
 
     price_match = re.search(r"€(\d+)", message)
-    delivery_match = re.search(r"(\d+)\s*day", message, re.IGNORECASE)
+    delivery_match = re.search(r"(\d+)[\s-]*days?", message, re.IGNORECASE)
     extracted: dict = {}
     if price_match:
         extracted["price_eur"] = int(price_match.group(1))

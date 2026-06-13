@@ -1,0 +1,1088 @@
+[
+  {
+    "type": "requirements",
+    "stage": "requirements",
+    "data": {
+      "product_type": "GPU",
+      "use_case": "AI workstation",
+      "max_length_mm": 300,
+      "max_power_watts": 250,
+      "budget_eur": 650.0,
+      "max_delivery_days": 7,
+      "warranty_required": true,
+      "minimum_warranty_years": 1.0
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_1",
+        "products": [
+          {
+            "id": "vendor_b-rtx4070supercompact",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 4070 Super Compact",
+            "length_mm": 267,
+            "power_watts": 220,
+            "price_eur": 650,
+            "delivery_days": 5,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_b-rtx4070",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 4070",
+            "length_mm": 242,
+            "power_watts": 200,
+            "price_eur": 580,
+            "delivery_days": 4,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_b-rtx4070tisuperitx",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 4070 Ti Super ITX",
+            "length_mm": 280,
+            "power_watts": 250,
+            "price_eur": 730,
+            "delivery_days": 6,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.85,
+        "representative_specs": {
+          "avg_price_eur": 653.33,
+          "avg_delivery_days": 5.0,
+          "avg_length_mm": 263.0,
+          "avg_power_watts": 223.3,
+          "avg_warranty_years": 2.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_1",
+        "seller_id": "vendor_b",
+        "product": "RTX 4070 Super Compact",
+        "verdict": "good",
+        "reason": "This candidate is an excellent match, meeting all buyer requirements. The GPU's length (267mm) and power consumption (220W) are comfortably below the maximum limits of 300mm and 250W respectively. Furthermore, the price of 650 EUR perfectly aligns with the budget, delivery is well within the 7-day maximum at 5 days, and the 2-year warranty exceeds the 1-year minimum.",
+        "score": 98
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_2",
+        "products": [
+          {
+            "id": "vendor_a-rtx4070ti",
+            "seller_id": "vendor_a",
+            "seller_name": "Vendor A (CompuTech Distribution)",
+            "product": "RTX 4070 Ti",
+            "length_mm": 285,
+            "power_watts": 285,
+            "price_eur": 620,
+            "delivery_days": 6,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 620.0,
+          "avg_delivery_days": 6.0,
+          "avg_length_mm": 285.0,
+          "avg_power_watts": 285.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_2",
+        "seller_id": "vendor_a",
+        "product": "RTX 4070 Ti",
+        "verdict": "bad",
+        "reason": "The candidate product exceeds the maximum power requirement by 35W (285W vs 250W limit), which is a critical deviation for an AI workstation. While it meets all other requirements including price, delivery, length, and warranty, this significant power overage makes it unsuitable without potential system modifications or compromises.",
+        "score": 30
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_3",
+        "products": [
+          {
+            "id": "vendor_c-rtx4070",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4070",
+            "length_mm": 250,
+            "power_watts": 200,
+            "price_eur": 620,
+            "delivery_days": 2,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 620.0,
+          "avg_delivery_days": 2.0,
+          "avg_length_mm": 250.0,
+          "avg_power_watts": 200.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_3",
+        "seller_id": "vendor_c",
+        "product": "RTX 4070",
+        "verdict": "good",
+        "reason": "The candidate RTX 4070 from Vendor C meets all specified buyer requirements. It is well within the maximum length (250mm vs 300mm), power consumption (200W vs 250W), and budget (620 EUR vs 650 EUR). Additionally, the delivery time of 2 days is significantly faster than the 7-day maximum, and the 1-year warranty perfectly matches the minimum requirement.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_4",
+        "products": [
+          {
+            "id": "vendor_c-rtx4060",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4060",
+            "length_mm": 230,
+            "power_watts": 160,
+            "price_eur": 400,
+            "delivery_days": 2,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_b-rtx3060compact",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 3060 Compact",
+            "length_mm": 210,
+            "power_watts": 130,
+            "price_eur": 310,
+            "delivery_days": 3,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.88,
+        "representative_specs": {
+          "avg_price_eur": 355.0,
+          "avg_delivery_days": 2.5,
+          "avg_length_mm": 220.0,
+          "avg_power_watts": 145.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_4",
+        "seller_id": "vendor_c",
+        "product": "RTX 4060",
+        "verdict": "good",
+        "reason": "This candidate GPU is an excellent match, meeting or exceeding all buyer requirements. It is significantly under budget by 250 EUR, well within the length and power limits by 70mm and 90W respectively, and offers faster delivery by 5 days. The 1-year warranty also perfectly matches the minimum requirement.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_5",
+        "products": [
+          {
+            "id": "vendor_c-rtx4070ti",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4070 Ti",
+            "length_mm": 290,
+            "power_watts": 280,
+            "price_eur": 690,
+            "delivery_days": 3,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_c-rtx4080super",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4080 Super",
+            "length_mm": 310,
+            "power_watts": 300,
+            "price_eur": 780,
+            "delivery_days": 3,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.91,
+        "representative_specs": {
+          "avg_price_eur": 735.0,
+          "avg_delivery_days": 3.0,
+          "avg_length_mm": 300.0,
+          "avg_power_watts": 290.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_5",
+        "seller_id": "vendor_c",
+        "product": "RTX 4070 Ti",
+        "verdict": "bad",
+        "reason": "The candidate product exceeds the buyer's maximum power consumption by 30W (280W vs 250W) and is over budget by 40 EUR (690 EUR vs 650 EUR). These two critical misses make the product unsuitable, despite meeting length, delivery, and warranty requirements.",
+        "score": 35
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_6",
+        "products": [
+          {
+            "id": "vendor_a-rtx4060ti",
+            "seller_id": "vendor_a",
+            "seller_name": "Vendor A (CompuTech Distribution)",
+            "product": "RTX 4060 Ti",
+            "length_mm": 242,
+            "power_watts": 165,
+            "price_eur": 420,
+            "delivery_days": 4,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_b-rtx4060compact",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 4060 Compact",
+            "length_mm": 230,
+            "power_watts": 160,
+            "price_eur": 380,
+            "delivery_days": 3,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.92,
+        "representative_specs": {
+          "avg_price_eur": 400.0,
+          "avg_delivery_days": 3.5,
+          "avg_length_mm": 236.0,
+          "avg_power_watts": 162.5,
+          "avg_warranty_years": 2.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_6",
+        "seller_id": "vendor_a",
+        "product": "RTX 4060 Ti",
+        "verdict": "good",
+        "reason": "This candidate is an excellent match, meeting all buyer requirements. It is significantly under budget by 230 EUR, offers a longer warranty (2 years vs. 1 year required), and provides faster delivery (4 days vs. 7 days max). All physical and power specifications are also well within limits.",
+        "score": 96
+      }
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_b",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "match_score": 0.98,
+      "reason": "This candidate is an excellent match, meeting all buyer requirements. The GPU's length (267mm) and power consumption (220W) are comfortably below the maximum limits of 300mm and 250W respectively. Furthermore, the price of 650 EUR perfectly aligns with the budget, delivery is well within the 7-day maximum at 5 days, and the 2-year warranty exceeds the 1-year minimum.",
+      "specialization": "workstation components",
+      "region": "Germany",
+      "reliability_score": 0.88,
+      "negotiation_style": "cooperative"
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_a",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "match_score": 0.96,
+      "reason": "This candidate is an excellent match, meeting all buyer requirements. It is significantly under budget by 230 EUR, offers a longer warranty (2 years vs. 1 year required), and provides faster delivery (4 days vs. 7 days max). All physical and power specifications are also well within limits.",
+      "specialization": "high-performance GPUs",
+      "region": "Germany",
+      "reliability_score": 0.74,
+      "negotiation_style": "aggressive"
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "match_score": 0.95,
+      "reason": "The candidate RTX 4070 from Vendor C meets all specified buyer requirements. It is well within the maximum length (250mm vs 300mm), power consumption (200W vs 250W), and budget (620 EUR vs 650 EUR). Additionally, the delivery time of 2 days is significantly faster than the 7-day maximum, and the 1-year warranty perfectly matches the minimum requirement.",
+      "specialization": "fast logistics electronics",
+      "region": "Netherlands",
+      "reliability_score": 0.81,
+      "negotiation_style": "flexible"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_b",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "speaker": "buyer",
+      "message": "We are reviewing your offer for the RTX 4070 Super Compact. While the \u20ac650 price is within budget, we seek a slight reduction or value-add. Please confirm the 5-day delivery timeline holds and that the 2-year warranty provides full replacement coverage. We also require confirmation of immediate stock availability.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_b",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "speaker": "seller",
+      "message": "Thank you for reviewing our RTX 4070 Super Compact offer. The \u20ac650 price reflects its strong value as a compact, low-power GPU. We can confirm immediate stock availability and a 5-day delivery timeline for your order. Our standard 2-year warranty covers manufacturing defects, ensuring peace of mind for your workstation.",
+      "round": 1,
+      "pioneer_labels": [
+        "price_concession",
+        "delivery_condition",
+        "warranty_risk",
+        "technical_info"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "price_eur": 650,
+        "delivery_days": 5
+      }
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_a",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "speaker": "buyer",
+      "message": "Regarding your RTX 4060 Ti offer at \u20ac420, please confirm the 4-day delivery timeline and clarify if the 2-year warranty covers full replacement. Given this offer is well within our \u20ac650 budget, we'd also like to confirm immediate stock availability and explore any complementary services or expedited support options.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_a",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "speaker": "seller",
+      "message": "The 4-day delivery and 2-year warranty, covering manufacturer defects, are confirmed for our in-stock RTX 4060 Ti. At \u20ac420, this GPU delivers exceptional performance value. We focus on providing premium hardware, not unlisted complementary services.",
+      "round": 1,
+      "pioneer_labels": [
+        "price_concession",
+        "delivery_condition",
+        "warranty_risk"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "price_eur": 420,
+        "delivery_days": 4
+      }
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "speaker": "buyer",
+      "message": "Regarding your RTX 4070 offer at \u20ac620, we appreciate the competitive pricing. Please confirm the 2-day delivery timeline and current stock availability for a prompt order. Additionally, clarify if the 1-year warranty covers full replacement or only parts.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "speaker": "seller",
+      "message": "Thank you for your interest. We can confirm the RTX 4070 is currently in stock, and our 2-day delivery timeline is accurate for a prompt order. Our standard 1-year warranty covers the product against manufacturing defects.",
+      "round": 1,
+      "pioneer_labels": [
+        "delivery_condition",
+        "warranty_risk"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "delivery_days": 2
+      }
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_b",
+      "status": "passed",
+      "failed_constraints": [],
+      "score": 78,
+      "next_action": "recommend",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "product": "RTX 4070 Super Compact",
+      "length_mm": 267,
+      "power_watts": 220,
+      "price_eur": 650,
+      "delivery_days": 5,
+      "warranty_years": 2
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_a",
+      "status": "passed",
+      "failed_constraints": [],
+      "score": 85,
+      "next_action": "recommend",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "product": "RTX 4060 Ti",
+      "length_mm": 242,
+      "power_watts": 165,
+      "price_eur": 420,
+      "delivery_days": 4,
+      "warranty_years": 2
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_c",
+      "status": "passed",
+      "failed_constraints": [],
+      "score": 83,
+      "next_action": "recommend",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "product": "RTX 4070",
+      "length_mm": 250,
+      "power_watts": 200,
+      "price_eur": 620,
+      "delivery_days": 2,
+      "warranty_years": 1
+    }
+  },
+  {
+    "type": "escalation",
+    "stage": "escalation",
+    "data": {
+      "escalate": true,
+      "trigger": "competing_offers",
+      "reason": "Final approval required before completing procurement.",
+      "question_for_human": "The recommended offer scored 85/100 (\u20ac420, 4-day delivery). Do you approve this procurement recommendation?"
+    }
+  },
+  {
+    "type": "recommendation",
+    "stage": "recommendation",
+    "data": {
+      "recommended_seller": "Vendor A (CompuTech Distribution)",
+      "recommended_product": "RTX 4060 Ti",
+      "price_eur": 420,
+      "delivery_days": 4,
+      "warranty_years": 2,
+      "technical_status": "passed",
+      "risk_level": "low",
+      "reason": "Best balance of compatibility, price, delivery, and warranty.",
+      "human_approval_required": true,
+      "human_decision": null
+    }
+  },
+  {
+    "type": "audit",
+    "stage": "audit",
+    "data": "3 suppliers were contacted.\n\nVendor B (Workstation Parts GmbH) offered RTX 4070 Super Compact at \u20ac650 with 5-day delivery and 2-year warranty. This offer passed all technical checks and stayed within budget.\nVendor A (CompuTech Distribution) offered RTX 4060 Ti at \u20ac420 with 4-day delivery and 2-year warranty. This offer passed all technical checks and stayed within budget.\nVendor C (RapidShip Components) offered RTX 4070 at \u20ac620 with 2-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\n\nRecommended supplier: Vendor A (CompuTech Distribution) \u2014 RTX 4060 Ti at \u20ac420, 4-day delivery.\nReason: Best balance of compatibility, price, delivery, warranty, and risk.\n\nHuman approval required: The recommended offer scored 85/100 (\u20ac420, 4-day delivery). Do you approve this procurement recommendation?"
+  },
+  {
+    "type": "done",
+    "stage": "done",
+    "data": {
+      "request": {
+        "request_id": "REQ-001",
+        "raw_request": "We need a GPU for an AI workstation. It should fit inside our compact case, not consume too much power, stay under \u00e2\u201a\u00ac650, arrive within a week, and include warranty.",
+        "region": "Germany",
+        "priority": "technical_fit",
+        "_interactive": false
+      },
+      "structured_requirements": {
+        "product_type": "GPU",
+        "use_case": "AI workstation",
+        "max_length_mm": 300,
+        "max_power_watts": 250,
+        "budget_eur": 650.0,
+        "max_delivery_days": 7,
+        "warranty_required": true,
+        "minimum_warranty_years": 1.0
+      },
+      "clusters": [
+        {
+          "cluster_id": "cluster_1",
+          "products": [
+            {
+              "id": "vendor_b-rtx4070supercompact",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 4070 Super Compact",
+              "length_mm": 267,
+              "power_watts": 220,
+              "price_eur": 650,
+              "delivery_days": 5,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_b-rtx4070",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 4070",
+              "length_mm": 242,
+              "power_watts": 200,
+              "price_eur": 580,
+              "delivery_days": 4,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_b-rtx4070tisuperitx",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 4070 Ti Super ITX",
+              "length_mm": 280,
+              "power_watts": 250,
+              "price_eur": 730,
+              "delivery_days": 6,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.85,
+          "representative_specs": {
+            "avg_price_eur": 653.33,
+            "avg_delivery_days": 5.0,
+            "avg_length_mm": 263.0,
+            "avg_power_watts": 223.3,
+            "avg_warranty_years": 2.0
+          }
+        },
+        {
+          "cluster_id": "cluster_2",
+          "products": [
+            {
+              "id": "vendor_a-rtx4070ti",
+              "seller_id": "vendor_a",
+              "seller_name": "Vendor A (CompuTech Distribution)",
+              "product": "RTX 4070 Ti",
+              "length_mm": 285,
+              "power_watts": 285,
+              "price_eur": 620,
+              "delivery_days": 6,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 620.0,
+            "avg_delivery_days": 6.0,
+            "avg_length_mm": 285.0,
+            "avg_power_watts": 285.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_3",
+          "products": [
+            {
+              "id": "vendor_c-rtx4070",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4070",
+              "length_mm": 250,
+              "power_watts": 200,
+              "price_eur": 620,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 620.0,
+            "avg_delivery_days": 2.0,
+            "avg_length_mm": 250.0,
+            "avg_power_watts": 200.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_4",
+          "products": [
+            {
+              "id": "vendor_c-rtx4060",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4060",
+              "length_mm": 230,
+              "power_watts": 160,
+              "price_eur": 400,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_b-rtx3060compact",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 3060 Compact",
+              "length_mm": 210,
+              "power_watts": 130,
+              "price_eur": 310,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.88,
+          "representative_specs": {
+            "avg_price_eur": 355.0,
+            "avg_delivery_days": 2.5,
+            "avg_length_mm": 220.0,
+            "avg_power_watts": 145.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_5",
+          "products": [
+            {
+              "id": "vendor_c-rtx4070ti",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4070 Ti",
+              "length_mm": 290,
+              "power_watts": 280,
+              "price_eur": 690,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_c-rtx4080super",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4080 Super",
+              "length_mm": 310,
+              "power_watts": 300,
+              "price_eur": 780,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.91,
+          "representative_specs": {
+            "avg_price_eur": 735.0,
+            "avg_delivery_days": 3.0,
+            "avg_length_mm": 300.0,
+            "avg_power_watts": 290.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_6",
+          "products": [
+            {
+              "id": "vendor_a-rtx4060ti",
+              "seller_id": "vendor_a",
+              "seller_name": "Vendor A (CompuTech Distribution)",
+              "product": "RTX 4060 Ti",
+              "length_mm": 242,
+              "power_watts": 165,
+              "price_eur": 420,
+              "delivery_days": 4,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_b-rtx4060compact",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 4060 Compact",
+              "length_mm": 230,
+              "power_watts": 160,
+              "price_eur": 380,
+              "delivery_days": 3,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.92,
+          "representative_specs": {
+            "avg_price_eur": 400.0,
+            "avg_delivery_days": 3.5,
+            "avg_length_mm": 236.0,
+            "avg_power_watts": 162.5,
+            "avg_warranty_years": 2.0
+          }
+        }
+      ],
+      "judged_candidates": [
+        {
+          "cluster_id": "cluster_1",
+          "seller_id": "vendor_b",
+          "product": "RTX 4070 Super Compact",
+          "verdict": "good",
+          "reason": "This candidate is an excellent match, meeting all buyer requirements. The GPU's length (267mm) and power consumption (220W) are comfortably below the maximum limits of 300mm and 250W respectively. Furthermore, the price of 650 EUR perfectly aligns with the budget, delivery is well within the 7-day maximum at 5 days, and the 2-year warranty exceeds the 1-year minimum.",
+          "score": 98
+        },
+        {
+          "cluster_id": "cluster_2",
+          "seller_id": "vendor_a",
+          "product": "RTX 4070 Ti",
+          "verdict": "bad",
+          "reason": "The candidate product exceeds the maximum power requirement by 35W (285W vs 250W limit), which is a critical deviation for an AI workstation. While it meets all other requirements including price, delivery, length, and warranty, this significant power overage makes it unsuitable without potential system modifications or compromises.",
+          "score": 30
+        },
+        {
+          "cluster_id": "cluster_3",
+          "seller_id": "vendor_c",
+          "product": "RTX 4070",
+          "verdict": "good",
+          "reason": "The candidate RTX 4070 from Vendor C meets all specified buyer requirements. It is well within the maximum length (250mm vs 300mm), power consumption (200W vs 250W), and budget (620 EUR vs 650 EUR). Additionally, the delivery time of 2 days is significantly faster than the 7-day maximum, and the 1-year warranty perfectly matches the minimum requirement.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_4",
+          "seller_id": "vendor_c",
+          "product": "RTX 4060",
+          "verdict": "good",
+          "reason": "This candidate GPU is an excellent match, meeting or exceeding all buyer requirements. It is significantly under budget by 250 EUR, well within the length and power limits by 70mm and 90W respectively, and offers faster delivery by 5 days. The 1-year warranty also perfectly matches the minimum requirement.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_5",
+          "seller_id": "vendor_c",
+          "product": "RTX 4070 Ti",
+          "verdict": "bad",
+          "reason": "The candidate product exceeds the buyer's maximum power consumption by 30W (280W vs 250W) and is over budget by 40 EUR (690 EUR vs 650 EUR). These two critical misses make the product unsuitable, despite meeting length, delivery, and warranty requirements.",
+          "score": 35
+        },
+        {
+          "cluster_id": "cluster_6",
+          "seller_id": "vendor_a",
+          "product": "RTX 4060 Ti",
+          "verdict": "good",
+          "reason": "This candidate is an excellent match, meeting all buyer requirements. It is significantly under budget by 230 EUR, offers a longer warranty (2 years vs. 1 year required), and provides faster delivery (4 days vs. 7 days max). All physical and power specifications are also well within limits.",
+          "score": 96
+        }
+      ],
+      "matched_suppliers": [
+        {
+          "seller_id": "vendor_b",
+          "seller_name": "Vendor B (Workstation Parts GmbH)",
+          "match_score": 0.98,
+          "reason": "This candidate is an excellent match, meeting all buyer requirements. The GPU's length (267mm) and power consumption (220W) are comfortably below the maximum limits of 300mm and 250W respectively. Furthermore, the price of 650 EUR perfectly aligns with the budget, delivery is well within the 7-day maximum at 5 days, and the 2-year warranty exceeds the 1-year minimum.",
+          "specialization": "workstation components",
+          "region": "Germany",
+          "reliability_score": 0.88,
+          "negotiation_style": "cooperative"
+        },
+        {
+          "seller_id": "vendor_a",
+          "seller_name": "Vendor A (CompuTech Distribution)",
+          "match_score": 0.96,
+          "reason": "This candidate is an excellent match, meeting all buyer requirements. It is significantly under budget by 230 EUR, offers a longer warranty (2 years vs. 1 year required), and provides faster delivery (4 days vs. 7 days max). All physical and power specifications are also well within limits.",
+          "specialization": "high-performance GPUs",
+          "region": "Germany",
+          "reliability_score": 0.74,
+          "negotiation_style": "aggressive"
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "match_score": 0.95,
+          "reason": "The candidate RTX 4070 from Vendor C meets all specified buyer requirements. It is well within the maximum length (250mm vs 300mm), power consumption (200W vs 250W), and budget (620 EUR vs 650 EUR). Additionally, the delivery time of 2 days is significantly faster than the 7-day maximum, and the 1-year warranty perfectly matches the minimum requirement.",
+          "specialization": "fast logistics electronics",
+          "region": "Netherlands",
+          "reliability_score": 0.81,
+          "negotiation_style": "flexible"
+        }
+      ],
+      "conversation_logs": [
+        {
+          "seller_id": "vendor_b",
+          "seller_name": "Vendor B (Workstation Parts GmbH)",
+          "speaker": "buyer",
+          "message": "We are reviewing your offer for the RTX 4070 Super Compact. While the \u20ac650 price is within budget, we seek a slight reduction or value-add. Please confirm the 5-day delivery timeline holds and that the 2-year warranty provides full replacement coverage. We also require confirmation of immediate stock availability.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_b",
+          "seller_name": "Vendor B (Workstation Parts GmbH)",
+          "speaker": "seller",
+          "message": "Thank you for reviewing our RTX 4070 Super Compact offer. The \u20ac650 price reflects its strong value as a compact, low-power GPU. We can confirm immediate stock availability and a 5-day delivery timeline for your order. Our standard 2-year warranty covers manufacturing defects, ensuring peace of mind for your workstation.",
+          "round": 1,
+          "pioneer_labels": [
+            "price_concession",
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 650,
+            "delivery_days": 5
+          }
+        },
+        {
+          "seller_id": "vendor_a",
+          "seller_name": "Vendor A (CompuTech Distribution)",
+          "speaker": "buyer",
+          "message": "Regarding your RTX 4060 Ti offer at \u20ac420, please confirm the 4-day delivery timeline and clarify if the 2-year warranty covers full replacement. Given this offer is well within our \u20ac650 budget, we'd also like to confirm immediate stock availability and explore any complementary services or expedited support options.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_a",
+          "seller_name": "Vendor A (CompuTech Distribution)",
+          "speaker": "seller",
+          "message": "The 4-day delivery and 2-year warranty, covering manufacturer defects, are confirmed for our in-stock RTX 4060 Ti. At \u20ac420, this GPU delivers exceptional performance value. We focus on providing premium hardware, not unlisted complementary services.",
+          "round": 1,
+          "pioneer_labels": [
+            "price_concession",
+            "delivery_condition",
+            "warranty_risk"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 420,
+            "delivery_days": 4
+          }
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "speaker": "buyer",
+          "message": "Regarding your RTX 4070 offer at \u20ac620, we appreciate the competitive pricing. Please confirm the 2-day delivery timeline and current stock availability for a prompt order. Additionally, clarify if the 1-year warranty covers full replacement or only parts.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "speaker": "seller",
+          "message": "Thank you for your interest. We can confirm the RTX 4070 is currently in stock, and our 2-day delivery timeline is accurate for a prompt order. Our standard 1-year warranty covers the product against manufacturing defects.",
+          "round": 1,
+          "pioneer_labels": [
+            "delivery_condition",
+            "warranty_risk"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 2
+          }
+        }
+      ],
+      "pioneer_labels": [
+        {
+          "message": "Thank you for reviewing our RTX 4070 Super Compact offer. The \u20ac650 price reflects its strong value as a compact, low-power GPU. We can confirm immediate stock availability and a 5-day delivery timeline for your order. Our standard 2-year warranty covers manufacturing defects, ensuring peace of mind for your workstation.",
+          "labels": [
+            "price_concession",
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 650,
+            "delivery_days": 5
+          }
+        },
+        {
+          "message": "The 4-day delivery and 2-year warranty, covering manufacturer defects, are confirmed for our in-stock RTX 4060 Ti. At \u20ac420, this GPU delivers exceptional performance value. We focus on providing premium hardware, not unlisted complementary services.",
+          "labels": [
+            "price_concession",
+            "delivery_condition",
+            "warranty_risk"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 420,
+            "delivery_days": 4
+          }
+        },
+        {
+          "message": "Thank you for your interest. We can confirm the RTX 4070 is currently in stock, and our 2-day delivery timeline is accurate for a prompt order. Our standard 1-year warranty covers the product against manufacturing defects.",
+          "labels": [
+            "delivery_condition",
+            "warranty_risk"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 2
+          }
+        }
+      ],
+      "validation_results": [
+        {
+          "seller_id": "vendor_b",
+          "status": "passed",
+          "failed_constraints": [],
+          "score": 78,
+          "next_action": "recommend",
+          "seller_name": "Vendor B (Workstation Parts GmbH)",
+          "product": "RTX 4070 Super Compact",
+          "length_mm": 267,
+          "power_watts": 220,
+          "price_eur": 650,
+          "delivery_days": 5,
+          "warranty_years": 2
+        },
+        {
+          "seller_id": "vendor_a",
+          "status": "passed",
+          "failed_constraints": [],
+          "score": 85,
+          "next_action": "recommend",
+          "seller_name": "Vendor A (CompuTech Distribution)",
+          "product": "RTX 4060 Ti",
+          "length_mm": 242,
+          "power_watts": 165,
+          "price_eur": 420,
+          "delivery_days": 4,
+          "warranty_years": 2
+        },
+        {
+          "seller_id": "vendor_c",
+          "status": "passed",
+          "failed_constraints": [],
+          "score": 83,
+          "next_action": "recommend",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "product": "RTX 4070",
+          "length_mm": 250,
+          "power_watts": 200,
+          "price_eur": 620,
+          "delivery_days": 2,
+          "warranty_years": 1
+        }
+      ],
+      "tavily_enrichment": {
+        "triggered": false,
+        "reason": "",
+        "results": []
+      },
+      "escalation_result": {
+        "escalate": true,
+        "trigger": "competing_offers",
+        "reason": "Final approval required before completing procurement.",
+        "question_for_human": "The recommended offer scored 85/100 (\u20ac420, 4-day delivery). Do you approve this procurement recommendation?"
+      },
+      "audit_summary": "3 suppliers were contacted.\n\nVendor B (Workstation Parts GmbH) offered RTX 4070 Super Compact at \u20ac650 with 5-day delivery and 2-year warranty. This offer passed all technical checks and stayed within budget.\nVendor A (CompuTech Distribution) offered RTX 4060 Ti at \u20ac420 with 4-day delivery and 2-year warranty. This offer passed all technical checks and stayed within budget.\nVendor C (RapidShip Components) offered RTX 4070 at \u20ac620 with 2-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\n\nRecommended supplier: Vendor A (CompuTech Distribution) \u2014 RTX 4060 Ti at \u20ac420, 4-day delivery.\nReason: Best balance of compatibility, price, delivery, warranty, and risk.\n\nHuman approval required: The recommended offer scored 85/100 (\u20ac420, 4-day delivery). Do you approve this procurement recommendation?",
+      "final_recommendation": {
+        "recommended_seller": "Vendor A (CompuTech Distribution)",
+        "recommended_product": "RTX 4060 Ti",
+        "price_eur": 420,
+        "delivery_days": 4,
+        "warranty_years": 2,
+        "technical_status": "passed",
+        "risk_level": "low",
+        "reason": "Best balance of compatibility, price, delivery, and warranty.",
+        "human_approval_required": true,
+        "human_decision": null
+      },
+      "deal_card_path": "C:\\Users\\taimo\\Desktop\\Hackathons\\tech_europe_munich1\\TechEU_Munich_2026\\integrations\\../assets/fal_deal_card.png",
+      "demo_mode": false
+    }
+  }
+]
