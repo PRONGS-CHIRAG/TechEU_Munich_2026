@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { ChatCircle } from "@phosphor-icons/react";
 import { SectionHeader } from "@/components/primitives/SectionHeader";
 import { PioneerBadge, RiskPill } from "@/components/primitives/Badges";
 import type { ConversationLog, MatchedSupplier } from "@/lib/types";
@@ -19,12 +20,13 @@ export function NegotiationThreads({
   onSelectSeller,
 }: Props) {
   const orderedSellers = useMemo(
-    () => [...suppliers].sort((a, b) => a.seller_id.localeCompare(b.seller_id)),
+    () => [...suppliers].sort((a, b) => b.match_score - a.match_score),
     [suppliers],
   );
 
   const activeLogs = logs.filter((l) => l.seller_id === activeSeller);
   const rounds = Math.max(...activeLogs.map((l) => l.round), 0);
+  const maxRounds = Math.max(...logs.map((l) => l.round), 0);
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
@@ -35,7 +37,7 @@ export function NegotiationThreads({
         right={
           rounds > 0 && (
             <span className="font-mono text-[11px] text-text-3">
-              Round {rounds} of 2
+              Round {rounds} of {maxRounds}
             </span>
           )
         }
@@ -64,8 +66,10 @@ export function NegotiationThreads({
 
       <div className="flex flex-col gap-3">
         {activeLogs.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-surface-2 px-4 py-6 text-center text-[12px] text-text-3">
-            No messages exchanged with this seller.
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-surface-2 px-4 py-8 text-center">
+            <ChatCircle className="h-7 w-7 text-text-3" weight="thin" />
+            <p className="text-[12px] text-text-3">No messages exchanged yet</p>
+            <p className="text-[11px] text-text-3">Negotiations appear here as they run.</p>
           </div>
         ) : (
           activeLogs.map((log, i) => <Bubble key={i} log={log} />)

@@ -130,6 +130,23 @@ body {
   background: var(--bg) !important;
 }
 
+/* Compact form input used in seller workspace */
+.form-input {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-1);
+  outline: none;
+  transition: border-color 150ms;
+}
+.form-input:focus {
+  border-color: var(--accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

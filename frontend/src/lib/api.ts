@@ -1,4 +1,5 @@
 import type { BuyerRequest, DemoResult } from "./types";
+import { supabase } from "./supabase";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -25,6 +26,17 @@ export interface BuyerScenario {
 }
 
 export async function getScenarios(): Promise<BuyerScenario[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("buyer_scenarios")
+      .select("request_id, raw_request, region, priority, structured_requirements")
+      .order("created_at", { ascending: true });
+
+    if (!error && data) {
+      return data;
+    }
+  }
+
   const res = await fetch(`${API_BASE}/api/scenarios`);
   if (!res.ok) {
     throw new Error(`scenarios failed: ${res.status} ${res.statusText}`);

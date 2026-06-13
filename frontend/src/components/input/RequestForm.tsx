@@ -9,6 +9,7 @@ import {
   ArrowsClockwise,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getScenarios, type BuyerScenario } from "@/lib/api";
 import { defaultRequest } from "@/lib/mockData";
 
 interface Props {
@@ -31,14 +32,29 @@ const MODES = [
     sub: "Budget-first ranking",
     Icon: ArrowsClockwise,
   },
+  {
+    id: "performance",
+    label: "Performance",
+    sub: "Capability-first ranking",
+    Icon: Lightning,
+  },
 ] as const;
 
 type ModeId = (typeof MODES)[number]["id"];
 
-const SCENARIOS: Array<{ label: string; text: string }> = [
+type QuickScenario = {
+  label: string;
+  text: string;
+  region?: string;
+  priority?: string;
+};
+
+const FALLBACK_SCENARIOS: QuickScenario[] = [
   {
     label: "GPU workstation",
     text: defaultRequest.raw_request,
+    region: defaultRequest.region,
+    priority: defaultRequest.priority,
   },
   {
     label: "Software licenses",
@@ -54,11 +70,20 @@ const SCENARIOS: Array<{ label: string; text: string }> = [
   },
 ];
 
+function scenarioLabel(scenario: BuyerScenario): string {
+  return scenario.structured_requirements?.use_case || scenario.request_id;
+}
+
+function isModeId(value: string | undefined): value is ModeId {
+  return MODES.some((mode) => mode.id === value);
+}
+
 export function RequestForm({ onStart, disabled }: Props) {
   const [raw, setRaw] = useState(defaultRequest.raw_request);
   const [region, setRegion] = useState(defaultRequest.region);
   const [priority, setPriority] = useState<ModeId>("technical_fit");
   const [modeOpen, setModeOpen] = useState(false);
+  const [scenarios, setScenarios] = useState<QuickScenario[]>(FALLBACK_SCENARIOS);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -70,6 +95,30 @@ export function RequestForm({ onStart, disabled }: Props) {
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [raw]);
+
+  useEffect(() => {
+    let active = true;
+
+    getScenarios()
+      .then((items) => {
+        if (!active || items.length === 0) return;
+        setScenarios(
+          items.map((item) => ({
+            label: scenarioLabel(item),
+            text: item.raw_request,
+            region: item.region,
+            priority: item.priority,
+          })),
+        );
+      })
+      .catch(() => {
+        if (active) setScenarios(FALLBACK_SCENARIOS);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -98,9 +147,12 @@ export function RequestForm({ onStart, disabled }: Props) {
 
   const activeMode = MODES.find((m) => m.id === priority)!;
   const ActiveIcon = activeMode.Icon;
+  const regions = Array.from(
+    new Set([...REGIONS, ...scenarios.map((s) => s.region).filter(Boolean)]),
+  ) as string[];
 
   return (
-    <div className="w-full max-w-[680px]">
+    <div className="mx-auto w-full max-w-[680px]">
       {/* Main pill input */}
       <div className="relative rounded-[22px] border border-[#e4e7ec] bg-white shadow-[0_2px_20px_rgba(0,0,0,0.07)]">
         <div className="flex items-start gap-3 px-5 py-[14px]">
@@ -181,7 +233,11 @@ export function RequestForm({ onStart, disabled }: Props) {
               disabled={disabled || !raw.trim()}
               className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-accent text-white transition-all hover:brightness-110 active:scale-[0.94] disabled:cursor-not-allowed disabled:bg-text-3"
             >
-              <ArrowRight className="h-4 w-4" weight="bold" />
+              {disabled ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                <ArrowRight className="h-4 w-4" weight="bold" />
+              )}
             </button>
           </div>
         </div>
@@ -189,13 +245,15 @@ export function RequestForm({ onStart, disabled }: Props) {
 
       {/* Quick-fill pills + region */}
       <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">
-        {SCENARIOS.map((s) => (
+        {scenarios.map((s) => (
           <button
             key={s.label}
             type="button"
             disabled={disabled}
             onClick={() => {
               setRaw(s.text);
+              if (s.region) setRegion(s.region);
+              if (isModeId(s.priority)) setPriority(s.priority);
               setTimeout(() => textareaRef.current?.focus(), 0);
             }}
             className="rounded-full border border-border bg-white px-3.5 py-1.5 text-[12px] font-medium text-text-2 transition-all hover:border-accent-border hover:bg-accent-soft hover:text-accent disabled:pointer-events-none"
@@ -213,7 +271,7 @@ export function RequestForm({ onStart, disabled }: Props) {
             disabled={disabled}
             className="appearance-none rounded-full border border-border bg-white py-1.5 pl-7 pr-6 text-[12px] font-medium text-text-2 outline-none transition-colors hover:border-border-strong focus:border-accent disabled:pointer-events-none"
           >
-            {REGIONS.map((r) => (
+            {regions.map((r) => (
               <option key={r} value={r}>
                 {r}
               </option>

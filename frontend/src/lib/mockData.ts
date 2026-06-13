@@ -5,6 +5,7 @@ import type {
   EscalationResult,
   FinalRecommendation,
   MatchedSupplier,
+  SellerInventoryMerchant,
   StructuredRequirements,
   TavilyResult,
   ValidationResult,
@@ -84,6 +85,219 @@ export const matchedSuppliers: MatchedSupplier[] = [
     region: "Switzerland",
     reliability_score: 0.91,
     negotiation_style: "formal",
+  },
+];
+
+export const sellerInventoryCatalog: SellerInventoryMerchant[] = [
+  {
+    seller_id: "vendor_b",
+    seller_name: "Vendor B (Workstation Parts GmbH)",
+    negotiation_style: "cooperative",
+    region: "Germany",
+    reliability_score: 0.88,
+    inventories: [
+      {
+        inventory_id: "vendor_b-munich-compact",
+        location: "Munich warehouse",
+        products: [
+          {
+            product_id: "vendor_b-rtx4070supercompact",
+            product: "RTX 4070 Super Compact",
+            category: "GPU",
+            specifications: {
+              length_mm: 267,
+              power_watts: 220,
+              warranty_years: 2,
+              availability: "in_stock",
+              compatibility_notes: "Best compact AI workstation fit; strong thermal profile.",
+            },
+            price_eur: 650,
+            approximate_delivery_days: 5,
+            max_negotiation_percent: 6,
+          },
+          {
+            product_id: "vendor_b-rtx4070",
+            product: "RTX 4070",
+            category: "GPU",
+            specifications: {
+              length_mm: 242,
+              power_watts: 200,
+              warranty_years: 2,
+              availability: "in_stock",
+              compatibility_notes: "Compact card with balanced price and power draw.",
+            },
+            price_eur: 580,
+            approximate_delivery_days: 4,
+            max_negotiation_percent: 4,
+          },
+          {
+            product_id: "vendor_b-rtx4070tisuperitx",
+            product: "RTX 4070 Ti Super ITX",
+            category: "GPU",
+            specifications: {
+              length_mm: 280,
+              power_watts: 250,
+              warranty_years: 2,
+              availability: "in_stock",
+              compatibility_notes: "Upper edge of compact power envelope; suitable if budget can move.",
+            },
+            price_eur: 730,
+            approximate_delivery_days: 6,
+            max_negotiation_percent: 7,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    seller_id: "vendor_a",
+    seller_name: "Vendor A (CompuTech Distribution)",
+    negotiation_style: "firm",
+    region: "Germany",
+    reliability_score: 0.82,
+    inventories: [
+      {
+        inventory_id: "vendor_a-berlin-gpu",
+        location: "Berlin warehouse",
+        products: [
+          {
+            product_id: "vendor_a-rtx4080",
+            product: "RTX 4080",
+            category: "GPU",
+            specifications: {
+              length_mm: 320,
+              power_watts: 320,
+              warranty_years: 2,
+              availability: "in_stock",
+              compatibility_notes: "High performance card; exceeds compact-case limits.",
+            },
+            price_eur: 700,
+            approximate_delivery_days: 5,
+            max_negotiation_percent: 4,
+          },
+          {
+            product_id: "vendor_a-rtx4070ti",
+            product: "RTX 4070 Ti",
+            category: "GPU",
+            specifications: {
+              length_mm: 285,
+              power_watts: 285,
+              warranty_years: 1,
+              availability: "in_stock",
+              compatibility_notes: "Fits compact cases but power draw is above the buyer target.",
+            },
+            price_eur: 620,
+            approximate_delivery_days: 6,
+            max_negotiation_percent: 5,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    seller_id: "vendor_c",
+    seller_name: "Vendor C (RapidShip Components)",
+    negotiation_style: "flexible",
+    region: "Germany",
+    reliability_score: 0.79,
+    inventories: [
+      {
+        inventory_id: "vendor_c-amsterdam-fast",
+        location: "Amsterdam fulfillment hub",
+        products: [
+          {
+            product_id: "vendor_c-rtx4070ti",
+            product: "RTX 4070 Ti",
+            category: "GPU",
+            specifications: {
+              length_mm: 290,
+              power_watts: 280,
+              warranty_years: 1,
+              availability: "in_stock",
+              compatibility_notes: "Very fast delivery; power draw is above the buyer target.",
+            },
+            price_eur: 690,
+            approximate_delivery_days: 3,
+            max_negotiation_percent: 8,
+          },
+          {
+            product_id: "vendor_c-rtx4070",
+            product: "RTX 4070",
+            category: "GPU",
+            specifications: {
+              length_mm: 250,
+              power_watts: 200,
+              warranty_years: 1,
+              availability: "in_stock",
+              compatibility_notes: "Fastest compatible offer; warranty is shorter than Vendor B.",
+            },
+            price_eur: 620,
+            approximate_delivery_days: 2,
+            max_negotiation_percent: 5,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    seller_id: "vendor_d",
+    seller_name: "Vendor D (BudgetGPU Direct)",
+    negotiation_style: "aggressive",
+    region: "Austria",
+    reliability_score: 0.71,
+    inventories: [
+      {
+        inventory_id: "vendor_d-warsaw-budget",
+        location: "Warsaw warehouse",
+        products: [
+          {
+            product_id: "vendor_d-rtx4060",
+            product: "RTX 4060",
+            category: "GPU",
+            specifications: {
+              length_mm: 200,
+              power_watts: 115,
+              warranty_years: 0.5,
+              availability: "in_stock",
+              compatibility_notes: "Low-cost compact option with short warranty and slower logistics.",
+            },
+            price_eur: 330,
+            approximate_delivery_days: 12,
+            max_negotiation_percent: 2,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    seller_id: "vendor_e",
+    seller_name: "Vendor E (Enterprise Compute Solutions)",
+    negotiation_style: "formal",
+    region: "Switzerland",
+    reliability_score: 0.91,
+    inventories: [
+      {
+        inventory_id: "vendor_e-zurich-enterprise",
+        location: "Zurich enterprise depot",
+        products: [
+          {
+            product_id: "vendor_e-rtx4070tisuper",
+            product: "RTX 4070 Ti Super",
+            category: "GPU",
+            specifications: {
+              length_mm: 295,
+              power_watts: 285,
+              warranty_years: 3,
+              availability: "in_stock",
+              compatibility_notes: "Strong warranty; power draw and price need approval.",
+            },
+            price_eur: 740,
+            approximate_delivery_days: 10,
+            max_negotiation_percent: 4,
+          },
+        ],
+      },
+    ],
   },
 ];
 

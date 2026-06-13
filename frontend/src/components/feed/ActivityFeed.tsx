@@ -13,18 +13,25 @@ export type FeedItem = {
     | "tavily"
     | "validation"
     | "escalation"
+    | "judging"
+    | "cluster"
+    | "audit"
+    | "recommendation"
     | "system";
   title: string;
   detail?: string;
   vendor?: string;
+  ts?: number;
 };
 
 interface Props {
   items: FeedItem[];
+  demoMode?: boolean;
 }
 
-export function ActivityFeed({ items }: Props) {
+export function ActivityFeed({ items, demoMode }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const startTs = items[0]?.ts;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -43,13 +50,26 @@ export function ActivityFeed({ items }: Props) {
             Agent feed
           </div>
         </div>
-        <div className="inline-flex items-center gap-1.5 text-[11px] text-text-2">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              items.length > 0 ? "animate-pulse bg-emerald-500" : "bg-text-3"
-            }`}
-          />
-          {items.length} events
+        <div className="flex items-center gap-2">
+          {demoMode !== undefined && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                demoMode
+                  ? "bg-warning-soft text-warning"
+                  : "bg-success-soft text-success"
+              }`}
+            >
+              {demoMode ? "Replay" : "Live LLM"}
+            </span>
+          )}
+          <div className="inline-flex items-center gap-1.5 text-[11px] text-text-2">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                items.length > 0 ? "animate-pulse bg-emerald-500" : "bg-text-3"
+              }`}
+            />
+            {items.length} events
+          </div>
         </div>
       </div>
 
@@ -73,7 +93,7 @@ export function ActivityFeed({ items }: Props) {
                     ease: [0.16, 1, 0.3, 1],
                   }}
                 >
-                  <FeedRow item={item} />
+                  <FeedRow item={item} startTs={startTs} />
                 </motion.li>
               ))}
             </AnimatePresence>
@@ -84,8 +104,13 @@ export function ActivityFeed({ items }: Props) {
   );
 }
 
-function FeedRow({ item }: { item: FeedItem }) {
+function FeedRow({ item, startTs }: { item: FeedItem; startTs?: number }) {
   const meta = agentMeta[item.agent];
+  const elapsed =
+    item.ts !== undefined && startTs !== undefined && item.ts > startTs
+      ? ((item.ts - startTs) / 1000).toFixed(1)
+      : null;
+
   return (
     <div className="flex items-start gap-2.5 rounded-lg border border-transparent px-2 py-1.5 transition-colors hover:border-border hover:bg-surface-2">
       <span
@@ -101,6 +126,11 @@ function FeedRow({ item }: { item: FeedItem }) {
           {item.vendor && (
             <span className="text-[10px] font-medium text-text-3">
               · {item.vendor}
+            </span>
+          )}
+          {elapsed && (
+            <span className="ml-auto shrink-0 font-mono text-[10px] text-text-3">
+              +{elapsed}s
             </span>
           )}
         </div>
@@ -175,6 +205,30 @@ const agentMeta: Record<
     glyph: "!",
     bg: "bg-amber-50",
     fg: "text-warning",
+  },
+  judging: {
+    label: "Judging Agent",
+    glyph: "⚖",
+    bg: "bg-amber-50",
+    fg: "text-warning",
+  },
+  cluster: {
+    label: "Clustering",
+    glyph: "⊕",
+    bg: "bg-sky-50",
+    fg: "text-info",
+  },
+  audit: {
+    label: "Audit",
+    glyph: "✎",
+    bg: "bg-surface-2",
+    fg: "text-text-2",
+  },
+  recommendation: {
+    label: "Recommendation",
+    glyph: "★",
+    bg: "bg-emerald-50",
+    fg: "text-success",
   },
   system: {
     label: "System",

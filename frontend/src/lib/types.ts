@@ -47,6 +47,39 @@ export interface MatchedSupplier {
   negotiation_style: string;
 }
 
+export interface SellerProductSpecifications {
+  length_mm: number;
+  power_watts: number;
+  warranty_years: number;
+  availability: "in_stock" | "limited_stock" | "out_of_stock";
+  compatibility_notes: string;
+}
+
+export interface SellerInventoryProduct {
+  product_id: string;
+  product: string;
+  category: string;
+  specifications: SellerProductSpecifications;
+  price_eur: number;
+  approximate_delivery_days: number;
+  max_negotiation_percent: number;
+}
+
+export interface SellerInventory {
+  inventory_id: string;
+  location: string;
+  products: SellerInventoryProduct[];
+}
+
+export interface SellerInventoryMerchant {
+  seller_id: string;
+  seller_name: string;
+  negotiation_style: string;
+  region: string;
+  reliability_score: number;
+  inventories: SellerInventory[];
+}
+
 export interface ConversationLog {
   seller_id: string;
   seller_name?: string;
