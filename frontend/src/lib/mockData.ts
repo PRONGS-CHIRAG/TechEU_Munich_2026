@@ -321,6 +321,8 @@ export const auditSummary =
 export const demoResult: DemoResult = {
   request: defaultRequest,
   structured_requirements: structuredRequirements,
+  clusters: [],
+  judged_candidates: [],
   matched_suppliers: matchedSuppliers,
   conversation_logs: conversationLogs,
   validation_results: validationResults,

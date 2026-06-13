@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { HumanAlertData, HumanResponse } from "@/lib/types";
 
 export type FeedItem = {
   id: string;
@@ -13,24 +14,30 @@ export type FeedItem = {
     | "tavily"
     | "validation"
     | "escalation"
+    | "judge"
+    | "human"
     | "system";
   title: string;
   detail?: string;
   vendor?: string;
 };
 
+// Frozen Phase 3 prop interface — Dev A's view wrapper passes `items` through
+// untouched; `pendingAlert`/`onHumanResponse` are the inline HITL seam.
 interface Props {
   items: FeedItem[];
+  pendingAlert?: HumanAlertData | null;
+  onHumanResponse?: (response: HumanResponse) => void;
 }
 
-export function ActivityFeed({ items }: Props) {
+export function ActivityFeed({ items, pendingAlert, onHumanResponse }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [items.length]);
+  }, [items.length, pendingAlert]);
 
   return (
     <section className="flex h-full flex-col rounded-2xl border border-border bg-surface shadow-sm">
@@ -58,7 +65,7 @@ export function ActivityFeed({ items }: Props) {
         className="flex-1 overflow-y-auto px-5 py-3"
         style={{ maxHeight: 360 }}
       >
-        {items.length === 0 ? (
+        {items.length === 0 && !pendingAlert ? (
           <EmptyState />
         ) : (
           <ol className="flex flex-col gap-2">
@@ -77,11 +84,113 @@ export function ActivityFeed({ items }: Props) {
                   <FeedRow item={item} />
                 </motion.li>
               ))}
+              {pendingAlert && (
+                <motion.li
+                  key="human-alert"
+                  layout
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <HumanAlertCard alert={pendingAlert} onRespond={onHumanResponse} />
+                </motion.li>
+              )}
             </AnimatePresence>
           </ol>
         )}
       </div>
     </section>
+  );
+}
+
+function HumanAlertCard({
+  alert,
+  onRespond,
+}: {
+  alert: HumanAlertData;
+  onRespond?: (response: HumanResponse) => void;
+}) {
+  const [submitted, setSubmitted] = useState(false);
+  const [adjustedBudget, setAdjustedBudget] = useState(
+    alert.budget_eur ? String(alert.budget_eur) : "",
+  );
+  const [showAdjust, setShowAdjust] = useState(false);
+
+  function respond(decision: HumanResponse["decision"]) {
+    if (submitted) return;
+    setSubmitted(true);
+    onRespond?.({
+      decision,
+      adjustedBudgetEur:
+        decision === "adjust" ? Number(adjustedBudget) || undefined : undefined,
+    });
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-300 bg-amber-50 p-3">
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-[11px] font-semibold text-warning">
+          Human review needed
+        </span>
+        {alert.trigger && (
+          <span className="text-[10px] font-medium text-text-3">
+            · {alert.trigger}
+          </span>
+        )}
+      </div>
+      <div className="mt-1 text-[12.5px] text-text-1">{alert.question}</div>
+      {alert.best_offer && (
+        <div className="mt-1 font-mono text-[11px] text-text-2">
+          {alert.best_offer.seller_name} · {alert.best_offer.product} · €
+          {alert.best_offer.price_eur} · {alert.best_offer.delivery_days}d
+        </div>
+      )}
+
+      {submitted ? (
+        <div className="mt-2 text-[11px] font-medium text-text-3">
+          Submitted — resuming run…
+        </div>
+      ) : (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => respond("approve")}
+            className="rounded-md bg-success px-2.5 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            Approve
+          </button>
+          <button
+            onClick={() => respond("reject")}
+            className="rounded-md bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-text-2 transition-colors hover:bg-border"
+          >
+            Reject
+          </button>
+          {showAdjust ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-[11px] text-text-2">Budget €</span>
+              <input
+                type="number"
+                value={adjustedBudget}
+                onChange={(e) => setAdjustedBudget(e.target.value)}
+                className="w-20 rounded-md border border-border bg-surface px-1.5 py-1 text-[11px] text-text-1"
+              />
+              <button
+                onClick={() => respond("adjust")}
+                className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+              >
+                Submit
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setShowAdjust(true)}
+              className="rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold text-text-2 transition-colors hover:bg-surface-2"
+            >
+              Adjust budget…
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -164,6 +273,18 @@ const agentMeta: Record<
     glyph: "T",
     bg: "bg-sky-50",
     fg: "text-info",
+  },
+  judge: {
+    label: "Judge",
+    glyph: "⚖",
+    bg: "bg-pioneer-soft",
+    fg: "text-pioneer",
+  },
+  human: {
+    label: "Human",
+    glyph: "☻",
+    bg: "bg-amber-50",
+    fg: "text-warning",
   },
   validation: {
     label: "Validator",

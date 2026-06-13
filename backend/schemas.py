@@ -82,6 +82,17 @@ class FinalRecommendation(TypedDict):
     risk_level: str
     reason: str
     human_approval_required: bool
+    human_decision: Optional[str]  # approve | reject | adjust | None (no response yet)
+
+
+class HumanAlert(TypedDict):
+    """Phase 3 — emitted on `human_alert` events, pauses run_demo_stream()
+    until POST /api/human-response submits a matching session_id."""
+    session_id: str
+    question: str
+    trigger: str
+    best_offer: Optional[dict]
+    budget_eur: float
 
 
 class ProductCluster(TypedDict):

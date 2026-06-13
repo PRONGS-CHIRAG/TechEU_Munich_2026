@@ -3,14 +3,17 @@
 import { CaretDown, PaperPlaneTilt } from "@phosphor-icons/react";
 import { useState } from "react";
 import { BUYER_COMPANY, defaultRequest } from "@/lib/mockData";
+import type { BuyerScenario } from "@/lib/api";
 
 interface Props {
   onStart: (req: {
     raw_request: string;
     region: string;
     priority: string;
+    request_id?: string;
   }) => void;
   disabled: boolean;
+  scenarios?: BuyerScenario[];
 }
 
 const REGIONS = ["Germany", "Austria", "Switzerland"];
@@ -21,10 +24,20 @@ const PRIORITIES = [
   { id: "performance", label: "Performance" },
 ];
 
-export function RequestForm({ onStart, disabled }: Props) {
+export function RequestForm({ onStart, disabled, scenarios = [] }: Props) {
   const [raw, setRaw] = useState(defaultRequest.raw_request);
   const [region, setRegion] = useState(defaultRequest.region);
   const [priority, setPriority] = useState(defaultRequest.priority);
+  const [scenarioId, setScenarioId] = useState("");
+
+  function applyScenario(id: string) {
+    setScenarioId(id);
+    const scenario = scenarios.find((s) => s.request_id === id);
+    if (!scenario) return;
+    setRaw(scenario.raw_request);
+    if (scenario.region) setRegion(scenario.region);
+    if (scenario.priority) setPriority(scenario.priority);
+  }
 
   return (
     <section className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm">
@@ -48,9 +61,22 @@ export function RequestForm({ onStart, disabled }: Props) {
         onSubmit={(e) => {
           e.preventDefault();
           if (disabled) return;
-          onStart({ raw_request: raw, region, priority });
+          onStart({ raw_request: raw, region, priority, request_id: scenarioId || undefined });
         }}
       >
+        {scenarios.length > 0 && (
+          <Select
+            label="Scenario"
+            value={scenarioId}
+            options={[
+              { id: "", label: "Custom request" },
+              ...scenarios.map((s) => ({ id: s.request_id, label: s.request_id })),
+            ]}
+            onChange={applyScenario}
+            disabled={disabled}
+          />
+        )}
+
         <textarea
           value={raw}
           onChange={(e) => setRaw(e.target.value)}

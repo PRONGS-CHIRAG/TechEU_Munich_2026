@@ -7,7 +7,7 @@ import {
   type Node,
   type Edge,
 } from "@xyflow/react";
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   BuyerAgentNode,
   OrchestratorNode,
@@ -15,7 +15,7 @@ import {
   SellerNode,
 } from "./nodes";
 import { MessageEdge } from "./MessageEdge";
-import type { MatchedSupplier } from "@/lib/types";
+import type { ConversationLog, MatchedSupplier } from "@/lib/types";
 
 interface Props {
   stageIndex: number;
@@ -24,6 +24,7 @@ interface Props {
   onSelectSeller: (sellerId: string) => void;
   canInteract: boolean;
   suppliers: MatchedSupplier[];
+  conversationLogs?: ConversationLog[];
 }
 
 const nodeTypes = {
@@ -44,7 +45,10 @@ export function AgentNetwork({
   onSelectSeller,
   canInteract,
   suppliers,
+  conversationLogs = [],
 }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<{ sellerId: string; x: number; y: number } | null>(null);
   const { nodes, edges } = useMemo(() => {
     const requestActive = stageIndex === 0;
     const orchActive = stageIndex >= 0 && stageIndex <= 1;
@@ -150,8 +154,13 @@ export function AgentNetwork({
     return { nodes, edges };
   }, [stageIndex, activeSeller, canInteract, suppliers]);
 
+  const hoverLog = hover ? lastLogForSeller(conversationLogs, hover.sellerId) : null;
+
   return (
-    <div className="relative h-[340px] overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-white to-surface-2/60 shadow-[var(--shadow-tinted)]">
+    <div
+      ref={containerRef}
+      className="relative h-[340px] overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-white to-surface-2/60 shadow-[var(--shadow-tinted)]"
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -173,6 +182,17 @@ export function AgentNetwork({
             onSelectSeller(node.id);
           }
         }}
+        onEdgeMouseEnter={(event, edge) => {
+          if (!edge.id.startsWith("ba-")) return;
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          setHover({
+            sellerId: edge.id.slice(3),
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+          });
+        }}
+        onEdgeMouseLeave={() => setHover(null)}
       >
         <Background
           variant={BackgroundVariant.Dots}
@@ -191,7 +211,68 @@ export function AgentNetwork({
         </div>
       </div>
 
+      {hoverLog && (
+        <EdgeDetailPopup log={hoverLog} x={hover!.x} y={hover!.y} />
+      )}
+
       <LiveTicker stageIndex={stageIndex} phase={phase} />
+    </div>
+  );
+}
+
+function lastLogForSeller(
+  logs: ConversationLog[],
+  sellerId: string,
+): ConversationLog | null {
+  for (let i = logs.length - 1; i >= 0; i -= 1) {
+    if (logs[i].seller_id === sellerId) return logs[i];
+  }
+  return null;
+}
+
+function EdgeDetailPopup({
+  log,
+  x,
+  y,
+}: {
+  log: ConversationLog;
+  x: number;
+  y: number;
+}) {
+  const fields = Object.entries(log.extracted_fields ?? {});
+  return (
+    <div
+      className="pointer-events-none absolute z-20 w-64 -translate-x-1/2 -translate-y-full rounded-xl border border-border bg-white p-3 text-left shadow-[var(--shadow-tinted)]"
+      style={{ left: x, top: y - 10 }}
+    >
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-[11px] font-semibold text-text-1">
+          {log.speaker === "buyer" ? "Buyer Agent" : log.seller_name ?? log.seller_id}
+        </span>
+        <span className="text-[10px] text-text-3">· round {log.round}</span>
+      </div>
+      <div className="mt-1 line-clamp-3 text-[11.5px] text-text-2">{log.message}</div>
+      {log.pioneer_labels.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {log.pioneer_labels.map((label) => (
+            <span
+              key={label}
+              className="rounded-full bg-pioneer-soft px-1.5 py-0.5 text-[9.5px] font-medium text-pioneer"
+            >
+              {label.replace(/_/g, " ")}
+            </span>
+          ))}
+        </div>
+      )}
+      {fields.length > 0 && (
+        <div className="mt-1.5 space-y-0.5 font-mono text-[10px] text-text-3">
+          {fields.map(([key, value]) => (
+            <div key={key}>
+              {key}: {String(value)}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
