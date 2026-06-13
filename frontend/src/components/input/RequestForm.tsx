@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  MagnifyingGlass,
   Lightning,
   ArrowRight,
   Globe,
@@ -156,11 +155,17 @@ export function RequestForm({ onStart, disabled }: Props) {
       {/* Main pill input */}
       <div className="relative rounded-[22px] border border-[#e4e7ec] bg-white shadow-[0_2px_20px_rgba(0,0,0,0.07)]">
         <div className="flex items-start gap-3 px-5 py-[14px]">
-          {/* Search icon */}
-          <MagnifyingGlass
-            className="mt-[3px] h-[18px] w-[18px] shrink-0 text-text-3"
-            weight="regular"
-          />
+          {/* Pactum logo */}
+          <svg
+            aria-hidden
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            className="mt-[3px] shrink-0 text-accent"
+          >
+            <rect x="1" y="1" width="9" height="9" stroke="currentColor" strokeWidth="1.4" fill="none" />
+            <rect x="8" y="8" width="9" height="9" fill="currentColor" />
+          </svg>
 
           {/* Auto-resize textarea */}
           <textarea
