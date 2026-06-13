@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+:root {
+  --bg: #F7F6F3;
+  --surface: #FFFFFF;
+  --surface-2: #F2F1EE;
+  --border: #E4E2DC;
+  --border-strong: #CFCDC5;
+  --text-1: #111110;
+  --text-2: #57534E;
+  --text-3: #A8A29E;
+
+  --accent: #2B4EDD;
+  --accent-soft: #EEF1FD;
+  --accent-border: #BFC9F8;
+
+  --success: #16a34a;
+  --success-soft: #f0fdf4;
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --info: #0284c7;
+
+  --pioneer: #ea580c;
+  --pioneer-soft: #fff7ed;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+
+  --shadow-tinted: 0 1px 2px rgb(15 23 42 / 0.04),
+    0 4px 12px -4px rgb(15 23 42 / 0.06);
+  --shadow-accent: 0 1px 2px rgb(43 78 221 / 0.06),
+    0 8px 28px -12px rgb(43 78 221 / 0.18);
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-border: var(--accent-border);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-pioneer: var(--pioneer);
+  --color-pioneer-soft: var(--pioneer-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01", "ss03";
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+/* Faint grain to break the digital flatness. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.035 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+::selection {
+  background: rgb(43 78 221 / 0.18);
+  color: var(--text-1);
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(43 78 221 / 0.32);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgb(43 78 221 / 0);
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.8s var(--ease-out-strong) infinite;
+}
+
+.edge-flow {
+  stroke-dasharray: 6 6;
+  animation: dash 1.2s linear infinite;
+}
+
+/* Focus discipline — visible, branded, not browser default */
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* react-flow tweaks */
+.react-flow__attribution {
+  display: none !important;
+}
+.react-flow__edge-path {
+  stroke-width: 1.5;
+  transition:
+    stroke 220ms var(--ease-out-strong),
+    stroke-opacity 220ms var(--ease-out-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
