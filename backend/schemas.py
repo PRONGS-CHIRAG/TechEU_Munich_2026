@@ -1,11 +1,16 @@
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, List
 
 
-class BuyerRequest(TypedDict):
+class BuyerBlueprint(TypedDict):
+    """Scenario blueprint — structured_requirements are extracted live by Gemini, not stored here."""
     request_id: str
     raw_request: str
     region: str
     priority: str
+
+
+# BuyerRequest is an alias for backwards-compat with orchestrator imports
+BuyerRequest = BuyerBlueprint
 
 
 class StructuredRequirements(TypedDict):
@@ -79,9 +84,29 @@ class FinalRecommendation(TypedDict):
     human_approval_required: bool
 
 
+class ProductCluster(TypedDict):
+    """A group of spec-similar products across sellers (Phase 1 — product_clustering.py)."""
+    cluster_id: str
+    products: list
+    similarity_score: float
+    representative_specs: dict
+
+
+class JudgedCandidate(TypedDict):
+    """Gemini-generated verdict + reasoning for a candidate product (Phase 2 — judging_agent.py)."""
+    cluster_id: str
+    seller_id: str
+    product: str
+    verdict: str   # good | borderline | bad
+    reason: str
+    score: int
+
+
 class DemoResult(TypedDict):
     request: dict
     structured_requirements: dict
+    clusters: list              # ProductCluster[] — populated in Phase 1/2
+    judged_candidates: list     # JudgedCandidate[] — populated in Phase 2
     matched_suppliers: list
     conversation_logs: list
     pioneer_labels: list

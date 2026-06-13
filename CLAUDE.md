@@ -721,12 +721,12 @@ feature/realtime-ui
 * Promote stable `staging-demo` → `main` only after a clean full run.
 * Run the final demo from `main`.
 
-### Phase 0 contracts (must be frozen before any feature branch splits)
+### Phase 0 contracts (FROZEN — all committed as of Phase 0)
 
-1. Gemini client signature: `generate(prompt, system, temperature, json_mode) → str`
-2. Nested inventory shape: `merchants[] → inventories[] → products[]`
-3. SSE event envelope + frozen event types (see Section 8)
-4. `DEMO_MODE` default flipped to `false` (live = default; replay = opt-in)
+1. ✅ Gemini client signature: `generate(prompt, system, temperature, json_mode) → str` — implemented in `integrations/gemini_client.py`, model `gemini-2.5-flash`
+2. ✅ Nested inventory shape: `merchants[] → inventories[] → products[]` — documented in `docs/contracts.md`; JSON restructure is Phase 1
+3. ✅ SSE event envelope + frozen event types — documented in `docs/contracts.md` (see Section 8)
+4. ✅ `DEMO_MODE` default flipped to `false` — live mode is now the default; `DEMO_MODE=true` is the replay/CTO safety net
 
 ---
 
@@ -736,11 +736,12 @@ feature/realtime-ui
 
 The reviewer's core objection: everything is pre-written — the system reads files, not intelligence. He will check the backend code. A reviewer who opened 6-7 tabs is engaged; the architecture must hold up to code inspection.
 
-**Must change:**
-* Delete all static conversation/dialogue data.
-* Add real Gemini calls for extraction, negotiation, judging, and audit.
-* Make the agent feed render line by line as LLM tokens arrive.
-* The `_get_scenario_lookup()` hardcode in `procurement_intelligence.py` must go.
+**Must change (Phase 0 complete, Phase 1–3 remaining):**
+* ✅ Delete all static conversation/dialogue data — 7 precomputed JSON files removed.
+* ✅ `_get_scenario_lookup()` hardcode in `procurement_intelligence.py` — deleted.
+* ✅ `buyer_scenarios.json` rebuilt as blueprints (no `structured_requirements`).
+* Remaining: Add real Gemini calls for extraction, negotiation, judging, and audit (Phase 1–2).
+* Remaining: Make the agent feed render line by line as LLM tokens arrive (Phase 1–3).
 
 **Keep:**
 * One-button trigger pattern (impressed the reviewer).
@@ -819,62 +820,53 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 
 ## 13. Implementation Status
 
-### What is complete (as of this commit)
+### What is complete (as of Phase 0)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
+| `integrations/gemini_client.py` | ✅ Complete (Phase 0) | `generate(prompt, *, system, temperature, json_mode) → str`. Model: `gemini-2.5-flash`. Retry once, graceful fallback. |
+| `backend/schemas.py` | ✅ Updated (Phase 0) | Added `BuyerBlueprint`, `ProductCluster`, `JudgedCandidate`. `DemoResult` now includes `clusters[]` + `judged_candidates[]`. |
+| `data/buyer_scenarios.json` | ✅ Rebuilt (Phase 0) | Blueprints only — `structured_requirements` stripped; requirements extracted live. |
+| `docs/contracts.md` | ✅ Created (Phase 0) | All four Phase 0 contracts frozen in writing. |
+| `backend/orchestrator.py` | ✅ Updated (Phase 0) | `DEMO_MODE` default flipped to `false`. Returns `clusters: []` and `judged_candidates: []`. Needs event-emitter upgrade (Phase 2). |
+| `procurement_intelligence.py` | ✅ Updated (Phase 0) | `_get_scenario_lookup()` deleted. `extract_requirements()` falls through to regex; Gemini rewrite is Phase 1. `validate_offer()` + `compute_value_score()` unchanged. |
+| Precomputed data files | ✅ Deleted (Phase 0) | `synthetic_negotiations`, `edge_cases`, `audit_summaries`, `validation_results`, `escalation_results`, `final_recommendations`, `pioneer_inference_examples` — all removed. |
 | `streamlit_app.py` | Working | Scenario selector, session_state, interactive approval. Legacy UI. |
-| `backend/api.py` | Working | FastAPI with CORS, `/api/run-demo`, `/api/scenarios`. Streaming routes TBD. |
-| `backend/orchestrator.py` | Working | Full `run_demo()` flow. Needs upgrade to event emitter. |
-| `backend/schemas.py` | Complete | All TypedDicts match Section 8 contracts. |
+| `backend/api.py` | Working | FastAPI with CORS, `/api/run-demo`, `/api/scenarios`. Streaming routes TBD (Phase 1). |
 | `backend/data_access.py` | Working | Supabase + local JSON fallback pattern. |
-| `procurement_intelligence.py` | Partial | `validate_offer()` + `compute_value_score()` complete. `extract_requirements()` has hardcoded lookup — must be replaced with Gemini. |
-| `supplier_matching.py` | Working | BM25-style scoring. Will be replaced/supplemented by `product_clustering.py`. |
-| `buyer_agent.py` | Working but retiring | 2-round hardcoded dialogue loop. Replaced by `negotiation_agent.py`. |
-| `seller_agent.py` | Working but retiring | Premium-open + concession logic. Replaced by `negotiation_agent.py`. |
-| `human_escalation.py` | Working | Escalation triggers + question. Needs pause/resume hook for streaming. |
-| `audit_summary.py` | Working | Deterministic narrative. Switch to Gemini. |
+| `supplier_matching.py` | Working | BM25-style scoring. Will be supplemented by `product_clustering.py` (Phase 1). |
+| `buyer_agent.py` | Retiring (Phase 2) | 2-round hardcoded dialogue loop → replaced by `negotiation_agent.py`. |
+| `seller_agent.py` | Retiring (Phase 2) | Premium-open + concession logic → replaced by `negotiation_agent.py`. |
+| `human_escalation.py` | Working | Escalation triggers + question. Needs pause/resume hook for streaming (Phase 3). |
+| `audit_summary.py` | Working | Deterministic narrative. Switch to Gemini (Phase 2). |
 | `pioneer_client.py` | Stubbed | HTTP wrapper; fallback to regex labels. Keep as-is. |
 | `tavily_client.py` | Stubbed | TavilyClient wrapper; fallback to saved JSON. Keep as-is. |
 | `fal_client.py` | Stubbed | fal_client wrapper; fallback to PNG path. Keep as-is. |
 | `fallback_outputs.py` | Complete | Static fallbacks for all three APIs. |
-| Next.js frontend | Working | Fully wired to `/api/run-demo`. All section components render. Needs streaming upgrade. |
+| Next.js frontend | Working | Fully wired to `/api/run-demo`. All section components render. Needs streaming upgrade (Phase 1). |
 | `data/seller_registry.json` | Complete | 5 vendor profiles. Keep. |
-| `data/seller_inventory.json` | Complete (flat) | Needs restructure to nested shape. |
-| `data/buyer_scenarios.json` | Has hardcoded requirements | Needs rebuild as blueprints. |
+| `data/seller_inventory.json` | Flat (Phase 1) | Needs restructure to nested `merchants→inventories→products` shape (Phase 1). |
 | `tests/test_validation.py` | Complete | 4 passing deterministic validation tests. |
-| `.env` / `.env.example` | Complete | All env vars; `.env` is git-ignored. |
+| `.env` / `.env.example` | Complete | All env vars; `.env` is git-ignored. `DEMO_MODE=false`, `LLM_PROVIDER=gemini`. |
 
-### What needs to be built (from new_plan.md)
+### What needs to be built (Phase 1 onward)
 
-| Component | Priority | Owner | Phase |
-|-----------|----------|-------|-------|
-| `integrations/gemini_client.py` | HIGH | Dev A | 1 |
-| `procurement_intelligence.py` extract rewrite | HIGH | Dev A | 1 |
-| `data/seller_inventory.json` nested restructure | HIGH | Dev B | 1 |
-| `backend/agents/product_clustering.py` | HIGH | Dev B | 1 |
-| Streaming SSE endpoint + `stream.ts` | HIGH | Dev C | 1 |
-| `backend/agents/judging_agent.py` | HIGH | Dev B | 2 |
-| `backend/agents/negotiation_agent.py` + sub-agents + guardrails | HIGH | Dev A | 2 |
-| Orchestrator event emitter upgrade | HIGH | Dev C | 2 |
-| Inline human alert (pause/resume) | HIGH | Dev C | 3 |
-| AgentNetwork labeled edges + hover + 3 views | MEDIUM | Dev A | 3 |
-| `integrations/email_hitl.py` (Gmail) | STRETCH | Dev B | 3 |
-| `assets/fal_deal_card.png` placeholder | MEDIUM | Dev B | 4 |
-| Aikido screenshot | MEDIUM | Dev B | 4 |
-| Replay transcript save | MEDIUM | Dev A | 4 |
-
-### Data files to delete before Phase 1
-
-```text
-data/synthetic_negotiations.json
-data/edge_cases.json
-data/audit_summaries.json
-data/validation_results.json
-data/escalation_results.json
-data/final_recommendations.json
-data/pioneer_inference_examples.json
-```
+| Component | Priority | Phase |
+|-----------|----------|-------|
+| `procurement_intelligence.py` extract rewrite (Gemini) | HIGH | 1 |
+| `data/seller_inventory.json` nested restructure + `data_access.py` new accessors | HIGH | 1 |
+| `backend/agents/product_clustering.py` | HIGH | 1 |
+| Streaming SSE endpoint (`backend/api.py`) + `frontend/src/lib/stream.ts` | HIGH | 1 |
+| `ActivityFeed.tsx` streaming upgrade | HIGH | 1 |
+| `backend/agents/judging_agent.py` | HIGH | 2 |
+| `backend/agents/negotiation_agent.py` + `negotiation/{price,delivery,warranty,risk,guardrails}.py` | HIGH | 2 |
+| Orchestrator event-emitter upgrade (`backend/orchestrator.py`) | HIGH | 2 |
+| Inline human alert — pause/resume (`backend/api.py` + `ActivityFeed.tsx`) | HIGH | 3 |
+| AgentNetwork labeled edges + hover + 3 views | MEDIUM | 3 |
+| `integrations/email_hitl.py` (Gmail, stretch) | STRETCH | 3 |
+| `assets/fal_deal_card.png` placeholder | MEDIUM | 4 |
+| Aikido screenshot | MEDIUM | 4 |
+| Replay transcript save | MEDIUM | 4 |
 
 ---
 

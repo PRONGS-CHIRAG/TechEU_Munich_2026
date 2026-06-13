@@ -3,48 +3,18 @@
     "request_id": "REQ-001",
     "raw_request": "We need a GPU for an AI workstation. It should fit inside our compact case, not consume too much power, stay under €650, arrive within a week, and include warranty.",
     "region": "Germany",
-    "priority": "technical_fit",
-    "structured_requirements": {
-      "product_type": "GPU",
-      "use_case": "AI workstation",
-      "max_length_mm": 300,
-      "max_power_watts": 250,
-      "budget_eur": 650,
-      "max_delivery_days": 7,
-      "warranty_required": true,
-      "minimum_warranty_years": 1
-    }
+    "priority": "technical_fit"
   },
   {
     "request_id": "REQ-002",
     "raw_request": "We're setting up a small training rig for fine-tuning open-source models. We need a high-VRAM GPU, our case supports up to 340mm, the power supply can handle up to 350W, budget is around €1800, and we need it within 2 weeks. Enterprise-grade warranty preferred.",
     "region": "Germany",
-    "priority": "performance",
-    "structured_requirements": {
-      "product_type": "GPU",
-      "use_case": "ML training rig",
-      "max_length_mm": 340,
-      "max_power_watts": 350,
-      "budget_eur": 1800,
-      "max_delivery_days": 14,
-      "warranty_required": true,
-      "minimum_warranty_years": 2
-    }
+    "priority": "performance"
   },
   {
     "request_id": "REQ-003",
     "raw_request": "We need an affordable GPU for 3D rendering in our small studio. Small form factor case (max 230mm), keep power draw under 180W, budget is tight at €350, need it within 10 days, and at least 1 year warranty.",
     "region": "Netherlands",
-    "priority": "budget",
-    "structured_requirements": {
-      "product_type": "GPU",
-      "use_case": "3D rendering workstation",
-      "max_length_mm": 230,
-      "max_power_watts": 180,
-      "budget_eur": 350,
-      "max_delivery_days": 10,
-      "warranty_required": true,
-      "minimum_warranty_years": 1
-    }
+    "priority": "budget"
   }
 ]

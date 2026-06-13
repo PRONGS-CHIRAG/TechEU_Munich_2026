@@ -17,7 +17,7 @@ from integrations.fallback_outputs import (
 )
 
 load_dotenv()
-DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
+DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 
 
 def run_demo(request: dict) -> dict:
@@ -101,6 +101,8 @@ def run_demo(request: dict) -> dict:
     return {
         "request": request,
         "structured_requirements": structured_requirements,
+        "clusters": [],              # populated in Phase 1 by product_clustering.py
+        "judged_candidates": [],     # populated in Phase 2 by judging_agent.py
         "matched_suppliers": matched_suppliers,
         "conversation_logs": conversation_logs,
         "pioneer_labels": pioneer_labels,
