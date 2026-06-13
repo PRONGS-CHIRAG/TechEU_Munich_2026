@@ -1,29 +1,63 @@
 """Product clustering — groups inventory products by spec similarity.
 
-Uses greedy euclidean clustering on a normalized feature vector of
-(length_mm, power_watts, price_eur, delivery_days).
+Uses greedy euclidean clustering on a normalized feature vector.
+Feature dimensions are derived from the actual product data rather than
+hardcoded GPU assumptions, so the system works for any product category.
 """
 
 import math
 
-_FEATURE_KEYS = ["length_mm", "power_watts", "price_eur", "delivery_days"]
-
-_NORMS = {
-    "length_mm": (150.0, 400.0),
-    "power_watts": (50.0, 500.0),
-    "price_eur": (100.0, 5000.0),
-    "delivery_days": (1.0, 30.0),
-}
-
 _CLUSTER_THRESHOLD = 0.35
 
+# Optional extra dims to include when a majority of products carry them
+_OPTIONAL_DIMS = ["length_mm", "power_watts"]
 
-def _normalize(product: dict) -> list[float]:
+
+def _build_feature_config(all_products: list[dict]) -> tuple[list[str], dict]:
+    """Determine clustering dimensions and normalization ranges from actual product data.
+
+    Always uses price_eur and delivery_days (universal).
+    Adds optional dims (length_mm, power_watts) only when >= 50% of products have them.
+    Normalization ranges are computed from real min/max values (not static GPU presets).
+    """
+    n = len(all_products)
+    if n == 0:
+        return [], {}
+
+    feature_keys: list[str] = ["price_eur", "delivery_days"]
+
+    for key in _OPTIONAL_DIMS:
+        count = sum(
+            1 for p in all_products
+            if p.get(key) is not None and float(p.get(key, 0)) > 0
+        )
+        if count / n >= 0.5:
+            feature_keys.append(key)
+
+    norms: dict = {}
+    for key in feature_keys:
+        vals = [float(p[key]) for p in all_products if p.get(key) is not None]
+        if not vals:
+            norms[key] = (0.0, 1.0)
+            continue
+        lo, hi = min(vals), max(vals)
+        if hi == lo:
+            hi = lo + 1.0  # guard divide-by-zero
+        norms[key] = (lo, hi)
+
+    return feature_keys, norms
+
+
+def _normalize(product: dict, feature_keys: list[str], norms: dict) -> list[float]:
     vec = []
-    for key in _FEATURE_KEYS:
-        lo, hi = _NORMS[key]
-        val = float(product.get(key, (lo + hi) / 2))
-        vec.append(max(0.0, min(1.0, (val - lo) / (hi - lo))))
+    for key in feature_keys:
+        lo, hi = norms[key]
+        val_raw = product.get(key)
+        if val_raw is None:
+            vec.append(0.5)  # midpoint for absent fields
+        else:
+            val = float(val_raw)
+            vec.append(max(0.0, min(1.0, (val - lo) / (hi - lo))))
     return vec
 
 
@@ -36,10 +70,14 @@ def cluster_products(requirements: dict, all_products: list[dict]) -> list[dict]
     if not all_products:
         return []
 
+    feature_keys, norms = _build_feature_config(all_products)
+    if not feature_keys:
+        return []
+
     clusters: list[dict] = []
 
     for product in all_products:
-        vec = _normalize(product)
+        vec = _normalize(product, feature_keys, norms)
         best_cluster = None
         best_dist = _CLUSTER_THRESHOLD
 
@@ -70,7 +108,7 @@ def cluster_products(requirements: dict, all_products: list[dict]) -> list[dict]
         if len(products) == 1:
             similarity = 1.0
         else:
-            vecs = [_normalize(p) for p in products]
+            vecs = [_normalize(p, feature_keys, norms) for p in products]
             dists = [
                 _euclidean(vecs[a], vecs[b])
                 for a in range(len(vecs))
@@ -89,6 +127,7 @@ def cluster_products(requirements: dict, all_products: list[dict]) -> list[dict]
                     "seller_id": p.get("seller_id", ""),
                     "seller_name": p.get("seller_name", ""),
                     "product": p.get("product", ""),
+                    # GPU-specific dims kept for backward compat (0 when absent)
                     "length_mm": p.get("length_mm", 0),
                     "power_watts": p.get("power_watts", 0),
                     "price_eur": p.get("price_eur", 0),

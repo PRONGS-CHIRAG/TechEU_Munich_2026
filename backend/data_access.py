@@ -56,7 +56,12 @@ def _fetch(table: str, fallback_file: str) -> list:
 
 
 def get_seller_registry() -> list:
-    return _fetch("seller_registry", "seller_registry.json")
+    """Returns the seller registry from local JSON.
+
+    Local file is the source of truth — Supabase may lag behind when new vendors
+    are added. Always reading local ensures new inventory is immediately visible.
+    """
+    return _load_local("seller_registry.json")
 
 
 def get_seller_inventory_nested() -> dict:
@@ -84,18 +89,11 @@ def get_all_products_flat() -> list[dict]:
 
 
 def get_seller_inventory() -> list:
-    """Flat product list for backward-compat consumers (buyer_agent, supplier_matching).
+    """Flat product list for backward-compat consumers (supplier_matching, negotiation_agent).
 
-    Tries Supabase first (which still holds flat rows); falls back to flattening local JSON.
+    Always derived from the local nested JSON so new vendors (vendor_f, vendor_g, etc.)
+    are immediately visible without a Supabase sync.
     """
-    client = _get_client()
-    if client is not None:
-        try:
-            response = client.table("seller_inventory").select("*").execute()
-            if response.data:
-                return response.data
-        except Exception:
-            pass
     return get_all_products_flat()
 
 

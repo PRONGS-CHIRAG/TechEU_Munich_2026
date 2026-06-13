@@ -5,26 +5,32 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { SectionHeader } from "@/components/primitives/SectionHeader";
 import { StatusBadge } from "@/components/primitives/Badges";
-import type { StructuredRequirements, ValidationResult } from "@/lib/types";
+import type { ExtraConstraint, StructuredRequirements, ValidationResult } from "@/lib/types";
 
 interface Props {
   results: ValidationResult[];
   requirements: StructuredRequirements;
 }
 
-const COLUMNS = [
-  { key: "seller", label: "Seller" },
-  { key: "product", label: "Product" },
-  { key: "length", label: "Length" },
-  { key: "power", label: "Power" },
-  { key: "price", label: "Price" },
-  { key: "delivery", label: "Delivery" },
-  { key: "warranty", label: "Warranty" },
-  { key: "status", label: "Status" },
-];
-
 export function ValidationTable({ results, requirements }: Props) {
   const [openRow, setOpenRow] = useState<string | null>(null);
+
+  const showLength = requirements.max_length_mm != null;
+  const showPower = requirements.max_power_watts != null;
+  const extraConstraints = requirements.extra_constraints ?? [];
+
+  // Dynamic column list based on what the requirements actually contain
+  const columns: { key: string; label: string }[] = [
+    { key: "seller", label: "Seller" },
+    { key: "product", label: "Product" },
+    ...(showLength ? [{ key: "length", label: "Length" }] : []),
+    ...(showPower ? [{ key: "power", label: "Power" }] : []),
+    { key: "price", label: "Price" },
+    { key: "delivery", label: "Delivery" },
+    { key: "warranty", label: "Warranty" },
+    ...extraConstraints.map((c) => ({ key: c.field, label: c.label })),
+    { key: "status", label: "Status" },
+  ];
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
@@ -38,7 +44,7 @@ export function ValidationTable({ results, requirements }: Props) {
         <table className="w-full text-left text-[12.5px]">
           <thead>
             <tr className="border-b border-border">
-              {COLUMNS.map((c) => (
+              {columns.map((c) => (
                 <th
                   key={c.key}
                   className="py-2 pr-4 text-[10.5px] font-medium uppercase tracking-wide text-text-3"
@@ -60,6 +66,10 @@ export function ValidationTable({ results, requirements }: Props) {
                   id={id}
                   r={r}
                   requirements={requirements}
+                  showLength={showLength}
+                  showPower={showPower}
+                  extraConstraints={extraConstraints}
+                  colCount={columns.length}
                   open={isOpen}
                   canExpand={canExpand}
                   onToggle={() => setOpenRow(isOpen ? null : id)}
@@ -77,6 +87,10 @@ function Row({
   id,
   r,
   requirements,
+  showLength,
+  showPower,
+  extraConstraints,
+  colCount,
   open,
   canExpand,
   onToggle,
@@ -84,6 +98,10 @@ function Row({
   id: string;
   r: ValidationResult;
   requirements: StructuredRequirements;
+  showLength: boolean;
+  showPower: boolean;
+  extraConstraints: ExtraConstraint[];
+  colCount: number;
   open: boolean;
   canExpand: boolean;
   onToggle: () => void;
@@ -105,14 +123,41 @@ function Row({
       >
         <td className="py-3 pr-4 font-medium text-text-1">{r.seller_name}</td>
         <td className="py-3 pr-4 text-text-2">{r.product}</td>
-        <Spec value={`${r.length_mm}mm`} fail={r.length_mm > requirements.max_length_mm} />
-        <Spec value={`${r.power_watts}W`} fail={r.power_watts > requirements.max_power_watts} />
+
+        {showLength && (
+          <Spec
+            value={`${r.length_mm}mm`}
+            fail={r.length_mm > (requirements.max_length_mm ?? Infinity)}
+          />
+        )}
+        {showPower && (
+          <Spec
+            value={`${r.power_watts}W`}
+            fail={r.power_watts > (requirements.max_power_watts ?? Infinity)}
+          />
+        )}
+
         <Spec value={`€${r.price_eur}`} fail={r.price_eur > requirements.budget_eur} />
         <Spec value={`${r.delivery_days}d`} fail={r.delivery_days > requirements.max_delivery_days} />
         <Spec
           value={`${r.warranty_years}yr`}
           fail={r.warranty_years < requirements.minimum_warranty_years}
         />
+
+        {extraConstraints.map((c) => {
+          const actual = r.extra_fields?.[c.field];
+          const fail =
+            actual == null ||
+            (c.operator === "<=" ? actual > c.limit : actual < c.limit);
+          return (
+            <Spec
+              key={c.field}
+              value={actual != null ? `${actual}${c.unit}` : "—"}
+              fail={fail}
+            />
+          );
+        })}
+
         <td className="py-3 pr-4">
           <StatusBadge status={r.status} />
         </td>
@@ -129,7 +174,7 @@ function Row({
       <AnimatePresence initial={false}>
         {open && (
           <tr>
-            <td colSpan={COLUMNS.length + 1} className="bg-surface-2/60 p-0">
+            <td colSpan={colCount + 1} className="bg-surface-2/60 p-0">
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
@@ -137,7 +182,13 @@ function Row({
                 transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
-                <FailedDrawer r={r} requirements={requirements} />
+                <FailedDrawer
+                  r={r}
+                  requirements={requirements}
+                  showLength={showLength}
+                  showPower={showPower}
+                  extraConstraints={extraConstraints}
+                />
               </motion.div>
             </td>
           </tr>
@@ -162,23 +213,36 @@ function Spec({ value, fail }: { value: string; fail: boolean }) {
 function FailedDrawer({
   r,
   requirements,
+  showLength,
+  showPower,
+  extraConstraints,
 }: {
   r: ValidationResult;
   requirements: StructuredRequirements;
+  showLength: boolean;
+  showPower: boolean;
+  extraConstraints: ExtraConstraint[];
 }) {
-  const checks = [
-    {
+  const checks: { label: string; actual: string; limit: string; fail: boolean }[] = [];
+
+  if (showLength) {
+    checks.push({
       label: "Length",
       actual: `${r.length_mm}mm`,
       limit: `≤ ${requirements.max_length_mm}mm`,
-      fail: r.length_mm > requirements.max_length_mm,
-    },
-    {
+      fail: r.length_mm > (requirements.max_length_mm ?? Infinity),
+    });
+  }
+  if (showPower) {
+    checks.push({
       label: "Power draw",
       actual: `${r.power_watts}W`,
       limit: `≤ ${requirements.max_power_watts}W`,
-      fail: r.power_watts > requirements.max_power_watts,
-    },
+      fail: r.power_watts > (requirements.max_power_watts ?? Infinity),
+    });
+  }
+
+  checks.push(
     {
       label: "Price",
       actual: `€${r.price_eur}`,
@@ -197,7 +261,20 @@ function FailedDrawer({
       limit: `≥ ${requirements.minimum_warranty_years}yr`,
       fail: r.warranty_years < requirements.minimum_warranty_years,
     },
-  ];
+  );
+
+  for (const c of extraConstraints) {
+    const actual = r.extra_fields?.[c.field];
+    const fail =
+      actual == null ||
+      (c.operator === "<=" ? actual > c.limit : actual < c.limit);
+    checks.push({
+      label: c.label,
+      actual: actual != null ? `${actual}${c.unit}` : "missing",
+      limit: `${c.operator} ${c.limit}${c.unit}`,
+      fail,
+    });
+  }
 
   return (
     <div className="px-6 py-4">
@@ -205,7 +282,7 @@ function FailedDrawer({
         <Warning weight="fill" className="h-3.5 w-3.5" />
         Why this offer {r.status === "rejected" ? "was rejected" : "is borderline"}
       </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="flex flex-wrap gap-2">
         {checks.map((c) => (
           <div
             key={c.label}

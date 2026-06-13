@@ -13,27 +13,39 @@ class BuyerBlueprint(TypedDict):
 BuyerRequest = BuyerBlueprint
 
 
-class StructuredRequirements(TypedDict):
+class ExtraConstraint(TypedDict):
+    """A product-specific numeric constraint extracted from the buyer's request."""
+    field: str       # exact key in the inventory product JSON
+    label: str       # human-readable label for display
+    operator: str    # "<=" or ">="
+    limit: float
+    unit: str
+
+
+class StructuredRequirements(TypedDict, total=False):
     product_type: str
     use_case: str
-    max_length_mm: int
-    max_power_watts: int
     budget_eur: float
     max_delivery_days: int
     warranty_required: bool
-    minimum_warranty_years: int
+    minimum_warranty_years: float
+    extra_constraints: List[ExtraConstraint]
+    # GPU / physical hardware only (absent for non-GPU requests)
+    max_length_mm: int
+    max_power_watts: int
 
 
 class SellerOffer(TypedDict):
     seller_id: str
     seller_name: str
     product: str
-    length_mm: int
-    power_watts: int
     price_eur: float
     delivery_days: int
-    warranty_years: int
+    warranty_years: float
     availability: str
+    # GPU-specific (optional)
+    length_mm: Optional[int]
+    power_watts: Optional[int]
 
 
 class MatchedSupplier(TypedDict):

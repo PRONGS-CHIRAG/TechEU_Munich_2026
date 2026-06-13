@@ -309,6 +309,130 @@
           ]
         }
       ]
+    },
+    {
+      "seller_id": "vendor_f",
+      "seller_name": "Vendor F (OfficeSupply Pro)",
+      "inventories": [
+        {
+          "inventory_id": "vendor_f-main",
+          "location": "Hamburg, Germany",
+          "products": [
+            {
+              "id": "vendor_f-ergochair-pro",
+              "product": "ErgoChair Pro",
+              "load_rating_kg": 150,
+              "seat_width_mm": 520,
+              "price_eur": 490,
+              "delivery_days": 5,
+              "warranty_years": 3,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_f-ergochair-standard",
+              "product": "ErgoChair Standard",
+              "load_rating_kg": 120,
+              "seat_width_mm": 480,
+              "price_eur": 280,
+              "delivery_days": 4,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_f-ergochair-compact",
+              "product": "ErgoChair Compact",
+              "load_rating_kg": 100,
+              "seat_width_mm": 440,
+              "price_eur": 199,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_f-ergochair-executive",
+              "product": "ErgoChair Executive",
+              "load_rating_kg": 180,
+              "seat_width_mm": 560,
+              "price_eur": 750,
+              "delivery_days": 7,
+              "warranty_years": 5,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_f-ergochair-lite",
+              "product": "ErgoChair Lite",
+              "load_rating_kg": 110,
+              "seat_width_mm": 460,
+              "price_eur": 149,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seller_id": "vendor_g",
+      "seller_name": "Vendor G (SensorTech Europe)",
+      "inventories": [
+        {
+          "inventory_id": "vendor_g-main",
+          "location": "Munich, Germany",
+          "products": [
+            {
+              "id": "vendor_g-proximax-pro",
+              "product": "ProximaMax PRO",
+              "ip_rating": 68,
+              "range_m": 10,
+              "price_eur": 450,
+              "delivery_days": 7,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_g-proximax-standard",
+              "product": "ProximaMax Standard",
+              "ip_rating": 67,
+              "range_m": 8,
+              "price_eur": 280,
+              "delivery_days": 5,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_g-proximax-compact",
+              "product": "ProximaMax Compact",
+              "ip_rating": 65,
+              "range_m": 5,
+              "price_eur": 180,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_g-proximax-ultra",
+              "product": "ProximaMax Ultra",
+              "ip_rating": 69,
+              "range_m": 20,
+              "price_eur": 850,
+              "delivery_days": 14,
+              "warranty_years": 3,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_g-proximax-eco",
+              "product": "ProximaMax Eco",
+              "ip_rating": 54,
+              "range_m": 3,
+              "price_eur": 90,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -25,15 +25,26 @@ export interface BuyerRequest {
   priority: string;
 }
 
+export interface ExtraConstraint {
+  field: string;
+  label: string;
+  operator: "<=" | ">=";
+  limit: number;
+  unit: string;
+}
+
 export interface StructuredRequirements {
   product_type: string;
   use_case: string;
-  max_length_mm: number;
-  max_power_watts: number;
   budget_eur: number;
   max_delivery_days: number;
   warranty_required: boolean;
   minimum_warranty_years: number;
+  // GPU / physical hardware only — absent for non-GPU requests
+  max_length_mm?: number;
+  max_power_watts?: number;
+  // Generic product-specific constraints
+  extra_constraints?: ExtraConstraint[];
 }
 
 export interface MatchedSupplier {
@@ -62,6 +73,7 @@ export interface ValidationResult {
   seller_id: string;
   seller_name: string;
   product: string;
+  // GPU-specific dims (0 for non-GPU; column hidden when requirement is absent)
   length_mm: number;
   power_watts: number;
   price_eur: number;
@@ -70,6 +82,8 @@ export interface ValidationResult {
   status: ValidationStatus;
   failed_constraints: string[];
   score: number;
+  // Actual values for extra_constraints fields (keyed by field name)
+  extra_fields?: Record<string, number | null>;
 }
 
 export interface TavilyResult {

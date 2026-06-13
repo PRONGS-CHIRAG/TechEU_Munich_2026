@@ -1,7 +1,7 @@
 [
   {
     "request_id": "REQ-001",
-    "raw_request": "We need a GPU for an AI workstation. It should fit inside our compact case, not consume too much power, stay under €650, arrive within a week, and include warranty.",
+    "raw_request": "We need a GPU for an AI workstation. It must fit inside our compact case (max 300mm), power draw must stay under 250W, budget under €650, arrive within a week, and include at least 1 year warranty.",
     "region": "Germany",
     "priority": "technical_fit"
   },
@@ -16,5 +16,17 @@
     "raw_request": "We need an affordable GPU for 3D rendering in our small studio. Small form factor case (max 230mm), keep power draw under 180W, budget is tight at €350, need it within 10 days, and at least 1 year warranty.",
     "region": "Netherlands",
     "priority": "budget"
+  },
+  {
+    "request_id": "REQ-004",
+    "raw_request": "We need ergonomic office chairs for our team. Each chair must support a load rating of at least 120kg, budget is €400 per chair, delivery within 10 days, and a minimum 2-year warranty.",
+    "region": "Germany",
+    "priority": "technical_fit"
+  },
+  {
+    "request_id": "REQ-005",
+    "raw_request": "We need proximity sensors for our assembly line. IP rating must be at least 67, detection range must be at least 5 meters, budget is €500 per unit, delivery within 14 days, and at least 1 year warranty.",
+    "region": "Germany",
+    "priority": "technical_fit"
   }
 ]

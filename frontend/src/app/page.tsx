@@ -103,8 +103,8 @@ export default function Page() {
           const sections = EVENT_REVEAL_MAP[event.type];
           if (sections?.length) reveal(sections);
 
-          const item = eventToFeedItem(event);
-          if (item) pushFeed(item);
+          // eventToFeedItems returns 1-2 items (e.g. cluster + judging verdict)
+          eventToFeedItems(event).forEach(pushFeed);
         },
 
         onDone(data) {
@@ -257,11 +257,42 @@ export default function Page() {
   );
 }
 
-function eventToFeedItem(event: StreamEvent): FeedItem | null {
+function eventToFeedItems(event: StreamEvent): FeedItem[] {
   const id = `${event.type}-${event.ts}`;
   const d = event.data;
+  const item = _eventToFeedItem(id, event.type, d);
+  if (!item) return [];
 
-  switch (event.type) {
+  // For cluster events that carry a judged_candidate, emit a second judging item
+  if (event.type === "cluster") {
+    const jc = (d as Record<string, unknown>).judged_candidate as
+      | { verdict?: string; reason?: string; product?: string; seller_id?: string }
+      | undefined;
+    if (jc?.verdict) {
+      const verdictColor =
+        jc.verdict === "good" ? "✓ GOOD" : jc.verdict === "bad" ? "✗ BAD" : "~ BORDERLINE";
+      return [
+        item,
+        {
+          id: `judge-${event.ts}`,
+          agent: "judging" as const,
+          title: `${verdictColor}: ${jc.product ?? "candidate"}`,
+          detail: jc.reason,
+          vendor: jc.seller_id,
+        },
+      ];
+    }
+  }
+
+  return [item];
+}
+
+function _eventToFeedItem(
+  id: string,
+  type: string,
+  d: unknown,
+): FeedItem | null {
+  switch (type) {
     case "requirements": {
       if ((d as { status?: string }).status === "extracting") {
         return {

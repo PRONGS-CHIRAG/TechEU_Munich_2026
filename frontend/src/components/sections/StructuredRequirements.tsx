@@ -11,16 +11,30 @@ export function StructuredRequirementsSection({ data }: Props) {
   const entries: { key: string; value: string }[] = [
     { key: "product_type", value: data.product_type },
     { key: "use_case", value: data.use_case },
-    { key: "max_length_mm", value: `${data.max_length_mm}` },
-    { key: "max_power_watts", value: `${data.max_power_watts}` },
+  ];
+
+  // GPU-specific dims — only shown when present in extracted requirements
+  if (data.max_length_mm != null) {
+    entries.push({ key: "max_length_mm", value: `${data.max_length_mm}mm` });
+  }
+  if (data.max_power_watts != null) {
+    entries.push({ key: "max_power_watts", value: `${data.max_power_watts}W` });
+  }
+
+  entries.push(
     { key: "budget_eur", value: `€${data.budget_eur}` },
     { key: "max_delivery_days", value: `${data.max_delivery_days}d` },
     { key: "warranty_required", value: data.warranty_required ? "true" : "false" },
-    {
-      key: "minimum_warranty_years",
-      value: `${data.minimum_warranty_years}y`,
-    },
-  ];
+    { key: "minimum_warranty_years", value: `${data.minimum_warranty_years}yr` },
+  );
+
+  // Generic product-specific constraints from extra_constraints
+  for (const c of data.extra_constraints ?? []) {
+    entries.push({
+      key: c.label,
+      value: `${c.operator} ${c.limit}${c.unit}`,
+    });
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">

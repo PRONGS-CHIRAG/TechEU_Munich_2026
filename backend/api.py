@@ -67,9 +67,9 @@ def scenarios() -> list:
 @app.post("/api/run-demo")
 def run_demo_endpoint(request: BuyerRequestIn) -> dict:
     payload = request.model_dump(exclude_none=True)
-    result = run_demo(payload)
-    result["tavily_enrichment"] = _adapt_tavily(result.get("tavily_enrichment") or {})
-    return result
+    # run_demo() drains run_demo_events() which already adapts tavily_enrichment
+    # to the frontend shape (triggered/reason/results) — no further adaptation needed.
+    return run_demo(payload)
 
 
 @app.get("/api/run-demo/stream")

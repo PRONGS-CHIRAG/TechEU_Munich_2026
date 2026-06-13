@@ -68,5 +68,33 @@
       "typical_customers": "enterprise data centers and research labs",
       "notes": "Premium pricing, long 3-year warranties, but slower delivery and minimum order processes."
     }
+  },
+  {
+    "seller_id": "vendor_f",
+    "seller_name": "Vendor F (OfficeSupply Pro)",
+    "specialization": "ergonomic office furniture",
+    "region": "Germany",
+    "reliability_score": 0.85,
+    "negotiation_style": "cooperative",
+    "profile": {
+      "headquarters": "Hamburg, Germany",
+      "founded_year": 2014,
+      "typical_customers": "SMEs and corporate offices equipping workspaces",
+      "notes": "Wide range of ergonomic chairs with certified load ratings. Fast domestic delivery."
+    }
+  },
+  {
+    "seller_id": "vendor_g",
+    "seller_name": "Vendor G (SensorTech Europe)",
+    "specialization": "industrial sensors and detection systems",
+    "region": "Germany",
+    "reliability_score": 0.82,
+    "negotiation_style": "flexible",
+    "profile": {
+      "headquarters": "Munich, Germany",
+      "founded_year": 2012,
+      "typical_customers": "manufacturing plants, logistics facilities, and R&D labs",
+      "notes": "Proximity and distance sensors with high IP ratings for industrial environments."
+    }
   }
 ]
