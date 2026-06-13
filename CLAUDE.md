@@ -854,10 +854,10 @@ Prioritize in this order:
 * Add fallback outputs for Pioneer, Tavily, fal. ✓
 * Add deterministic validation tests. ✓
 
-#### Hour 1–3: Parallel build block 1
+#### Hour 1–3: Parallel build block 1 ✓ COMPLETE (Developer 2)
 
 * Phillip: build frontend skeleton using mock data.
-* Developer 2: build backend and agent skeletons.
+* Developer 2: ✓ negotiation loop live (premium-open → buyer counter → seller concession), value scoring, escalation enriched with price/delivery, `seller_name` crash fixed.
 * Developer 3: build synthetic data and integration stubs.
 
 #### Hour 3–5: Parallel build block 2
@@ -968,20 +968,20 @@ Pactum is not a single agent calling tools. It is a modular orchestration layer 
 
 ## 13. Implementation Status
 
-### What is scaffolded and working (Hour 0–1 complete)
+### What is scaffolded and working (Hour 0–1 complete, Hour 1–3 Developer 2 complete)
 
 All files exist and the end-to-end demo flow runs in `DEMO_MODE=true` with no API keys.
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | `streamlit_app.py` | Scaffolded | Full UI wired to `run_demo()` |
-| `backend/orchestrator.py` | Scaffolded | `run_demo()` routes all agents |
+| `backend/orchestrator.py` | Working | Applies value scores, passes `best_offer` to escalation |
 | `backend/schemas.py` | Complete | All TypedDicts match Section 8 contracts |
-| `procurement_intelligence.py` | Working | Regex-based extraction + deterministic validation |
+| `procurement_intelligence.py` | Working | Regex extraction + deterministic validation + `compute_value_score()` |
 | `supplier_matching.py` | Working | BM25-style scoring from `data/seller_registry.json` |
-| `buyer_agent.py` | Working | 2-round negotiation loop per seller |
-| `seller_agent.py` | Working | Inventory search + alternative offer logic |
-| `human_escalation.py` | Working | Always escalates for human approval |
+| `buyer_agent.py` | Working | 2-round negotiation loop; enriches offers with `seller_name` |
+| `seller_agent.py` | Working | Premium-open strategy; concession logic via `request_alternative()` |
+| `human_escalation.py` | Working | Escalation question includes price, delivery, and score |
 | `audit_summary.py` | Working | Narrative summary of all sellers and outcome |
 | `pioneer_client.py` | Stubbed | HTTP wrapper; falls back to regex-based labels |
 | `tavily_client.py` | Stubbed | TavilyClient wrapper; falls back to saved JSON |
@@ -991,16 +991,25 @@ All files exist and the end-to-end demo flow runs in `DEMO_MODE=true` with no AP
 | `tests/test_validation.py` | Complete | 4 passing tests for deterministic validation |
 | `.env` / `.env.example` | Complete | All 8 env vars; `.env` is git-ignored |
 
+### Key behaviors after Hour 1–3 (Developer 2)
+
+* **Negotiation fires visibly:** sellers open with their most premium compatible card; buyer counters on price; seller concedes to a cheaper alternative. Judges see a real negotiation log.
+* **Defensible recommendation:** passing offers are scored by `compute_value_score()` (penalises high price −15pts, slow delivery −10pts). Cheaper and faster offers win. Flat 100-score tie-break eliminated.
+* **Informative escalation:** human approval question shows score, price, and delivery days (e.g. "scored 84/100 (€430, 4-day delivery)").
+* **No runtime crash:** offers are enriched with `seller_name` before being passed to the orchestrator's `final_recommendation` block.
+
 ### What each developer needs to do next
 
 **Phillip (feature/frontend-dashboard)**
 - Polish `streamlit_app.py` — add Pactum branding, better layout, agent status indicators.
 - Do not change `run_demo()` call signature or result keys.
 
-**Developer 2 (feature/orchestrator-agents)**
-- Improve `extract_requirements()` with LLM or smarter parsing if needed.
-- Improve negotiation loop (more rounds, counter-offer logic).
-- Do not break `run_demo()` return shape.
+**Developer 2 (feature/orchestrator-agents)** — Hour 1–3 complete
+- ✓ Negotiation loop fires: premium-open → buyer counter → seller concession.
+- ✓ Value scoring: `compute_value_score()` in `procurement_intelligence.py` ranks passing offers by price+delivery.
+- ✓ Escalation enriched with price, delivery, and score.
+- ✓ `seller_name` KeyError crash fixed in `buyer_agent.py`.
+- Next (Hour 3–5): improve `extract_requirements()` with smarter keyword/regex parsing for size, power, warranty; do not break `run_demo()` return shape.
 
 **Developer 3 (feature/integrations-data)**
 - Add real Pioneer API calls to `pioneer_client.py` when key is available.

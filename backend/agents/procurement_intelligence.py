@@ -28,6 +28,14 @@ def extract_requirements(raw_request: str) -> dict:
     return requirements
 
 
+def compute_value_score(requirements: dict, offer: dict) -> int:
+    budget = requirements.get("budget_eur", 650) or 1
+    max_delivery = requirements.get("max_delivery_days", 7) or 1
+    price_ratio = min(offer.get("price_eur", 0) / budget, 1.0)
+    delivery_ratio = min(offer.get("delivery_days", 0) / max_delivery, 1.0)
+    return int(round(100.0 - (price_ratio * 15.0) - (delivery_ratio * 10.0)))
+
+
 def validate_offer(requirements: dict, offer: dict) -> dict:
     failed = []
 

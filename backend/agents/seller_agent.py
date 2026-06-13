@@ -10,7 +10,7 @@ def get_initial_offer(seller_id: str, requirements: dict, inventory: list) -> di
     ]
 
     candidates = compatible if compatible else seller_items
-    return min(candidates, key=lambda x: x.get("price_eur", 9999))
+    return max(candidates, key=lambda x: x.get("price_eur", 9999))
 
 
 def request_alternative(seller_id: str, requirements: dict, inventory: list, current_offer: dict) -> dict | None:

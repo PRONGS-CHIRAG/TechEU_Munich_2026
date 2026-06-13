@@ -59,7 +59,7 @@ def run_negotiation(requirements: dict, matched_suppliers: list) -> tuple[list, 
                         "risk_level": "low",
                     })
 
-            final_offers.append(offer)
+            final_offers.append({**offer, "seller_name": seller_name})
         else:
             logs.append({
                 "seller_id": seller_id,
