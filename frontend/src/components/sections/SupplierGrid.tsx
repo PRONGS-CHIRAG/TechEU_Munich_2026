@@ -36,7 +36,7 @@ function SupplierCard({
     <article
       className={`relative flex flex-col rounded-xl p-4 transition-all duration-200 ${
         best
-          ? "bg-gradient-to-b from-accent-soft/70 to-white ring-1 ring-accent-border shadow-[0_1px_2px_rgb(79_70_229_/_0.08),0_12px_28px_-12px_rgb(79_70_229_/_0.25)]"
+          ? "bg-gradient-to-b from-accent-soft/70 to-white ring-1 ring-accent-border shadow-[0_1px_2px_rgb(37_99_235_/_0.08),0_12px_28px_-12px_rgb(37_99_235_/_0.22)]"
           : "bg-surface ring-1 ring-border hover:ring-border-strong"
       }`}
     >

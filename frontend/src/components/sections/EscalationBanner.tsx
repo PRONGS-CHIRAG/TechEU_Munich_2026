@@ -61,7 +61,7 @@ export function EscalationBanner({ data, decided, onDecide }: Props) {
               </button>
               <button
                 onClick={() => onDecide("approved")}
-                className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-success px-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 active:translate-y-px"
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-success px-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:brightness-90 active:translate-y-px"
               >
                 Approve Deal
               </button>

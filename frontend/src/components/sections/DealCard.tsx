@@ -15,7 +15,7 @@ export function DealCard({ rec, requestId, approved }: Props) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
       {/* Header band */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-accent via-indigo-600 to-accent px-5 py-3 text-white">
+      <div className="flex items-center justify-between bg-gradient-to-br from-blue-600 to-blue-700 px-5 py-3 text-white">
         <div className="flex items-center gap-2.5">
           <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden>
             <rect x="1" y="1" width="9" height="9" stroke="currentColor" strokeWidth="1.4" fill="none" />

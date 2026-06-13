@@ -68,7 +68,7 @@ export function FinalRecommendationSection({
             <button
               onClick={onApprove}
               disabled={approved}
-              className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-accent text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-indigo-600 active:translate-y-px disabled:cursor-not-allowed disabled:bg-success disabled:opacity-100"
+              className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-accent text-[14px] font-semibold text-white shadow-sm transition-all hover:brightness-90 active:translate-y-px disabled:cursor-not-allowed disabled:bg-success disabled:opacity-100"
             >
               {approved ? (
                 <>

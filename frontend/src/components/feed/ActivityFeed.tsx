@@ -33,7 +33,7 @@ export function ActivityFeed({ items }: Props) {
   }, [items.length]);
 
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-border bg-surface shadow-sm">
+    <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <div>
           <div className="text-[11px] uppercase tracking-wide text-text-3">
@@ -56,7 +56,6 @@ export function ActivityFeed({ items }: Props) {
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-5 py-3"
-        style={{ maxHeight: 360 }}
       >
         {items.length === 0 ? (
           <EmptyState />
