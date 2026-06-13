@@ -8,7 +8,7 @@ st.set_page_config(page_title="Pactum — B2B Procurement", layout="wide")
 st.title("Pactum")
 st.caption("Multi-agent B2B procurement negotiation layer")
 
-# M2: Scenario selector — outside the form so changing it rerenders the text area
+# Scenario selector — outside the form so changing it rerenders the text area
 @st.cache_data
 def _load_scenarios():
     return get_buyer_scenarios()
@@ -35,12 +35,9 @@ else:
 with st.form("buyer_request_form"):
     # key changes when scenario changes, forcing value to reset
     raw_request = st.text_area("Buyer Request", value=default_text, height=100, key=selected_label)
-    col_a, col_b = st.columns(2)
-    with col_a:
-        region = st.selectbox("Region", ["Germany", "Austria", "Switzerland", "Netherlands"])
-    with col_b:
-        priority = st.selectbox("Priority", ["technical_fit", "budget", "delivery", "performance"])
-    submitted = st.form_submit_button("Start Procurement", use_container_width=True)
+    region = st.selectbox("Region", ["Germany", "Austria", "Switzerland"])
+    priority = st.selectbox("Priority", ["technical_fit", "budget", "delivery", "performance"])
+    submitted = st.form_submit_button("Start Procurement")
 
 if submitted:
     request = {"raw_request": raw_request, "region": region, "priority": priority}
@@ -51,76 +48,56 @@ if submitted:
         st.session_state["result"] = run_demo(request)
     st.session_state.pop("approval", None)  # clear stale approval from previous run
 
-# M1: render from session_state so the page never resets mid-interaction
+# Render from session_state so the page never resets when judge clicks the approval radio
 if "result" in st.session_state:
     result = st.session_state["result"]
 
     st.success("Procurement complete.")
 
-    # --- Requirements & Suppliers ---
     col1, col2 = st.columns(2)
+
     with col1:
         st.subheader("Structured Requirements")
         st.json(result["structured_requirements"])
+
     with col2:
         st.subheader("Matched Suppliers")
         for s in result["matched_suppliers"]:
-            # M6: reason goes to st.caption, not the metric delta arg
             st.metric(s["seller_name"], f"{s['match_score']:.0%}")
             st.caption(s["reason"])
 
-    # --- Negotiation Timeline ---
     st.subheader("Negotiation Timeline")
     for log in result["conversation_logs"]:
         speaker = log["speaker"].capitalize()
-        badge = log.get("seller_name") or log["seller_id"]
+        badge = f"[{log['seller_name']}]" if "seller_name" in log else f"[{log['seller_id']}]"
         pioneer_labels = log.get("pioneer_labels") or []
-        # M5: only render labels fragment when labels actually exist
-        labels_md = ("  " + " ".join(f"`{l}`" for l in pioneer_labels)) if pioneer_labels else ""
+        labels = ("  " + " ".join(f"`{l}`" for l in pioneer_labels)) if pioneer_labels else ""
         risk = log.get("risk_level", "")
         risk_md = f" _{risk} risk_" if risk and risk != "low" else ""
-        st.markdown(f"**[{badge}] {speaker}** (round {log['round']}): {log['message']}{labels_md}{risk_md}")
+        st.markdown(f"**{badge} {speaker}** (round {log['round']}): {log['message']}{labels}{risk_md}")
 
-    # --- Validation ---
     st.subheader("Technical Validation")
-    # M4: resolve seller_id → seller_name from matched_suppliers
     seller_names = {s["seller_id"]: s["seller_name"] for s in result["matched_suppliers"]}
     for v in result["validation_results"]:
         display_name = seller_names.get(v["seller_id"], v["seller_id"])
-        color = "green" if v["status"] == "passed" else "red"
-        st.markdown(f":{color}[**{display_name}** — {v['status'].upper()} (score {v['score']}/100)]")
-        for c in v.get("failed_constraints", []):
-            st.markdown(f"  - {c}")
+        status_color = "green" if v["status"] == "passed" else "red"
+        st.markdown(f":{status_color}[**{display_name}** — {v['status'].upper()} (score {v['score']}/100)]")
+        if v["failed_constraints"]:
+            for c in v["failed_constraints"]:
+                st.markdown(f"  - {c}")
 
-    # --- Audit Summary ---
-    st.subheader("Audit Summary")
-    st.text(result["audit_summary"])
-
-    # --- Final Recommendation ---
-    st.subheader("Final Recommendation")
-    rec = result["final_recommendation"]
-    if rec.get("recommended_seller"):
-        st.success(
-            f"**{rec['recommended_seller']}** — {rec['recommended_product']}  \n"
-            f"€{rec['price_eur']} · {rec['delivery_days']}-day delivery · "
-            f"{rec['technical_status']} · risk: {rec['risk_level']}"
-        )
-        st.caption(rec.get("reason", ""))
-    else:
-        st.error("No compatible offer found. All supplier offers failed technical or commercial constraints.")
-
-    # --- Human Escalation (M1 + M3: interactive approval persists across reruns) ---
     st.subheader("Human Escalation")
     esc = result["escalation_result"]
     if esc.get("escalate"):
         st.warning(esc.get("reason", ""))
         approval = st.radio(
-            esc.get("question_for_human", "Do you approve this procurement recommendation?"),
+            esc.get("question_for_human", "Approve?"),
             ["Approve", "Reject"],
             index=None,
             key="approval",
         )
         if approval == "Approve":
+            rec = result["final_recommendation"]
             st.success(
                 f"Approved — purchase order would be issued to "
                 f"**{rec.get('recommended_seller', 'selected vendor')}** "
@@ -129,7 +106,20 @@ if "result" in st.session_state:
         elif approval == "Reject":
             st.warning("Rejected — recommendation returned to procurement for re-negotiation.")
 
-    # --- Deal Card ---
+    st.subheader("Audit Summary")
+    st.text(result["audit_summary"])
+
+    st.subheader("Final Recommendation")
+    rec = result["final_recommendation"]
+    if rec.get("recommended_seller"):
+        st.success(
+            f"**{rec['recommended_seller']}** — {rec['recommended_product']}  \n"
+            f"€{rec['price_eur']} · {rec['delivery_days']} days · {rec['technical_status']} · risk: {rec['risk_level']}"
+        )
+        st.caption(rec.get("reason", ""))
+    else:
+        st.error("No compatible offer found.")
+
     deal_card = result.get("deal_card_path", "")
     if deal_card and os.path.exists(deal_card):
         st.subheader("Deal Card")
