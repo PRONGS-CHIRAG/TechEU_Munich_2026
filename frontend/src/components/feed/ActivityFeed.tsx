@@ -13,7 +13,10 @@ export type FeedItem = {
     | "tavily"
     | "validation"
     | "escalation"
-    | "system";
+    | "system"
+    | "gemini"
+    | "clustering"
+    | "judging";
   title: string;
   detail?: string;
   vendor?: string;
@@ -182,5 +185,23 @@ const agentMeta: Record<
     glyph: "·",
     bg: "bg-surface-2",
     fg: "text-text-2",
+  },
+  gemini: {
+    label: "Gemini",
+    glyph: "G",
+    bg: "bg-violet-50",
+    fg: "text-violet-600",
+  },
+  clustering: {
+    label: "Clustering",
+    glyph: "⬡",
+    bg: "bg-teal-50",
+    fg: "text-teal-600",
+  },
+  judging: {
+    label: "Judge",
+    glyph: "⚖",
+    bg: "bg-orange-50",
+    fg: "text-orange-600",
   },
 };

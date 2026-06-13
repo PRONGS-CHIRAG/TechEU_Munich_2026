@@ -17,14 +17,37 @@ import { AuditSummary } from "@/components/sections/AuditSummary";
 import { Reveal } from "@/components/primitives/Reveal";
 import {
   initialStatus,
-  STAGE_DURATION_MS,
-  STAGE_REVEALS,
   STAGES,
   type DemoStatus,
   type SectionId,
 } from "@/lib/demoMachine";
-import { runDemo } from "@/lib/api";
+import { startStream, type StreamEvent } from "@/lib/stream";
 import type { DemoResult } from "@/lib/types";
+
+// Maps SSE event stage string → StageStrip index
+const EVENT_STAGE_MAP: Record<string, number> = {
+  intel: 0,
+  match: 1,
+  negotiate: 2,
+  validate: 3,
+  escalate: 4,
+  recommend: 5,
+  audit: 5,
+  done: 5,
+};
+
+// Maps SSE event type → sections to reveal
+const EVENT_REVEAL_MAP: Record<string, SectionId[]> = {
+  requirements: ["requirements"],
+  cluster: [],
+  match: ["suppliers"],
+  negotiation_turn: ["negotiation"],
+  validation: ["validation"],
+  human_alert: ["escalation"],
+  escalation: ["escalation"],
+  recommendation: ["recommendation"],
+  audit: ["audit"],
+};
 
 export default function Page() {
   const [status, setStatus] = useState<DemoStatus>(() => ({
@@ -36,15 +59,15 @@ export default function Page() {
   const [activeSeller, setActiveSeller] = useState<string>("");
   const [result, setResult] = useState<DemoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const timeoutsRef = useRef<number[]>([]);
+  const streamStopRef = useRef<(() => void) | null>(null);
   const negotiationRef = useRef<HTMLDivElement>(null);
 
-  const clearTimers = useCallback(() => {
-    timeoutsRef.current.forEach((id) => window.clearTimeout(id));
-    timeoutsRef.current = [];
+  // Clean up stream on unmount
+  useEffect(() => {
+    return () => {
+      streamStopRef.current?.();
+    };
   }, []);
-
-  useEffect(() => clearTimers, [clearTimers]);
 
   const reveal = useCallback((sections: SectionId[]) => {
     setStatus((prev) => {
@@ -60,56 +83,53 @@ export default function Page() {
 
   const start = useCallback(
     async (req: { raw_request: string; region: string; priority: string }) => {
-      clearTimers();
+      // Stop any running stream
+      streamStopRef.current?.();
+
       setFeed([]);
       setDecision(null);
       setError(null);
       setResult(null);
       setStatus({ phase: "running", stageIndex: 0, revealedSections: new Set() });
 
-      let demo: DemoResult;
-      try {
-        demo = await runDemo(req);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to run demo");
-        setStatus({ ...initialStatus, revealedSections: new Set() });
-        return;
-      }
+      streamStopRef.current = startStream(req, {
+        onEvent(event: StreamEvent) {
+          const idx = EVENT_STAGE_MAP[event.stage] ?? 0;
+          setStatus((s) => ({
+            ...s,
+            stageIndex: Math.max(s.stageIndex, idx),
+          }));
 
-      setResult(demo);
-      setActiveSeller(
-        [...demo.matched_suppliers].sort((a, b) => b.match_score - a.match_score)[0]
-          ?.seller_id ?? "",
-      );
+          const sections = EVENT_REVEAL_MAP[event.type];
+          if (sections?.length) reveal(sections);
 
-      let elapsed = 0;
-      const schedule = (ms: number, fn: () => void) => {
-        const id = window.setTimeout(fn, ms);
-        timeoutsRef.current.push(id);
-      };
+          const item = eventToFeedItem(event);
+          if (item) pushFeed(item);
+        },
 
-      STAGES.forEach((stage, i) => {
-        schedule(elapsed, () => {
-          setStatus((s) => ({ ...s, stageIndex: i }));
-          emitStageStart(i, demo, pushFeed);
-        });
-        const duration = STAGE_DURATION_MS[stage.id];
-        schedule(elapsed + duration, () => {
-          reveal(STAGE_REVEALS[stage.id]);
-          emitStageEnd(i, demo, pushFeed);
-        });
-        elapsed += duration;
-      });
+        onDone(data) {
+          const demo = data as unknown as DemoResult;
+          setResult(demo);
+          setActiveSeller(
+            [...(demo.matched_suppliers ?? [])]
+              .sort((a, b) => b.match_score - a.match_score)[0]
+              ?.seller_id ?? "",
+          );
+          reveal(["recommendation", "audit"]);
+          setStatus((s) => ({
+            ...s,
+            phase: "awaiting_approval",
+            stageIndex: STAGES.length,
+          }));
+        },
 
-      schedule(elapsed + 200, () => {
-        setStatus((s) => ({
-          ...s,
-          phase: "awaiting_approval",
-          stageIndex: STAGES.length,
-        }));
+        onError(message: string) {
+          setError(message);
+          setStatus({ ...initialStatus, revealedSections: new Set() });
+        },
       });
     },
-    [clearTimers, pushFeed, reveal],
+    [pushFeed, reveal],
   );
 
   const handleDecide = useCallback((d: "approved" | "rejected") => {
@@ -122,7 +142,6 @@ export default function Page() {
 
   const handleSelectSeller = useCallback((sellerId: string) => {
     setActiveSeller(sellerId);
-    // Smooth scroll into view if the chat is already revealed.
     if (typeof window !== "undefined") {
       window.requestAnimationFrame(() => {
         negotiationRef.current?.scrollIntoView({
@@ -238,165 +257,131 @@ export default function Page() {
   );
 }
 
-function supplierName(demo: DemoResult, sellerId: string): string {
-  return (
-    demo.matched_suppliers.find((s) => s.seller_id === sellerId)?.seller_name ??
-    sellerId
-  );
-}
+function eventToFeedItem(event: StreamEvent): FeedItem | null {
+  const id = `${event.type}-${event.ts}`;
+  const d = event.data;
 
-function emitStageStart(
-  i: number,
-  demo: DemoResult,
-  push: (it: FeedItem) => void,
-) {
-  const events: FeedItem[][] = [
-    [
-      {
-        id: `s0-start`,
-        agent: "orchestrator",
-        title: "Routing request to Procurement Intelligence Agent",
-      },
-    ],
-    [
-      {
-        id: `s1-start`,
-        agent: "system",
-        title: "Querying internal supplier registry",
-      },
-    ],
-    [
-      {
-        id: `s2-start`,
-        agent: "buyer",
-        title: `Opening conversations with ${demo.matched_suppliers.length} sellers`,
-        detail: "Round 1 dispatch",
-      },
-    ],
-    [
-      {
-        id: `s3-start`,
-        agent: "validation",
-        title: "Running deterministic constraint checks",
-      },
-    ],
-    [
-      {
-        id: `s4-start`,
-        agent: "escalation",
-        title: "Evaluating escalation triggers",
-      },
-    ],
-    [
-      {
-        id: `s5-start`,
-        agent: "orchestrator",
-        title: "Compiling audit summary",
-      },
-    ],
-  ];
-  events[i]?.forEach(push);
-}
-
-function emitStageEnd(
-  i: number,
-  demo: DemoResult,
-  push: (it: FeedItem) => void,
-) {
-  const req = demo.structured_requirements;
-
-  if (i === 0) {
-    push({
-      id: "s0-end1",
-      agent: "orchestrator",
-      title: `Extracted ${Object.keys(req).length} structured requirements`,
-      detail: `budget €${req.budget_eur} · max ${req.max_length_mm}mm · ${req.max_delivery_days}d delivery`,
-    });
-    return;
-  }
-
-  if (i === 1) {
-    push({
-      id: "s1-end1",
-      agent: "system",
-      title: `Internal match surfaced ${demo.matched_suppliers.length} candidate suppliers`,
-    });
-    if (demo.tavily_enrichment.triggered) {
-      push({
-        id: "s1-end2",
-        agent: "tavily",
-        title: "External enrichment triggered",
-        detail: `${demo.tavily_enrichment.results.length} supporting results`,
-      });
-    }
-    push({
-      id: "s1-end3",
-      agent: "orchestrator",
-      title: `${demo.matched_suppliers.length} suppliers ranked by Supplier Matching Agent`,
-    });
-    return;
-  }
-
-  if (i === 2) {
-    demo.conversation_logs.forEach((log, idx) => {
-      const vendor = supplierName(demo, log.seller_id);
-      push({
-        id: `s2-log-${idx}`,
-        agent: log.speaker === "buyer" ? "buyer" : "seller",
-        vendor,
-        title: `"${log.message}"`,
-      });
-      if (log.speaker === "seller" && log.pioneer_labels.length > 0) {
-        const fields = Object.entries(log.extracted_fields ?? {})
-          .map(([k, v]) => `${k}: ${v}`)
-          .join(" · ");
-        push({
-          id: `s2-log-${idx}-pioneer`,
-          agent: "pioneer",
-          vendor,
-          title: `Labeled: ${log.pioneer_labels.join(", ")}`,
-          detail: fields || undefined,
-        });
+  switch (event.type) {
+    case "requirements": {
+      if ((d as { status?: string }).status === "extracting") {
+        return {
+          id,
+          agent: "gemini",
+          title: "Gemini extracting structured requirements...",
+        };
       }
-    });
-    return;
-  }
+      const req = d as {
+        use_case?: string;
+        budget_eur?: number;
+        max_length_mm?: number;
+        max_delivery_days?: number;
+      };
+      return {
+        id,
+        agent: "gemini",
+        title: `Requirements extracted: ${req.use_case ?? "GPU procurement"}`,
+        detail: `budget €${req.budget_eur} · max ${req.max_length_mm}mm · ${req.max_delivery_days}d delivery`,
+      };
+    }
 
-  if (i === 3) {
-    demo.validation_results.forEach((r) => {
-      push({
-        id: `s3-${r.seller_id}`,
+    case "cluster": {
+      const c = d as {
+        cluster_id?: string;
+        products?: unknown[];
+        similarity_score?: number;
+        representative_specs?: { avg_price_eur?: number };
+      };
+      return {
+        id,
+        agent: "clustering",
+        title: `${c.cluster_id ?? "Cluster"}: ${c.products?.length ?? 0} products`,
+        detail: `similarity ${c.similarity_score} · avg €${c.representative_specs?.avg_price_eur}`,
+      };
+    }
+
+    case "match": {
+      const m = d as {
+        seller_name?: string;
+        match_score?: number;
+        reason?: string;
+      };
+      return {
+        id,
+        agent: "system",
+        title: `Matched: ${m.seller_name ?? "supplier"}`,
+        detail: `score ${m.match_score} — ${m.reason}`,
+      };
+    }
+
+    case "negotiation_turn": {
+      const log = d as {
+        speaker?: string;
+        seller_name?: string;
+        message?: string;
+      };
+      return {
+        id,
+        agent: log.speaker === "buyer" ? "buyer" : "seller",
+        vendor: log.seller_name,
+        title: `"${log.message ?? ""}"`,
+      };
+    }
+
+    case "validation": {
+      const v = d as {
+        seller_name?: string;
+        status?: string;
+        failed_constraints?: string[];
+      };
+      return {
+        id,
         agent: "validation",
-        vendor: r.seller_name,
-        title: r.status.toUpperCase(),
+        vendor: v.seller_name,
+        title: (v.status ?? "").toUpperCase(),
         detail:
-          r.failed_constraints.length > 0
-            ? r.failed_constraints.join(" · ")
+          (v.failed_constraints ?? []).length > 0
+            ? v.failed_constraints!.join(" · ")
             : "all constraints satisfied",
-      });
-    });
-    return;
-  }
+      };
+    }
 
-  if (i === 4) {
-    push({
-      id: "s4-end1",
-      agent: "escalation",
-      title: demo.escalation_result.escalate
-        ? `Trigger: ${demo.escalation_result.trigger}`
-        : "No escalation required",
-      detail: demo.escalation_result.reason,
-    });
-    return;
-  }
+    case "human_alert": {
+      const e = d as { reason?: string; question_for_human?: string };
+      return {
+        id,
+        agent: "escalation",
+        title: `Human alert: ${e.reason ?? "review required"}`,
+        detail: e.question_for_human,
+      };
+    }
 
-  if (i === 5) {
-    const rec = demo.final_recommendation;
-    push({
-      id: "s5-end1",
-      agent: "orchestrator",
-      title: "Recommendation ready",
-      detail: `${rec.recommended_seller} · ${rec.recommended_product} · €${rec.price_eur}`,
-    });
+    case "escalation": {
+      return {
+        id,
+        agent: "escalation",
+        title: "Escalation resolved",
+        detail: (d as { note?: string }).note,
+      };
+    }
+
+    case "recommendation": {
+      const r = d as {
+        recommended_product?: string;
+        recommended_seller?: string;
+        price_eur?: number;
+      };
+      return {
+        id,
+        agent: "orchestrator",
+        title: `Recommendation: ${r.recommended_product ?? "ready"}`,
+        detail: `${r.recommended_seller} · €${r.price_eur}`,
+      };
+    }
+
+    case "audit":
+      return { id, agent: "orchestrator", title: "Audit summary generated" };
+
+    default:
+      return null;
   }
 }

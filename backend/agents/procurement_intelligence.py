@@ -1,10 +1,16 @@
+import json
+import os
 import re
+
+from integrations.gemini_client import generate as _gemini_generate
+from backend.prompts import EXTRACT_REQUIREMENTS_SYSTEM
 from backend.schemas import StructuredRequirements, SellerOffer, ValidationResult
 
+_GEMINI_FALLBACK = "[LLM unavailable — using fallback response]"
 
-def extract_requirements(request) -> dict:
-    raw_request = request.get("raw_request", "") if isinstance(request, dict) else request
 
+def _extract_with_regex(raw_request: str) -> dict:
+    """Regex-based extraction — fallback when Gemini is unavailable or in replay mode."""
     requirements: dict = {
         "product_type": "GPU",
         "use_case": "AI workstation",
@@ -30,6 +36,10 @@ def extract_requirements(request) -> dict:
 
     if "computer vision" in lower:
         requirements["use_case"] = "computer vision"
+    elif "ml training" in lower or "machine learning" in lower:
+        requirements["use_case"] = "ML training"
+    elif "3d rendering" in lower or "rendering" in lower:
+        requirements["use_case"] = "3D rendering"
     elif "data processing" in lower or "analytics" in lower:
         requirements["use_case"] = "data processing"
 
@@ -47,6 +57,47 @@ def extract_requirements(request) -> dict:
         requirements["warranty_required"] = True
 
     return requirements
+
+
+def _coerce_requirements(parsed: dict) -> dict | None:
+    """Coerce Gemini JSON output to correct Python types. Returns None on failure."""
+    try:
+        return {
+            "product_type": str(parsed.get("product_type", "GPU")),
+            "use_case": str(parsed.get("use_case", "AI workstation")),
+            "max_length_mm": int(float(str(parsed.get("max_length_mm", 300)))),
+            "max_power_watts": int(float(str(parsed.get("max_power_watts", 250)))),
+            "budget_eur": float(str(parsed.get("budget_eur", 650))),
+            "max_delivery_days": int(float(str(parsed.get("max_delivery_days", 7)))),
+            "warranty_required": bool(parsed.get("warranty_required", True)),
+            "minimum_warranty_years": float(str(parsed.get("minimum_warranty_years", 1))),
+        }
+    except (ValueError, TypeError):
+        return None
+
+
+def extract_requirements(request) -> dict:
+    raw_request = request.get("raw_request", "") if isinstance(request, dict) else str(request)
+    demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
+
+    if not demo_mode:
+        prompt = f"Extract structured procurement requirements from this buyer request:\n\n{raw_request}"
+        raw = _gemini_generate(
+            prompt,
+            system=EXTRACT_REQUIREMENTS_SYSTEM,
+            temperature=0.1,
+            json_mode=True,
+        )
+        if raw != _GEMINI_FALLBACK:
+            try:
+                parsed = json.loads(raw)
+                coerced = _coerce_requirements(parsed)
+                if coerced is not None:
+                    return coerced
+            except (json.JSONDecodeError, KeyError, TypeError):
+                pass
+
+    return _extract_with_regex(raw_request)
 
 
 def compute_value_score(requirements: dict, offer: dict) -> int:
@@ -80,11 +131,7 @@ def validate_offer(requirements: dict, offer: dict) -> dict:
         )
 
     status = "passed" if not failed else "rejected"
-
-    score = 100
-    if failed:
-        score = max(0, 100 - len(failed) * 25)
-
+    score = 100 if not failed else max(0, 100 - len(failed) * 25)
     next_action = "recommend" if status == "passed" else "Ask seller for a compatible alternative"
 
     return {

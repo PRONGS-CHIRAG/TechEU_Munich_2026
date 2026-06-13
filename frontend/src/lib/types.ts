@@ -97,9 +97,40 @@ export interface FinalRecommendation {
   human_approval_required: boolean;
 }
 
+export interface ProductCluster {
+  cluster_id: string;
+  products: Array<{
+    seller_id: string;
+    seller_name: string;
+    product: string;
+    length_mm: number;
+    power_watts: number;
+    price_eur: number;
+    delivery_days: number;
+    warranty_years: number;
+    availability: string;
+  }>;
+  similarity_score: number;
+  representative_specs: {
+    avg_price_eur: number;
+    avg_delivery_days: number;
+  };
+}
+
+export interface JudgedCandidate {
+  cluster_id: string;
+  seller_id: string;
+  product: string;
+  verdict: "good" | "borderline" | "bad";
+  reason: string;
+  score: number;
+}
+
 export interface DemoResult {
   request: BuyerRequest;
   structured_requirements: StructuredRequirements;
+  clusters?: ProductCluster[];
+  judged_candidates?: JudgedCandidate[];
   matched_suppliers: MatchedSupplier[];
   conversation_logs: ConversationLog[];
   validation_results: ValidationResult[];
@@ -109,4 +140,5 @@ export interface DemoResult {
   final_recommendation: FinalRecommendation;
   deal_card_path: string;
   demo_mode: boolean;
+  session_id?: string;
 }
