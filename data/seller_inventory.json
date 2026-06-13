@@ -1,302 +1,314 @@
-[
-  {
-    "id": "vendor_a-rtx4080",
-    "seller_id": "vendor_a",
-    "seller_name": "Vendor A (CompuTech Distribution)",
-    "product": "RTX 4080",
-    "length_mm": 320,
-    "power_watts": 320,
-    "price_eur": 700,
-    "delivery_days": 5,
-    "warranty_years": 2,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_a-rtx4090",
-    "seller_id": "vendor_a",
-    "seller_name": "Vendor A (CompuTech Distribution)",
-    "product": "RTX 4090",
-    "length_mm": 336,
-    "power_watts": 450,
-    "price_eur": 1750,
-    "delivery_days": 7,
-    "warranty_years": 2,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_a-rtx4070ti",
-    "seller_id": "vendor_a",
-    "seller_name": "Vendor A (CompuTech Distribution)",
-    "product": "RTX 4070 Ti",
-    "length_mm": 285,
-    "power_watts": 285,
-    "price_eur": 620,
-    "delivery_days": 6,
-    "warranty_years": 1,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_a-rtx4060ti",
-    "seller_id": "vendor_a",
-    "seller_name": "Vendor A (CompuTech Distribution)",
-    "product": "RTX 4060 Ti",
-    "length_mm": 242,
-    "power_watts": 165,
-    "price_eur": 420,
-    "delivery_days": 4,
-    "warranty_years": 2,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_a-rtx3090",
-    "seller_id": "vendor_a",
-    "seller_name": "Vendor A (CompuTech Distribution)",
-    "product": "RTX 3090",
-    "length_mm": 313,
-    "power_watts": 350,
-    "price_eur": 900,
-    "delivery_days": 10,
-    "warranty_years": 1,
-    "availability": "limited_stock"
-  },
-  {
-    "id": "vendor_b-rtx4070supercompact",
-    "seller_id": "vendor_b",
-    "seller_name": "Vendor B (Workstation Parts GmbH)",
-    "product": "RTX 4070 Super Compact",
-    "length_mm": 267,
-    "power_watts": 220,
-    "price_eur": 650,
-    "delivery_days": 5,
-    "warranty_years": 2,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_b-rtx4060compact",
-    "seller_id": "vendor_b",
-    "seller_name": "Vendor B (Workstation Parts GmbH)",
-    "product": "RTX 4060 Compact",
-    "length_mm": 230,
-    "power_watts": 160,
-    "price_eur": 380,
-    "delivery_days": 3,
-    "warranty_years": 2,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_b-rtx4070",
-    "seller_id": "vendor_b",
-    "seller_name": "Vendor B (Workstation Parts GmbH)",
-    "product": "RTX 4070",
-    "length_mm": 242,
-    "power_watts": 200,
-    "price_eur": 580,
-    "delivery_days": 4,
-    "warranty_years": 2,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_b-rtx4070tisuperitx",
-    "seller_id": "vendor_b",
-    "seller_name": "Vendor B (Workstation Parts GmbH)",
-    "product": "RTX 4070 Ti Super ITX",
-    "length_mm": 280,
-    "power_watts": 250,
-    "price_eur": 730,
-    "delivery_days": 6,
-    "warranty_years": 2,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_b-rtx3060compact",
-    "seller_id": "vendor_b",
-    "seller_name": "Vendor B (Workstation Parts GmbH)",
-    "product": "RTX 3060 Compact",
-    "length_mm": 210,
-    "power_watts": 130,
-    "price_eur": 310,
-    "delivery_days": 3,
-    "warranty_years": 1,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_c-rtx4070ti",
-    "seller_id": "vendor_c",
-    "seller_name": "Vendor C (RapidShip Components)",
-    "product": "RTX 4070 Ti",
-    "length_mm": 290,
-    "power_watts": 280,
-    "price_eur": 690,
-    "delivery_days": 3,
-    "warranty_years": 1,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_c-rtx4070",
-    "seller_id": "vendor_c",
-    "seller_name": "Vendor C (RapidShip Components)",
-    "product": "RTX 4070",
-    "length_mm": 250,
-    "power_watts": 200,
-    "price_eur": 620,
-    "delivery_days": 2,
-    "warranty_years": 1,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_c-rtx4060",
-    "seller_id": "vendor_c",
-    "seller_name": "Vendor C (RapidShip Components)",
-    "product": "RTX 4060",
-    "length_mm": 230,
-    "power_watts": 160,
-    "price_eur": 400,
-    "delivery_days": 2,
-    "warranty_years": 1,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_c-rtx4080super",
-    "seller_id": "vendor_c",
-    "seller_name": "Vendor C (RapidShip Components)",
-    "product": "RTX 4080 Super",
-    "length_mm": 310,
-    "power_watts": 300,
-    "price_eur": 780,
-    "delivery_days": 3,
-    "warranty_years": 1,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_c-rtx4090",
-    "seller_id": "vendor_c",
-    "seller_name": "Vendor C (RapidShip Components)",
-    "product": "RTX 4090",
-    "length_mm": 336,
-    "power_watts": 450,
-    "price_eur": 1820,
-    "delivery_days": 4,
-    "warranty_years": 1,
-    "availability": "limited_stock"
-  },
-  {
-    "id": "vendor_d-rtx4060",
-    "seller_id": "vendor_d",
-    "seller_name": "Vendor D (BudgetGPU Direct)",
-    "product": "RTX 4060",
-    "length_mm": 200,
-    "power_watts": 115,
-    "price_eur": 330,
-    "delivery_days": 12,
-    "warranty_years": 0.5,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_d-rtx3060",
-    "seller_id": "vendor_d",
-    "seller_name": "Vendor D (BudgetGPU Direct)",
-    "product": "RTX 3060",
-    "length_mm": 242,
-    "power_watts": 170,
-    "price_eur": 260,
-    "delivery_days": 14,
-    "warranty_years": 0.5,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_d-rtx3050",
-    "seller_id": "vendor_d",
-    "seller_name": "Vendor D (BudgetGPU Direct)",
-    "product": "RTX 3050",
-    "length_mm": 200,
-    "power_watts": 130,
-    "price_eur": 210,
-    "delivery_days": 10,
-    "warranty_years": 1,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_d-rtx4060ti",
-    "seller_id": "vendor_d",
-    "seller_name": "Vendor D (BudgetGPU Direct)",
-    "product": "RTX 4060 Ti",
-    "length_mm": 230,
-    "power_watts": 160,
-    "price_eur": 390,
-    "delivery_days": 13,
-    "warranty_years": 0.5,
-    "availability": "out_of_stock"
-  },
-  {
-    "id": "vendor_d-rtx3070",
-    "seller_id": "vendor_d",
-    "seller_name": "Vendor D (BudgetGPU Direct)",
-    "product": "RTX 3070",
-    "length_mm": 280,
-    "power_watts": 220,
-    "price_eur": 350,
-    "delivery_days": 11,
-    "warranty_years": 0.5,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_e-rtx4090",
-    "seller_id": "vendor_e",
-    "seller_name": "Vendor E (Enterprise Compute Solutions)",
-    "product": "RTX 4090",
-    "length_mm": 358,
-    "power_watts": 450,
-    "price_eur": 1900,
-    "delivery_days": 14,
-    "warranty_years": 3,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_e-rtx6000ada",
-    "seller_id": "vendor_e",
-    "seller_name": "Vendor E (Enterprise Compute Solutions)",
-    "product": "RTX 6000 Ada",
-    "length_mm": 336,
-    "power_watts": 300,
-    "price_eur": 4800,
-    "delivery_days": 21,
-    "warranty_years": 3,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_e-rtx4080",
-    "seller_id": "vendor_e",
-    "seller_name": "Vendor E (Enterprise Compute Solutions)",
-    "product": "RTX 4080",
-    "length_mm": 310,
-    "power_watts": 320,
-    "price_eur": 750,
-    "delivery_days": 12,
-    "warranty_years": 3,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_e-rtx4070tisuper",
-    "seller_id": "vendor_e",
-    "seller_name": "Vendor E (Enterprise Compute Solutions)",
-    "product": "RTX 4070 Ti Super",
-    "length_mm": 295,
-    "power_watts": 285,
-    "price_eur": 740,
-    "delivery_days": 10,
-    "warranty_years": 3,
-    "availability": "in_stock"
-  },
-  {
-    "id": "vendor_e-a100pcie",
-    "seller_id": "vendor_e",
-    "seller_name": "Vendor E (Enterprise Compute Solutions)",
-    "product": "A100 PCIe",
-    "length_mm": 267,
-    "power_watts": 300,
-    "price_eur": 9500,
-    "delivery_days": 30,
-    "warranty_years": 3,
-    "availability": "limited_stock"
-  }
-]
+{
+  "merchants": [
+    {
+      "seller_id": "vendor_a",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "inventories": [
+        {
+          "inventory_id": "vendor_a-main",
+          "location": "Berlin, Germany",
+          "products": [
+            {
+              "id": "vendor_a-rtx4080",
+              "product": "RTX 4080",
+              "length_mm": 320,
+              "power_watts": 320,
+              "price_eur": 700,
+              "delivery_days": 5,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_a-rtx4090",
+              "product": "RTX 4090",
+              "length_mm": 336,
+              "power_watts": 450,
+              "price_eur": 1750,
+              "delivery_days": 7,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_a-rtx4070ti",
+              "product": "RTX 4070 Ti",
+              "length_mm": 285,
+              "power_watts": 285,
+              "price_eur": 620,
+              "delivery_days": 6,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_a-rtx4060ti",
+              "product": "RTX 4060 Ti",
+              "length_mm": 242,
+              "power_watts": 165,
+              "price_eur": 420,
+              "delivery_days": 4,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_a-rtx3090",
+              "product": "RTX 3090",
+              "length_mm": 313,
+              "power_watts": 350,
+              "price_eur": 900,
+              "delivery_days": 10,
+              "warranty_years": 1,
+              "availability": "limited_stock"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seller_id": "vendor_b",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "inventories": [
+        {
+          "inventory_id": "vendor_b-main",
+          "location": "Munich, Germany",
+          "products": [
+            {
+              "id": "vendor_b-rtx4070supercompact",
+              "product": "RTX 4070 Super Compact",
+              "length_mm": 267,
+              "power_watts": 220,
+              "price_eur": 650,
+              "delivery_days": 5,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_b-rtx4060compact",
+              "product": "RTX 4060 Compact",
+              "length_mm": 230,
+              "power_watts": 160,
+              "price_eur": 380,
+              "delivery_days": 3,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_b-rtx4070",
+              "product": "RTX 4070",
+              "length_mm": 242,
+              "power_watts": 200,
+              "price_eur": 580,
+              "delivery_days": 4,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_b-rtx4070tisuperitx",
+              "product": "RTX 4070 Ti Super ITX",
+              "length_mm": 280,
+              "power_watts": 250,
+              "price_eur": 730,
+              "delivery_days": 6,
+              "warranty_years": 2,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_b-rtx3060compact",
+              "product": "RTX 3060 Compact",
+              "length_mm": 210,
+              "power_watts": 130,
+              "price_eur": 310,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "inventories": [
+        {
+          "inventory_id": "vendor_c-main",
+          "location": "Amsterdam, Netherlands",
+          "products": [
+            {
+              "id": "vendor_c-rtx4070ti",
+              "product": "RTX 4070 Ti",
+              "length_mm": 290,
+              "power_watts": 280,
+              "price_eur": 690,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_c-rtx4070",
+              "product": "RTX 4070",
+              "length_mm": 250,
+              "power_watts": 200,
+              "price_eur": 620,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_c-rtx4060",
+              "product": "RTX 4060",
+              "length_mm": 230,
+              "power_watts": 160,
+              "price_eur": 400,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_c-rtx4080super",
+              "product": "RTX 4080 Super",
+              "length_mm": 310,
+              "power_watts": 300,
+              "price_eur": 780,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_c-rtx4090",
+              "product": "RTX 4090",
+              "length_mm": 336,
+              "power_watts": 450,
+              "price_eur": 1820,
+              "delivery_days": 4,
+              "warranty_years": 1,
+              "availability": "limited_stock"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seller_id": "vendor_d",
+      "seller_name": "Vendor D (BudgetGPU Direct)",
+      "inventories": [
+        {
+          "inventory_id": "vendor_d-main",
+          "location": "Warsaw, Poland",
+          "products": [
+            {
+              "id": "vendor_d-rtx4060",
+              "product": "RTX 4060",
+              "length_mm": 200,
+              "power_watts": 115,
+              "price_eur": 330,
+              "delivery_days": 12,
+              "warranty_years": 0.5,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_d-rtx3060",
+              "product": "RTX 3060",
+              "length_mm": 242,
+              "power_watts": 170,
+              "price_eur": 260,
+              "delivery_days": 14,
+              "warranty_years": 0.5,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_d-rtx3050",
+              "product": "RTX 3050",
+              "length_mm": 200,
+              "power_watts": 130,
+              "price_eur": 210,
+              "delivery_days": 10,
+              "warranty_years": 1,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_d-rtx4060ti",
+              "product": "RTX 4060 Ti",
+              "length_mm": 230,
+              "power_watts": 160,
+              "price_eur": 390,
+              "delivery_days": 13,
+              "warranty_years": 0.5,
+              "availability": "out_of_stock"
+            },
+            {
+              "id": "vendor_d-rtx3070",
+              "product": "RTX 3070",
+              "length_mm": 280,
+              "power_watts": 220,
+              "price_eur": 350,
+              "delivery_days": 11,
+              "warranty_years": 0.5,
+              "availability": "in_stock"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seller_id": "vendor_e",
+      "seller_name": "Vendor E (Enterprise Compute Solutions)",
+      "inventories": [
+        {
+          "inventory_id": "vendor_e-main",
+          "location": "Zurich, Switzerland",
+          "products": [
+            {
+              "id": "vendor_e-rtx4090",
+              "product": "RTX 4090",
+              "length_mm": 358,
+              "power_watts": 450,
+              "price_eur": 1900,
+              "delivery_days": 14,
+              "warranty_years": 3,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_e-rtx6000ada",
+              "product": "RTX 6000 Ada",
+              "length_mm": 336,
+              "power_watts": 300,
+              "price_eur": 4800,
+              "delivery_days": 21,
+              "warranty_years": 3,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_e-rtx4080",
+              "product": "RTX 4080",
+              "length_mm": 310,
+              "power_watts": 320,
+              "price_eur": 750,
+              "delivery_days": 12,
+              "warranty_years": 3,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_e-rtx4070tisuper",
+              "product": "RTX 4070 Ti Super",
+              "length_mm": 295,
+              "power_watts": 285,
+              "price_eur": 740,
+              "delivery_days": 10,
+              "warranty_years": 3,
+              "availability": "in_stock"
+            },
+            {
+              "id": "vendor_e-a100pcie",
+              "product": "A100 PCIe",
+              "length_mm": 267,
+              "power_watts": 300,
+              "price_eur": 9500,
+              "delivery_days": 30,
+              "warranty_years": 3,
+              "availability": "limited_stock"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

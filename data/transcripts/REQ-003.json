@@ -1,0 +1,1053 @@
+[
+  {
+    "type": "requirements",
+    "stage": "requirements",
+    "data": {
+      "product_type": "GPU",
+      "use_case": "3D rendering",
+      "max_length_mm": 230,
+      "max_power_watts": 180,
+      "budget_eur": 350.0,
+      "max_delivery_days": 10,
+      "warranty_required": true,
+      "minimum_warranty_years": 1.0
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_1",
+        "products": [
+          {
+            "id": "vendor_d-rtx3050",
+            "seller_id": "vendor_d",
+            "seller_name": "Vendor D (BudgetGPU Direct)",
+            "product": "RTX 3050",
+            "length_mm": 200,
+            "power_watts": 130,
+            "price_eur": 210,
+            "delivery_days": 10,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 210.0,
+          "avg_delivery_days": 10.0,
+          "avg_length_mm": 200.0,
+          "avg_power_watts": 130.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_1",
+        "seller_id": "vendor_d",
+        "product": "RTX 3050",
+        "verdict": "good",
+        "reason": "This candidate is an excellent match. All buyer requirements are met or exceeded, including fitting within the maximum length of 230mm (at 200mm) and power consumption of 180W (at 130W). The price of 210 EUR is well within the 350 EUR budget, and delivery and warranty terms also perfectly align with requirements.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_2",
+        "products": [
+          {
+            "id": "vendor_b-rtx3060compact",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 3060 Compact",
+            "length_mm": 210,
+            "power_watts": 130,
+            "price_eur": 310,
+            "delivery_days": 3,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 310.0,
+          "avg_delivery_days": 3.0,
+          "avg_length_mm": 210.0,
+          "avg_power_watts": 130.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_2",
+        "seller_id": "vendor_b",
+        "product": "RTX 3060 Compact",
+        "verdict": "good",
+        "reason": "The RTX 3060 Compact meets all specified requirements. It is well within the length limit at 210mm (20mm under the 230mm max), consumes significantly less power at 130W (50W under the 180W max), and is priced at 310 EUR (40 EUR under the 350 EUR budget). Delivery is also very fast at 3 days, and the 1-year warranty meets the minimum requirement.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_3",
+        "products": [
+          {
+            "id": "vendor_c-rtx4060",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4060",
+            "length_mm": 230,
+            "power_watts": 160,
+            "price_eur": 400,
+            "delivery_days": 2,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 400.0,
+          "avg_delivery_days": 2.0,
+          "avg_length_mm": 230.0,
+          "avg_power_watts": 160.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_3",
+        "seller_id": "vendor_c",
+        "product": "RTX 4060",
+        "verdict": "borderline",
+        "reason": "The candidate GPU meets all physical and operational requirements, including length (230mm), power (160W), delivery (2 days), and warranty (1 year). However, its price of 400 EUR exceeds the buyer's budget of 350 EUR by 50 EUR, making it a borderline fit.",
+        "score": 70
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_4",
+        "products": [
+          {
+            "id": "vendor_b-rtx4060compact",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 4060 Compact",
+            "length_mm": 230,
+            "power_watts": 160,
+            "price_eur": 380,
+            "delivery_days": 3,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_a-rtx4060ti",
+            "seller_id": "vendor_a",
+            "seller_name": "Vendor A (CompuTech Distribution)",
+            "product": "RTX 4060 Ti",
+            "length_mm": 242,
+            "power_watts": 165,
+            "price_eur": 420,
+            "delivery_days": 4,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.92,
+        "representative_specs": {
+          "avg_price_eur": 400.0,
+          "avg_delivery_days": 3.5,
+          "avg_length_mm": 236.0,
+          "avg_power_watts": 162.5,
+          "avg_warranty_years": 2.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_4",
+        "seller_id": "vendor_b",
+        "product": "RTX 4060 Compact",
+        "verdict": "borderline",
+        "reason": "The candidate product meets or exceeds all physical and operational requirements, including maximum length (230mm), power consumption (160W vs 180W max), delivery time (3 days vs 10 days max), and warranty (2 years vs 1 year minimum). However, its price of \u20ac380 exceeds the buyer's budget of \u20ac350 by \u20ac30, making it a borderline option that requires further consideration regarding budget flexibility.",
+        "score": 75
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_5",
+        "products": [
+          {
+            "id": "vendor_b-rtx4070",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 4070",
+            "length_mm": 242,
+            "power_watts": 200,
+            "price_eur": 580,
+            "delivery_days": 4,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 580.0,
+          "avg_delivery_days": 4.0,
+          "avg_length_mm": 242.0,
+          "avg_power_watts": 200.0,
+          "avg_warranty_years": 2.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_5",
+        "seller_id": "vendor_b",
+        "product": "RTX 4070",
+        "verdict": "bad",
+        "reason": "This candidate is unsuitable as it significantly exceeds the buyer's maximums for length (242mm vs 230mm) and power (200W vs 180W). Most critically, the price of 580 EUR is far above the 350 EUR budget, making it a poor fit despite meeting delivery and warranty requirements.",
+        "score": 15
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_6",
+        "products": [
+          {
+            "id": "vendor_c-rtx4070",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4070",
+            "length_mm": 250,
+            "power_watts": 200,
+            "price_eur": 620,
+            "delivery_days": 2,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 620.0,
+          "avg_delivery_days": 2.0,
+          "avg_length_mm": 250.0,
+          "avg_power_watts": 200.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_6",
+        "seller_id": "vendor_c",
+        "product": "RTX 4070",
+        "verdict": "bad",
+        "reason": "This candidate is significantly over budget by 270 EUR, exceeding the 350 EUR limit. It also fails to meet physical constraints, being 20mm too long (250mm vs 230mm max) and drawing 20W too much power (200W vs 180W max).",
+        "score": 10
+      }
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_d",
+      "seller_name": "Vendor D (BudgetGPU Direct)",
+      "match_score": 0.95,
+      "reason": "This candidate is an excellent match. All buyer requirements are met or exceeded, including fitting within the maximum length of 230mm (at 200mm) and power consumption of 180W (at 130W). The price of 210 EUR is well within the 350 EUR budget, and delivery and warranty terms also perfectly align with requirements.",
+      "specialization": "budget consumer electronics",
+      "region": "Poland",
+      "reliability_score": 0.62,
+      "negotiation_style": "rigid"
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_b",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "match_score": 0.95,
+      "reason": "The RTX 3060 Compact meets all specified requirements. It is well within the length limit at 210mm (20mm under the 230mm max), consumes significantly less power at 130W (50W under the 180W max), and is priced at 310 EUR (40 EUR under the 350 EUR budget). Delivery is also very fast at 3 days, and the 1-year warranty meets the minimum requirement.",
+      "specialization": "workstation components",
+      "region": "Germany",
+      "reliability_score": 0.88,
+      "negotiation_style": "cooperative"
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "match_score": 0.7,
+      "reason": "The candidate GPU meets all physical and operational requirements, including length (230mm), power (160W), delivery (2 days), and warranty (1 year). However, its price of 400 EUR exceeds the buyer's budget of 350 EUR by 50 EUR, making it a borderline fit.",
+      "specialization": "fast logistics electronics",
+      "region": "Netherlands",
+      "reliability_score": 0.81,
+      "negotiation_style": "flexible"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_d",
+      "seller_name": "Vendor D (BudgetGPU Direct)",
+      "speaker": "buyer",
+      "message": "Regarding your RTX 3050 offer at \u20ac210, we're interested in value-adds given the competitive pricing. Please confirm the 10-day delivery for the order and include a penalty clause for any delays given the tight project schedule. Also, clarify if the 1-year warranty covers full replacement or parts only.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_d",
+      "seller_name": "Vendor D (BudgetGPU Direct)",
+      "speaker": "seller",
+      "message": "The RTX 3050 is offered at our lowest market price of \u20ac210. Delivery is confirmed at 10 days. Our standard terms do not include penalty clauses for delays. The 1-year warranty covers parts and labor for manufacturing defects.",
+      "round": 1,
+      "pioneer_labels": [
+        "price_concession",
+        "delivery_condition",
+        "warranty_risk"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "price_eur": 210,
+        "delivery_days": 10
+      }
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_b",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "speaker": "buyer",
+      "message": "Your RTX 3060 Compact at \u20ac310 is within our budget. Please confirm the 3-day delivery timeline and current stock availability for a firm order. Also, clarify if the 1-year warranty covers full replacement or parts only. We're open to discussing value-adds given the favorable pricing.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_b",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "speaker": "seller",
+      "message": "We can confirm the RTX 3060 Compact is currently in stock and the 3-day delivery timeline holds for your firm order. The 1-year warranty covers full replacement for manufacturing defects. We appreciate you finding our pricing favorable and are certainly open to discussing potential value-adds to best meet your needs.",
+      "round": 1,
+      "pioneer_labels": [
+        "delivery_condition",
+        "warranty_risk"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "delivery_days": 3
+      }
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "speaker": "buyer",
+      "message": "Regarding your RTX 4060 offer, the \u20ac400 price is \u20ac50 over our \u20ac350 budget. Can you offer a discount or value-added extras to bridge this gap? Please confirm the 2-day delivery timeframe and clarify if the 1-year warranty covers full replacement. Finally, confirm current stock availability for an immediate order.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "speaker": "seller",
+      "message": "We note your \u20ac350 budget for the RTX 4060 at \u20ac400. We confirm 2-day delivery and that the 1-year warranty applies. This model is currently in stock for immediate orders. We are open to finding a solution that fits your requirements.",
+      "round": 1,
+      "pioneer_labels": [
+        "price_concession",
+        "delivery_condition",
+        "warranty_risk",
+        "technical_info"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "price_eur": 350,
+        "delivery_days": 2
+      }
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "speaker": "buyer",
+      "message": "Your GPU meets our 230mm length and 160W power needs, and the 2-day delivery and 1-year warranty are acceptable. However, the \u20ac400 price is \u20ac50 over our \u20ac350 budget. Can you offer a price reduction or include a valuable extra to bridge this gap, and confirm full warranty coverage and immediate stock availability?",
+      "round": 2,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "speaker": "seller",
+      "message": "We understand your concerns regarding price and delivery. For the RTX 4060, we can offer a revised price of \u20ac380, complete with our rapid 1-day delivery. This represents our best and final offer, ensuring you receive premium performance with unparalleled speed.",
+      "round": 2,
+      "pioneer_labels": [
+        "price_concession",
+        "delivery_condition",
+        "final_offer"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "price_eur": 380,
+        "delivery_days": 1
+      }
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_d",
+      "status": "passed",
+      "failed_constraints": [],
+      "score": 81,
+      "next_action": "recommend",
+      "seller_name": "Vendor D (BudgetGPU Direct)",
+      "product": "RTX 3050",
+      "length_mm": 200,
+      "power_watts": 130,
+      "price_eur": 210,
+      "delivery_days": 10,
+      "warranty_years": 1
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_b",
+      "status": "passed",
+      "failed_constraints": [],
+      "score": 84,
+      "next_action": "recommend",
+      "seller_name": "Vendor B (Workstation Parts GmbH)",
+      "product": "RTX 3060 Compact",
+      "length_mm": 210,
+      "power_watts": 130,
+      "price_eur": 310,
+      "delivery_days": 3,
+      "warranty_years": 1
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_c",
+      "status": "rejected",
+      "failed_constraints": [
+        "Price \u20ac380.0 exceeds \u20ac350.0 budget"
+      ],
+      "score": 75,
+      "next_action": "Ask seller for a compatible alternative",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "product": "RTX 4060",
+      "length_mm": 230,
+      "power_watts": 160,
+      "price_eur": 380.0,
+      "delivery_days": 1,
+      "warranty_years": 1
+    }
+  },
+  {
+    "type": "escalation",
+    "stage": "escalation",
+    "data": {
+      "escalate": true,
+      "trigger": "competing_offers",
+      "reason": "Final approval required before completing procurement.",
+      "question_for_human": "The recommended offer scored 84/100 (\u20ac310, 3-day delivery). Do you approve this procurement recommendation?"
+    }
+  },
+  {
+    "type": "recommendation",
+    "stage": "recommendation",
+    "data": {
+      "recommended_seller": "Vendor B (Workstation Parts GmbH)",
+      "recommended_product": "RTX 3060 Compact",
+      "price_eur": 310,
+      "delivery_days": 3,
+      "warranty_years": 1,
+      "technical_status": "passed",
+      "risk_level": "low",
+      "reason": "Best balance of compatibility, price, delivery, and warranty.",
+      "human_approval_required": true,
+      "human_decision": null
+    }
+  },
+  {
+    "type": "audit",
+    "stage": "audit",
+    "data": "3 suppliers were contacted.\n\nVendor D (BudgetGPU Direct) offered RTX 3050 at \u20ac210 with 10-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\nVendor B (Workstation Parts GmbH) offered RTX 3060 Compact at \u20ac310 with 3-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\nVendor C (RapidShip Components) offered RTX 4060 at \u20ac380.0 with 1-day delivery and 1-year warranty. Rejected: Price \u20ac380.0 exceeds \u20ac350.0 budget.\n\nRecommended supplier: Vendor B (Workstation Parts GmbH) \u2014 RTX 3060 Compact at \u20ac310, 3-day delivery.\nReason: Best balance of compatibility, price, delivery, warranty, and risk.\n\nHuman approval required: The recommended offer scored 84/100 (\u20ac310, 3-day delivery). Do you approve this procurement recommendation?"
+  },
+  {
+    "type": "done",
+    "stage": "done",
+    "data": {
+      "request": {
+        "request_id": "REQ-003",
+        "raw_request": "We need an affordable GPU for 3D rendering in our small studio. Small form factor case (max 230mm), keep power draw under 180W, budget is tight at \u00e2\u201a\u00ac350, need it within 10 days, and at least 1 year warranty.",
+        "region": "Netherlands",
+        "priority": "budget",
+        "_interactive": false
+      },
+      "structured_requirements": {
+        "product_type": "GPU",
+        "use_case": "3D rendering",
+        "max_length_mm": 230,
+        "max_power_watts": 180,
+        "budget_eur": 350.0,
+        "max_delivery_days": 10,
+        "warranty_required": true,
+        "minimum_warranty_years": 1.0
+      },
+      "clusters": [
+        {
+          "cluster_id": "cluster_1",
+          "products": [
+            {
+              "id": "vendor_d-rtx3050",
+              "seller_id": "vendor_d",
+              "seller_name": "Vendor D (BudgetGPU Direct)",
+              "product": "RTX 3050",
+              "length_mm": 200,
+              "power_watts": 130,
+              "price_eur": 210,
+              "delivery_days": 10,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 210.0,
+            "avg_delivery_days": 10.0,
+            "avg_length_mm": 200.0,
+            "avg_power_watts": 130.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_2",
+          "products": [
+            {
+              "id": "vendor_b-rtx3060compact",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 3060 Compact",
+              "length_mm": 210,
+              "power_watts": 130,
+              "price_eur": 310,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 310.0,
+            "avg_delivery_days": 3.0,
+            "avg_length_mm": 210.0,
+            "avg_power_watts": 130.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_3",
+          "products": [
+            {
+              "id": "vendor_c-rtx4060",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4060",
+              "length_mm": 230,
+              "power_watts": 160,
+              "price_eur": 400,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 400.0,
+            "avg_delivery_days": 2.0,
+            "avg_length_mm": 230.0,
+            "avg_power_watts": 160.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_4",
+          "products": [
+            {
+              "id": "vendor_b-rtx4060compact",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 4060 Compact",
+              "length_mm": 230,
+              "power_watts": 160,
+              "price_eur": 380,
+              "delivery_days": 3,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_a-rtx4060ti",
+              "seller_id": "vendor_a",
+              "seller_name": "Vendor A (CompuTech Distribution)",
+              "product": "RTX 4060 Ti",
+              "length_mm": 242,
+              "power_watts": 165,
+              "price_eur": 420,
+              "delivery_days": 4,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.92,
+          "representative_specs": {
+            "avg_price_eur": 400.0,
+            "avg_delivery_days": 3.5,
+            "avg_length_mm": 236.0,
+            "avg_power_watts": 162.5,
+            "avg_warranty_years": 2.0
+          }
+        },
+        {
+          "cluster_id": "cluster_5",
+          "products": [
+            {
+              "id": "vendor_b-rtx4070",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 4070",
+              "length_mm": 242,
+              "power_watts": 200,
+              "price_eur": 580,
+              "delivery_days": 4,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 580.0,
+            "avg_delivery_days": 4.0,
+            "avg_length_mm": 242.0,
+            "avg_power_watts": 200.0,
+            "avg_warranty_years": 2.0
+          }
+        },
+        {
+          "cluster_id": "cluster_6",
+          "products": [
+            {
+              "id": "vendor_c-rtx4070",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4070",
+              "length_mm": 250,
+              "power_watts": 200,
+              "price_eur": 620,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 620.0,
+            "avg_delivery_days": 2.0,
+            "avg_length_mm": 250.0,
+            "avg_power_watts": 200.0,
+            "avg_warranty_years": 1.0
+          }
+        }
+      ],
+      "judged_candidates": [
+        {
+          "cluster_id": "cluster_1",
+          "seller_id": "vendor_d",
+          "product": "RTX 3050",
+          "verdict": "good",
+          "reason": "This candidate is an excellent match. All buyer requirements are met or exceeded, including fitting within the maximum length of 230mm (at 200mm) and power consumption of 180W (at 130W). The price of 210 EUR is well within the 350 EUR budget, and delivery and warranty terms also perfectly align with requirements.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_2",
+          "seller_id": "vendor_b",
+          "product": "RTX 3060 Compact",
+          "verdict": "good",
+          "reason": "The RTX 3060 Compact meets all specified requirements. It is well within the length limit at 210mm (20mm under the 230mm max), consumes significantly less power at 130W (50W under the 180W max), and is priced at 310 EUR (40 EUR under the 350 EUR budget). Delivery is also very fast at 3 days, and the 1-year warranty meets the minimum requirement.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_3",
+          "seller_id": "vendor_c",
+          "product": "RTX 4060",
+          "verdict": "borderline",
+          "reason": "The candidate GPU meets all physical and operational requirements, including length (230mm), power (160W), delivery (2 days), and warranty (1 year). However, its price of 400 EUR exceeds the buyer's budget of 350 EUR by 50 EUR, making it a borderline fit.",
+          "score": 70
+        },
+        {
+          "cluster_id": "cluster_4",
+          "seller_id": "vendor_b",
+          "product": "RTX 4060 Compact",
+          "verdict": "borderline",
+          "reason": "The candidate product meets or exceeds all physical and operational requirements, including maximum length (230mm), power consumption (160W vs 180W max), delivery time (3 days vs 10 days max), and warranty (2 years vs 1 year minimum). However, its price of \u20ac380 exceeds the buyer's budget of \u20ac350 by \u20ac30, making it a borderline option that requires further consideration regarding budget flexibility.",
+          "score": 75
+        },
+        {
+          "cluster_id": "cluster_5",
+          "seller_id": "vendor_b",
+          "product": "RTX 4070",
+          "verdict": "bad",
+          "reason": "This candidate is unsuitable as it significantly exceeds the buyer's maximums for length (242mm vs 230mm) and power (200W vs 180W). Most critically, the price of 580 EUR is far above the 350 EUR budget, making it a poor fit despite meeting delivery and warranty requirements.",
+          "score": 15
+        },
+        {
+          "cluster_id": "cluster_6",
+          "seller_id": "vendor_c",
+          "product": "RTX 4070",
+          "verdict": "bad",
+          "reason": "This candidate is significantly over budget by 270 EUR, exceeding the 350 EUR limit. It also fails to meet physical constraints, being 20mm too long (250mm vs 230mm max) and drawing 20W too much power (200W vs 180W max).",
+          "score": 10
+        }
+      ],
+      "matched_suppliers": [
+        {
+          "seller_id": "vendor_d",
+          "seller_name": "Vendor D (BudgetGPU Direct)",
+          "match_score": 0.95,
+          "reason": "This candidate is an excellent match. All buyer requirements are met or exceeded, including fitting within the maximum length of 230mm (at 200mm) and power consumption of 180W (at 130W). The price of 210 EUR is well within the 350 EUR budget, and delivery and warranty terms also perfectly align with requirements.",
+          "specialization": "budget consumer electronics",
+          "region": "Poland",
+          "reliability_score": 0.62,
+          "negotiation_style": "rigid"
+        },
+        {
+          "seller_id": "vendor_b",
+          "seller_name": "Vendor B (Workstation Parts GmbH)",
+          "match_score": 0.95,
+          "reason": "The RTX 3060 Compact meets all specified requirements. It is well within the length limit at 210mm (20mm under the 230mm max), consumes significantly less power at 130W (50W under the 180W max), and is priced at 310 EUR (40 EUR under the 350 EUR budget). Delivery is also very fast at 3 days, and the 1-year warranty meets the minimum requirement.",
+          "specialization": "workstation components",
+          "region": "Germany",
+          "reliability_score": 0.88,
+          "negotiation_style": "cooperative"
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "match_score": 0.7,
+          "reason": "The candidate GPU meets all physical and operational requirements, including length (230mm), power (160W), delivery (2 days), and warranty (1 year). However, its price of 400 EUR exceeds the buyer's budget of 350 EUR by 50 EUR, making it a borderline fit.",
+          "specialization": "fast logistics electronics",
+          "region": "Netherlands",
+          "reliability_score": 0.81,
+          "negotiation_style": "flexible"
+        }
+      ],
+      "conversation_logs": [
+        {
+          "seller_id": "vendor_d",
+          "seller_name": "Vendor D (BudgetGPU Direct)",
+          "speaker": "buyer",
+          "message": "Regarding your RTX 3050 offer at \u20ac210, we're interested in value-adds given the competitive pricing. Please confirm the 10-day delivery for the order and include a penalty clause for any delays given the tight project schedule. Also, clarify if the 1-year warranty covers full replacement or parts only.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_d",
+          "seller_name": "Vendor D (BudgetGPU Direct)",
+          "speaker": "seller",
+          "message": "The RTX 3050 is offered at our lowest market price of \u20ac210. Delivery is confirmed at 10 days. Our standard terms do not include penalty clauses for delays. The 1-year warranty covers parts and labor for manufacturing defects.",
+          "round": 1,
+          "pioneer_labels": [
+            "price_concession",
+            "delivery_condition",
+            "warranty_risk"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 210,
+            "delivery_days": 10
+          }
+        },
+        {
+          "seller_id": "vendor_b",
+          "seller_name": "Vendor B (Workstation Parts GmbH)",
+          "speaker": "buyer",
+          "message": "Your RTX 3060 Compact at \u20ac310 is within our budget. Please confirm the 3-day delivery timeline and current stock availability for a firm order. Also, clarify if the 1-year warranty covers full replacement or parts only. We're open to discussing value-adds given the favorable pricing.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_b",
+          "seller_name": "Vendor B (Workstation Parts GmbH)",
+          "speaker": "seller",
+          "message": "We can confirm the RTX 3060 Compact is currently in stock and the 3-day delivery timeline holds for your firm order. The 1-year warranty covers full replacement for manufacturing defects. We appreciate you finding our pricing favorable and are certainly open to discussing potential value-adds to best meet your needs.",
+          "round": 1,
+          "pioneer_labels": [
+            "delivery_condition",
+            "warranty_risk"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 3
+          }
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "speaker": "buyer",
+          "message": "Regarding your RTX 4060 offer, the \u20ac400 price is \u20ac50 over our \u20ac350 budget. Can you offer a discount or value-added extras to bridge this gap? Please confirm the 2-day delivery timeframe and clarify if the 1-year warranty covers full replacement. Finally, confirm current stock availability for an immediate order.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "speaker": "seller",
+          "message": "We note your \u20ac350 budget for the RTX 4060 at \u20ac400. We confirm 2-day delivery and that the 1-year warranty applies. This model is currently in stock for immediate orders. We are open to finding a solution that fits your requirements.",
+          "round": 1,
+          "pioneer_labels": [
+            "price_concession",
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 350,
+            "delivery_days": 2
+          }
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "speaker": "buyer",
+          "message": "Your GPU meets our 230mm length and 160W power needs, and the 2-day delivery and 1-year warranty are acceptable. However, the \u20ac400 price is \u20ac50 over our \u20ac350 budget. Can you offer a price reduction or include a valuable extra to bridge this gap, and confirm full warranty coverage and immediate stock availability?",
+          "round": 2,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "speaker": "seller",
+          "message": "We understand your concerns regarding price and delivery. For the RTX 4060, we can offer a revised price of \u20ac380, complete with our rapid 1-day delivery. This represents our best and final offer, ensuring you receive premium performance with unparalleled speed.",
+          "round": 2,
+          "pioneer_labels": [
+            "price_concession",
+            "delivery_condition",
+            "final_offer"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 380,
+            "delivery_days": 1
+          }
+        }
+      ],
+      "pioneer_labels": [
+        {
+          "message": "The RTX 3050 is offered at our lowest market price of \u20ac210. Delivery is confirmed at 10 days. Our standard terms do not include penalty clauses for delays. The 1-year warranty covers parts and labor for manufacturing defects.",
+          "labels": [
+            "price_concession",
+            "delivery_condition",
+            "warranty_risk"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 210,
+            "delivery_days": 10
+          }
+        },
+        {
+          "message": "We can confirm the RTX 3060 Compact is currently in stock and the 3-day delivery timeline holds for your firm order. The 1-year warranty covers full replacement for manufacturing defects. We appreciate you finding our pricing favorable and are certainly open to discussing potential value-adds to best meet your needs.",
+          "labels": [
+            "delivery_condition",
+            "warranty_risk"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 3
+          }
+        },
+        {
+          "message": "We note your \u20ac350 budget for the RTX 4060 at \u20ac400. We confirm 2-day delivery and that the 1-year warranty applies. This model is currently in stock for immediate orders. We are open to finding a solution that fits your requirements.",
+          "labels": [
+            "price_concession",
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 350,
+            "delivery_days": 2
+          }
+        },
+        {
+          "message": "We understand your concerns regarding price and delivery. For the RTX 4060, we can offer a revised price of \u20ac380, complete with our rapid 1-day delivery. This represents our best and final offer, ensuring you receive premium performance with unparalleled speed.",
+          "labels": [
+            "price_concession",
+            "delivery_condition",
+            "final_offer"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "price_eur": 380,
+            "delivery_days": 1
+          }
+        }
+      ],
+      "validation_results": [
+        {
+          "seller_id": "vendor_d",
+          "status": "passed",
+          "failed_constraints": [],
+          "score": 81,
+          "next_action": "recommend",
+          "seller_name": "Vendor D (BudgetGPU Direct)",
+          "product": "RTX 3050",
+          "length_mm": 200,
+          "power_watts": 130,
+          "price_eur": 210,
+          "delivery_days": 10,
+          "warranty_years": 1
+        },
+        {
+          "seller_id": "vendor_b",
+          "status": "passed",
+          "failed_constraints": [],
+          "score": 84,
+          "next_action": "recommend",
+          "seller_name": "Vendor B (Workstation Parts GmbH)",
+          "product": "RTX 3060 Compact",
+          "length_mm": 210,
+          "power_watts": 130,
+          "price_eur": 310,
+          "delivery_days": 3,
+          "warranty_years": 1
+        },
+        {
+          "seller_id": "vendor_c",
+          "status": "rejected",
+          "failed_constraints": [
+            "Price \u20ac380.0 exceeds \u20ac350.0 budget"
+          ],
+          "score": 75,
+          "next_action": "Ask seller for a compatible alternative",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "product": "RTX 4060",
+          "length_mm": 230,
+          "power_watts": 160,
+          "price_eur": 380.0,
+          "delivery_days": 1,
+          "warranty_years": 1
+        }
+      ],
+      "tavily_enrichment": {
+        "triggered": false,
+        "reason": "",
+        "results": []
+      },
+      "escalation_result": {
+        "escalate": true,
+        "trigger": "competing_offers",
+        "reason": "Final approval required before completing procurement.",
+        "question_for_human": "The recommended offer scored 84/100 (\u20ac310, 3-day delivery). Do you approve this procurement recommendation?"
+      },
+      "audit_summary": "3 suppliers were contacted.\n\nVendor D (BudgetGPU Direct) offered RTX 3050 at \u20ac210 with 10-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\nVendor B (Workstation Parts GmbH) offered RTX 3060 Compact at \u20ac310 with 3-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\nVendor C (RapidShip Components) offered RTX 4060 at \u20ac380.0 with 1-day delivery and 1-year warranty. Rejected: Price \u20ac380.0 exceeds \u20ac350.0 budget.\n\nRecommended supplier: Vendor B (Workstation Parts GmbH) \u2014 RTX 3060 Compact at \u20ac310, 3-day delivery.\nReason: Best balance of compatibility, price, delivery, warranty, and risk.\n\nHuman approval required: The recommended offer scored 84/100 (\u20ac310, 3-day delivery). Do you approve this procurement recommendation?",
+      "final_recommendation": {
+        "recommended_seller": "Vendor B (Workstation Parts GmbH)",
+        "recommended_product": "RTX 3060 Compact",
+        "price_eur": 310,
+        "delivery_days": 3,
+        "warranty_years": 1,
+        "technical_status": "passed",
+        "risk_level": "low",
+        "reason": "Best balance of compatibility, price, delivery, and warranty.",
+        "human_approval_required": true,
+        "human_decision": null
+      },
+      "deal_card_path": "C:\\Users\\taimo\\Desktop\\Hackathons\\tech_europe_munich1\\TechEU_Munich_2026\\integrations\\../assets/fal_deal_card.png",
+      "demo_mode": false
+    }
+  }
+]

@@ -128,11 +128,43 @@ export interface FinalRecommendation {
   risk_level: RiskLevel;
   reason: string;
   human_approval_required: boolean;
+  human_decision?: "approve" | "reject" | "adjust" | null;
+}
+
+export interface ProductCluster {
+  cluster_id: string;
+  products: SellerProduct[];
+  similarity_score: number;
+  representative_specs: Record<string, number>;
+}
+
+export interface JudgedCandidate {
+  cluster_id: string;
+  seller_id: string;
+  product: string;
+  verdict: "good" | "borderline" | "bad";
+  reason: string;
+  score: number;
+}
+
+export interface SellerProduct {
+  id?: string;
+  seller_id: string;
+  seller_name: string;
+  product: string;
+  length_mm: number;
+  power_watts: number;
+  price_eur: number;
+  delivery_days: number;
+  warranty_years: number;
+  availability: string;
 }
 
 export interface DemoResult {
   request: BuyerRequest;
   structured_requirements: StructuredRequirements;
+  clusters: ProductCluster[];
+  judged_candidates: JudgedCandidate[];
   matched_suppliers: MatchedSupplier[];
   conversation_logs: ConversationLog[];
   validation_results: ValidationResult[];
@@ -142,4 +174,48 @@ export interface DemoResult {
   final_recommendation: FinalRecommendation;
   deal_card_path: string;
   demo_mode: boolean;
+  session_id?: string;
+}
+
+// Phase 3 — streaming + inline human-in-the-loop ------------------------
+
+export type StreamEventType =
+  | "requirements"
+  | "cluster"
+  | "match"
+  | "negotiation_turn"
+  | "validation"
+  | "human_alert"
+  | "escalation"
+  | "recommendation"
+  | "audit"
+  | "done"
+  | "error";
+
+export interface StreamEvent<T = unknown> {
+  type: StreamEventType;
+  stage: string;
+  data: T;
+  ts: number;
+  session_id: string | null;
+}
+
+export interface HumanAlertData {
+  session_id: string;
+  question: string;
+  trigger: string;
+  best_offer: {
+    seller_name?: string;
+    product?: string;
+    price_eur?: number;
+    delivery_days?: number;
+  } | null;
+  budget_eur: number;
+}
+
+export type HumanResponseDecision = "approve" | "reject" | "adjust";
+
+export interface HumanResponse {
+  decision: HumanResponseDecision;
+  adjustedBudgetEur?: number;
 }

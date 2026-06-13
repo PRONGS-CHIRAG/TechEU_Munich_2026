@@ -1,0 +1,1082 @@
+[
+  {
+    "type": "requirements",
+    "stage": "requirements",
+    "data": {
+      "product_type": "GPU",
+      "use_case": "ML training",
+      "max_length_mm": 340,
+      "max_power_watts": 350,
+      "budget_eur": 1800.0,
+      "max_delivery_days": 14,
+      "warranty_required": true,
+      "minimum_warranty_years": 1.0
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_1",
+        "products": [
+          {
+            "id": "vendor_a-rtx3090",
+            "seller_id": "vendor_a",
+            "seller_name": "Vendor A (CompuTech Distribution)",
+            "product": "RTX 3090",
+            "length_mm": 313,
+            "power_watts": 350,
+            "price_eur": 900,
+            "delivery_days": 10,
+            "warranty_years": 1,
+            "availability": "limited_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 900.0,
+          "avg_delivery_days": 10.0,
+          "avg_length_mm": 313.0,
+          "avg_power_watts": 350.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_1",
+        "seller_id": "vendor_a",
+        "product": "RTX 3090",
+        "verdict": "good",
+        "reason": "This candidate is an excellent match, meeting all buyer requirements. The GPU length (313mm) is well within the 340mm maximum, and power consumption (350W) meets the 350W limit. Crucially, the price of 900 EUR is significantly under the 1800 EUR budget, and delivery in 10 days is faster than the 14-day maximum, with the 1-year warranty also meeting the minimum.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_2",
+        "products": [
+          {
+            "id": "vendor_e-rtx4080",
+            "seller_id": "vendor_e",
+            "seller_name": "Vendor E (Enterprise Compute Solutions)",
+            "product": "RTX 4080",
+            "length_mm": 310,
+            "power_watts": 320,
+            "price_eur": 750,
+            "delivery_days": 12,
+            "warranty_years": 3,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_e-rtx4070tisuper",
+            "seller_id": "vendor_e",
+            "seller_name": "Vendor E (Enterprise Compute Solutions)",
+            "product": "RTX 4070 Ti Super",
+            "length_mm": 295,
+            "power_watts": 285,
+            "price_eur": 740,
+            "delivery_days": 10,
+            "warranty_years": 3,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.91,
+        "representative_specs": {
+          "avg_price_eur": 745.0,
+          "avg_delivery_days": 11.0,
+          "avg_length_mm": 302.5,
+          "avg_power_watts": 302.5,
+          "avg_warranty_years": 3.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_2",
+        "seller_id": "vendor_e",
+        "product": "RTX 4080",
+        "verdict": "good",
+        "reason": "This candidate is an excellent fit, meeting or exceeding all buyer requirements. Its length (310mm) and power (320W) are well within the specified limits, and delivery (12 days) is faster than the 14-day maximum. Crucially, the 750 EUR price is significantly under the 1800 EUR budget, and the 3-year warranty far exceeds the 1-year minimum.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_3",
+        "products": [
+          {
+            "id": "vendor_a-rtx4070ti",
+            "seller_id": "vendor_a",
+            "seller_name": "Vendor A (CompuTech Distribution)",
+            "product": "RTX 4070 Ti",
+            "length_mm": 285,
+            "power_watts": 285,
+            "price_eur": 620,
+            "delivery_days": 6,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_c-rtx4080super",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4080 Super",
+            "length_mm": 310,
+            "power_watts": 300,
+            "price_eur": 780,
+            "delivery_days": 3,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_c-rtx4070ti",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4070 Ti",
+            "length_mm": 290,
+            "power_watts": 280,
+            "price_eur": 690,
+            "delivery_days": 3,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.84,
+        "representative_specs": {
+          "avg_price_eur": 696.67,
+          "avg_delivery_days": 4.0,
+          "avg_length_mm": 295.0,
+          "avg_power_watts": 288.3,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_3",
+        "seller_id": "vendor_a",
+        "product": "RTX 4070 Ti",
+        "verdict": "good",
+        "reason": "This candidate is an excellent match, meeting all buyer requirements. It is well within the budget at 620 EUR (1180 EUR under the limit) and offers quick delivery in 6 days (8 days ahead of schedule). All physical and power constraints are also comfortably met, and the 1-year warranty matches the minimum requirement.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_4",
+        "products": [
+          {
+            "id": "vendor_a-rtx4080",
+            "seller_id": "vendor_a",
+            "seller_name": "Vendor A (CompuTech Distribution)",
+            "product": "RTX 4080",
+            "length_mm": 320,
+            "power_watts": 320,
+            "price_eur": 700,
+            "delivery_days": 5,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_b-rtx4070tisuperitx",
+            "seller_id": "vendor_b",
+            "seller_name": "Vendor B (Workstation Parts GmbH)",
+            "product": "RTX 4070 Ti Super ITX",
+            "length_mm": 280,
+            "power_watts": 250,
+            "price_eur": 730,
+            "delivery_days": 6,
+            "warranty_years": 2,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.88,
+        "representative_specs": {
+          "avg_price_eur": 715.0,
+          "avg_delivery_days": 5.5,
+          "avg_length_mm": 300.0,
+          "avg_power_watts": 285.0,
+          "avg_warranty_years": 2.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_4",
+        "seller_id": "vendor_a",
+        "product": "RTX 4080",
+        "verdict": "good",
+        "reason": "This candidate is an excellent match for the buyer's requirements. Its length (320mm) and power consumption (320W) are well within the specified maximums of 340mm and 350W, respectively. The price of 700 EUR is significantly under the 1800 EUR budget, delivery is fast at 5 days (well within the 14-day limit), and the 2-year warranty exceeds the 1-year minimum requirement.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_5",
+        "products": [
+          {
+            "id": "vendor_c-rtx4070",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4070",
+            "length_mm": 250,
+            "power_watts": 200,
+            "price_eur": 620,
+            "delivery_days": 2,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          },
+          {
+            "id": "vendor_c-rtx4060",
+            "seller_id": "vendor_c",
+            "seller_name": "Vendor C (RapidShip Components)",
+            "product": "RTX 4060",
+            "length_mm": 230,
+            "power_watts": 160,
+            "price_eur": 400,
+            "delivery_days": 2,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 0.91,
+        "representative_specs": {
+          "avg_price_eur": 510.0,
+          "avg_delivery_days": 2.0,
+          "avg_length_mm": 240.0,
+          "avg_power_watts": 180.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_5",
+        "seller_id": "vendor_c",
+        "product": "RTX 4070",
+        "verdict": "good",
+        "reason": "This candidate GPU meets all buyer requirements. It is significantly under budget by 1180 EUR, well within the maximum length (250mm vs 340mm) and power consumption (200W vs 350W) limits, and offers fast delivery in 2 days. The 1-year warranty also perfectly matches the minimum requirement.",
+        "score": 95
+      }
+    }
+  },
+  {
+    "type": "cluster",
+    "stage": "cluster",
+    "data": {
+      "cluster": {
+        "cluster_id": "cluster_6",
+        "products": [
+          {
+            "id": "vendor_d-rtx3050",
+            "seller_id": "vendor_d",
+            "seller_name": "Vendor D (BudgetGPU Direct)",
+            "product": "RTX 3050",
+            "length_mm": 200,
+            "power_watts": 130,
+            "price_eur": 210,
+            "delivery_days": 10,
+            "warranty_years": 1,
+            "availability": "in_stock",
+            "data": {},
+            "created_at": "2026-06-13T13:25:00.921045+00:00"
+          }
+        ],
+        "similarity_score": 1.0,
+        "representative_specs": {
+          "avg_price_eur": 210.0,
+          "avg_delivery_days": 10.0,
+          "avg_length_mm": 200.0,
+          "avg_power_watts": 130.0,
+          "avg_warranty_years": 1.0
+        }
+      },
+      "judged_candidate": {
+        "cluster_id": "cluster_6",
+        "seller_id": "vendor_d",
+        "product": "RTX 3050",
+        "verdict": "good",
+        "reason": "This candidate is an excellent match, meeting all specified requirements. It is well within the maximum length (200mm vs 340mm) and power limits (130W vs 350W), and delivery is timely at 10 days. Crucially, the price of 210 EUR is significantly under the 1800 EUR budget, offering a substantial saving of 1590 EUR, and the 1-year warranty meets the minimum requirement.",
+        "score": 92
+      }
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_a",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "match_score": 0.95,
+      "reason": "This candidate is an excellent match, meeting all buyer requirements. The GPU length (313mm) is well within the 340mm maximum, and power consumption (350W) meets the 350W limit. Crucially, the price of 900 EUR is significantly under the 1800 EUR budget, and delivery in 10 days is faster than the 14-day maximum, with the 1-year warranty also meeting the minimum.",
+      "specialization": "high-performance GPUs",
+      "region": "Germany",
+      "reliability_score": 0.74,
+      "negotiation_style": "aggressive"
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_e",
+      "seller_name": "Vendor E (Enterprise Compute Solutions)",
+      "match_score": 0.95,
+      "reason": "This candidate is an excellent fit, meeting or exceeding all buyer requirements. Its length (310mm) and power (320W) are well within the specified limits, and delivery (12 days) is faster than the 14-day maximum. Crucially, the 750 EUR price is significantly under the 1800 EUR budget, and the 3-year warranty far exceeds the 1-year minimum.",
+      "specialization": "enterprise AI hardware",
+      "region": "Switzerland",
+      "reliability_score": 0.93,
+      "negotiation_style": "formal"
+    }
+  },
+  {
+    "type": "match",
+    "stage": "match",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "match_score": 0.95,
+      "reason": "This candidate GPU meets all buyer requirements. It is significantly under budget by 1180 EUR, well within the maximum length (250mm vs 340mm) and power consumption (200W vs 350W) limits, and offers fast delivery in 2 days. The 1-year warranty also perfectly matches the minimum requirement.",
+      "specialization": "fast logistics electronics",
+      "region": "Netherlands",
+      "reliability_score": 0.81,
+      "negotiation_style": "flexible"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_a",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "speaker": "buyer",
+      "message": "Regarding your RTX 3090 offer at \u20ac900, please confirm current stock levels to guarantee the 10-day delivery timeline. We also need clarification on whether the 1-year warranty provides full replacement coverage. As the price is well within our \u20ac1800 budget, we are interested in discussing potential value-added services or extended support options.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_a",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "speaker": "seller",
+      "message": "The RTX 3090 is in limited stock, but we guarantee the 10-day delivery timeline for prompt orders. The included 1-year warranty is standard. Given the high demand for these powerful GPUs, we advise immediate commitment to secure your unit before discussing any additional options.",
+      "round": 1,
+      "pioneer_labels": [
+        "delivery_condition",
+        "warranty_risk",
+        "technical_info"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "delivery_days": 10
+      }
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_e",
+      "seller_name": "Vendor E (Enterprise Compute Solutions)",
+      "speaker": "buyer",
+      "message": "Regarding your RTX 4080 offer at \u20ac750, we appreciate the competitive pricing which is well within our budget. To finalize, please confirm the 12-day delivery timeline and current stock availability for immediate order. Additionally, clarify if the 3-year warranty covers full replacement or parts only.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_e",
+      "seller_name": "Vendor E (Enterprise Compute Solutions)",
+      "speaker": "seller",
+      "message": "We confirm the RTX 4080 is currently in stock, and the 12-day delivery timeline is accurate. The product is offered with our standard 3-year warranty. Specific terms of coverage are detailed in our formal warranty agreement.",
+      "round": 1,
+      "pioneer_labels": [
+        "delivery_condition",
+        "warranty_risk",
+        "technical_info"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "delivery_days": 12
+      }
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "speaker": "buyer",
+      "message": "Regarding your RTX 4070 offer at \u20ac620, please confirm that the 2-day delivery applies to the full order quantity and that the 1-year warranty covers full replacement. Given the ample budget room, we're open to discussing potential value-adds. Finally, confirm immediate stock availability to ensure this timeline.",
+      "round": 1,
+      "pioneer_labels": [],
+      "risk_level": "low"
+    }
+  },
+  {
+    "type": "negotiation_turn",
+    "stage": "negotiation",
+    "data": {
+      "seller_id": "vendor_c",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "speaker": "seller",
+      "message": "We confirm immediate stock of the RTX 4070, and the 2-day delivery timeline applies to your full order. Our 1-year warranty covers full replacement. We appreciate your openness to discussing value-adds and are ready to explore options that best suit your requirements.",
+      "round": 1,
+      "pioneer_labels": [
+        "delivery_condition",
+        "warranty_risk",
+        "technical_info"
+      ],
+      "risk_level": "medium",
+      "extracted_fields": {
+        "delivery_days": 2
+      }
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_a",
+      "status": "passed",
+      "failed_constraints": [],
+      "score": 85,
+      "next_action": "recommend",
+      "seller_name": "Vendor A (CompuTech Distribution)",
+      "product": "RTX 3090",
+      "length_mm": 313,
+      "power_watts": 350,
+      "price_eur": 900,
+      "delivery_days": 10,
+      "warranty_years": 1
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_e",
+      "status": "passed",
+      "failed_constraints": [],
+      "score": 85,
+      "next_action": "recommend",
+      "seller_name": "Vendor E (Enterprise Compute Solutions)",
+      "product": "RTX 4080",
+      "length_mm": 310,
+      "power_watts": 320,
+      "price_eur": 750,
+      "delivery_days": 12,
+      "warranty_years": 3
+    }
+  },
+  {
+    "type": "validation",
+    "stage": "validation",
+    "data": {
+      "seller_id": "vendor_c",
+      "status": "passed",
+      "failed_constraints": [],
+      "score": 93,
+      "next_action": "recommend",
+      "seller_name": "Vendor C (RapidShip Components)",
+      "product": "RTX 4070",
+      "length_mm": 250,
+      "power_watts": 200,
+      "price_eur": 620,
+      "delivery_days": 2,
+      "warranty_years": 1
+    }
+  },
+  {
+    "type": "escalation",
+    "stage": "escalation",
+    "data": {
+      "escalate": true,
+      "trigger": "approval_required",
+      "reason": "Final approval required before completing procurement.",
+      "question_for_human": "The recommended offer scored 93/100 (\u20ac620, 2-day delivery). Do you approve this procurement recommendation?"
+    }
+  },
+  {
+    "type": "recommendation",
+    "stage": "recommendation",
+    "data": {
+      "recommended_seller": "Vendor C (RapidShip Components)",
+      "recommended_product": "RTX 4070",
+      "price_eur": 620,
+      "delivery_days": 2,
+      "warranty_years": 1,
+      "technical_status": "passed",
+      "risk_level": "low",
+      "reason": "Best balance of compatibility, price, delivery, and warranty.",
+      "human_approval_required": true,
+      "human_decision": null
+    }
+  },
+  {
+    "type": "audit",
+    "stage": "audit",
+    "data": "3 suppliers were contacted.\n\nVendor A (CompuTech Distribution) offered RTX 3090 at \u20ac900 with 10-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\nVendor E (Enterprise Compute Solutions) offered RTX 4080 at \u20ac750 with 12-day delivery and 3-year warranty. This offer passed all technical checks and stayed within budget.\nVendor C (RapidShip Components) offered RTX 4070 at \u20ac620 with 2-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\n\nRecommended supplier: Vendor C (RapidShip Components) \u2014 RTX 4070 at \u20ac620, 2-day delivery.\nReason: Best balance of compatibility, price, delivery, warranty, and risk.\n\nHuman approval required: The recommended offer scored 93/100 (\u20ac620, 2-day delivery). Do you approve this procurement recommendation?"
+  },
+  {
+    "type": "done",
+    "stage": "done",
+    "data": {
+      "request": {
+        "request_id": "REQ-002",
+        "raw_request": "We're setting up a small training rig for fine-tuning open-source models. We need a high-VRAM GPU, our case supports up to 340mm, the power supply can handle up to 350W, budget is around \u00e2\u201a\u00ac1800, and we need it within 2 weeks. Enterprise-grade warranty preferred.",
+        "region": "Germany",
+        "priority": "performance",
+        "_interactive": false
+      },
+      "structured_requirements": {
+        "product_type": "GPU",
+        "use_case": "ML training",
+        "max_length_mm": 340,
+        "max_power_watts": 350,
+        "budget_eur": 1800.0,
+        "max_delivery_days": 14,
+        "warranty_required": true,
+        "minimum_warranty_years": 1.0
+      },
+      "clusters": [
+        {
+          "cluster_id": "cluster_1",
+          "products": [
+            {
+              "id": "vendor_a-rtx3090",
+              "seller_id": "vendor_a",
+              "seller_name": "Vendor A (CompuTech Distribution)",
+              "product": "RTX 3090",
+              "length_mm": 313,
+              "power_watts": 350,
+              "price_eur": 900,
+              "delivery_days": 10,
+              "warranty_years": 1,
+              "availability": "limited_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 900.0,
+            "avg_delivery_days": 10.0,
+            "avg_length_mm": 313.0,
+            "avg_power_watts": 350.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_2",
+          "products": [
+            {
+              "id": "vendor_e-rtx4080",
+              "seller_id": "vendor_e",
+              "seller_name": "Vendor E (Enterprise Compute Solutions)",
+              "product": "RTX 4080",
+              "length_mm": 310,
+              "power_watts": 320,
+              "price_eur": 750,
+              "delivery_days": 12,
+              "warranty_years": 3,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_e-rtx4070tisuper",
+              "seller_id": "vendor_e",
+              "seller_name": "Vendor E (Enterprise Compute Solutions)",
+              "product": "RTX 4070 Ti Super",
+              "length_mm": 295,
+              "power_watts": 285,
+              "price_eur": 740,
+              "delivery_days": 10,
+              "warranty_years": 3,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.91,
+          "representative_specs": {
+            "avg_price_eur": 745.0,
+            "avg_delivery_days": 11.0,
+            "avg_length_mm": 302.5,
+            "avg_power_watts": 302.5,
+            "avg_warranty_years": 3.0
+          }
+        },
+        {
+          "cluster_id": "cluster_3",
+          "products": [
+            {
+              "id": "vendor_a-rtx4070ti",
+              "seller_id": "vendor_a",
+              "seller_name": "Vendor A (CompuTech Distribution)",
+              "product": "RTX 4070 Ti",
+              "length_mm": 285,
+              "power_watts": 285,
+              "price_eur": 620,
+              "delivery_days": 6,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_c-rtx4080super",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4080 Super",
+              "length_mm": 310,
+              "power_watts": 300,
+              "price_eur": 780,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_c-rtx4070ti",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4070 Ti",
+              "length_mm": 290,
+              "power_watts": 280,
+              "price_eur": 690,
+              "delivery_days": 3,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.84,
+          "representative_specs": {
+            "avg_price_eur": 696.67,
+            "avg_delivery_days": 4.0,
+            "avg_length_mm": 295.0,
+            "avg_power_watts": 288.3,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_4",
+          "products": [
+            {
+              "id": "vendor_a-rtx4080",
+              "seller_id": "vendor_a",
+              "seller_name": "Vendor A (CompuTech Distribution)",
+              "product": "RTX 4080",
+              "length_mm": 320,
+              "power_watts": 320,
+              "price_eur": 700,
+              "delivery_days": 5,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_b-rtx4070tisuperitx",
+              "seller_id": "vendor_b",
+              "seller_name": "Vendor B (Workstation Parts GmbH)",
+              "product": "RTX 4070 Ti Super ITX",
+              "length_mm": 280,
+              "power_watts": 250,
+              "price_eur": 730,
+              "delivery_days": 6,
+              "warranty_years": 2,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.88,
+          "representative_specs": {
+            "avg_price_eur": 715.0,
+            "avg_delivery_days": 5.5,
+            "avg_length_mm": 300.0,
+            "avg_power_watts": 285.0,
+            "avg_warranty_years": 2.0
+          }
+        },
+        {
+          "cluster_id": "cluster_5",
+          "products": [
+            {
+              "id": "vendor_c-rtx4070",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4070",
+              "length_mm": 250,
+              "power_watts": 200,
+              "price_eur": 620,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            },
+            {
+              "id": "vendor_c-rtx4060",
+              "seller_id": "vendor_c",
+              "seller_name": "Vendor C (RapidShip Components)",
+              "product": "RTX 4060",
+              "length_mm": 230,
+              "power_watts": 160,
+              "price_eur": 400,
+              "delivery_days": 2,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 0.91,
+          "representative_specs": {
+            "avg_price_eur": 510.0,
+            "avg_delivery_days": 2.0,
+            "avg_length_mm": 240.0,
+            "avg_power_watts": 180.0,
+            "avg_warranty_years": 1.0
+          }
+        },
+        {
+          "cluster_id": "cluster_6",
+          "products": [
+            {
+              "id": "vendor_d-rtx3050",
+              "seller_id": "vendor_d",
+              "seller_name": "Vendor D (BudgetGPU Direct)",
+              "product": "RTX 3050",
+              "length_mm": 200,
+              "power_watts": 130,
+              "price_eur": 210,
+              "delivery_days": 10,
+              "warranty_years": 1,
+              "availability": "in_stock",
+              "data": {},
+              "created_at": "2026-06-13T13:25:00.921045+00:00"
+            }
+          ],
+          "similarity_score": 1.0,
+          "representative_specs": {
+            "avg_price_eur": 210.0,
+            "avg_delivery_days": 10.0,
+            "avg_length_mm": 200.0,
+            "avg_power_watts": 130.0,
+            "avg_warranty_years": 1.0
+          }
+        }
+      ],
+      "judged_candidates": [
+        {
+          "cluster_id": "cluster_1",
+          "seller_id": "vendor_a",
+          "product": "RTX 3090",
+          "verdict": "good",
+          "reason": "This candidate is an excellent match, meeting all buyer requirements. The GPU length (313mm) is well within the 340mm maximum, and power consumption (350W) meets the 350W limit. Crucially, the price of 900 EUR is significantly under the 1800 EUR budget, and delivery in 10 days is faster than the 14-day maximum, with the 1-year warranty also meeting the minimum.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_2",
+          "seller_id": "vendor_e",
+          "product": "RTX 4080",
+          "verdict": "good",
+          "reason": "This candidate is an excellent fit, meeting or exceeding all buyer requirements. Its length (310mm) and power (320W) are well within the specified limits, and delivery (12 days) is faster than the 14-day maximum. Crucially, the 750 EUR price is significantly under the 1800 EUR budget, and the 3-year warranty far exceeds the 1-year minimum.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_3",
+          "seller_id": "vendor_a",
+          "product": "RTX 4070 Ti",
+          "verdict": "good",
+          "reason": "This candidate is an excellent match, meeting all buyer requirements. It is well within the budget at 620 EUR (1180 EUR under the limit) and offers quick delivery in 6 days (8 days ahead of schedule). All physical and power constraints are also comfortably met, and the 1-year warranty matches the minimum requirement.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_4",
+          "seller_id": "vendor_a",
+          "product": "RTX 4080",
+          "verdict": "good",
+          "reason": "This candidate is an excellent match for the buyer's requirements. Its length (320mm) and power consumption (320W) are well within the specified maximums of 340mm and 350W, respectively. The price of 700 EUR is significantly under the 1800 EUR budget, delivery is fast at 5 days (well within the 14-day limit), and the 2-year warranty exceeds the 1-year minimum requirement.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_5",
+          "seller_id": "vendor_c",
+          "product": "RTX 4070",
+          "verdict": "good",
+          "reason": "This candidate GPU meets all buyer requirements. It is significantly under budget by 1180 EUR, well within the maximum length (250mm vs 340mm) and power consumption (200W vs 350W) limits, and offers fast delivery in 2 days. The 1-year warranty also perfectly matches the minimum requirement.",
+          "score": 95
+        },
+        {
+          "cluster_id": "cluster_6",
+          "seller_id": "vendor_d",
+          "product": "RTX 3050",
+          "verdict": "good",
+          "reason": "This candidate is an excellent match, meeting all specified requirements. It is well within the maximum length (200mm vs 340mm) and power limits (130W vs 350W), and delivery is timely at 10 days. Crucially, the price of 210 EUR is significantly under the 1800 EUR budget, offering a substantial saving of 1590 EUR, and the 1-year warranty meets the minimum requirement.",
+          "score": 92
+        }
+      ],
+      "matched_suppliers": [
+        {
+          "seller_id": "vendor_a",
+          "seller_name": "Vendor A (CompuTech Distribution)",
+          "match_score": 0.95,
+          "reason": "This candidate is an excellent match, meeting all buyer requirements. The GPU length (313mm) is well within the 340mm maximum, and power consumption (350W) meets the 350W limit. Crucially, the price of 900 EUR is significantly under the 1800 EUR budget, and delivery in 10 days is faster than the 14-day maximum, with the 1-year warranty also meeting the minimum.",
+          "specialization": "high-performance GPUs",
+          "region": "Germany",
+          "reliability_score": 0.74,
+          "negotiation_style": "aggressive"
+        },
+        {
+          "seller_id": "vendor_e",
+          "seller_name": "Vendor E (Enterprise Compute Solutions)",
+          "match_score": 0.95,
+          "reason": "This candidate is an excellent fit, meeting or exceeding all buyer requirements. Its length (310mm) and power (320W) are well within the specified limits, and delivery (12 days) is faster than the 14-day maximum. Crucially, the 750 EUR price is significantly under the 1800 EUR budget, and the 3-year warranty far exceeds the 1-year minimum.",
+          "specialization": "enterprise AI hardware",
+          "region": "Switzerland",
+          "reliability_score": 0.93,
+          "negotiation_style": "formal"
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "match_score": 0.95,
+          "reason": "This candidate GPU meets all buyer requirements. It is significantly under budget by 1180 EUR, well within the maximum length (250mm vs 340mm) and power consumption (200W vs 350W) limits, and offers fast delivery in 2 days. The 1-year warranty also perfectly matches the minimum requirement.",
+          "specialization": "fast logistics electronics",
+          "region": "Netherlands",
+          "reliability_score": 0.81,
+          "negotiation_style": "flexible"
+        }
+      ],
+      "conversation_logs": [
+        {
+          "seller_id": "vendor_a",
+          "seller_name": "Vendor A (CompuTech Distribution)",
+          "speaker": "buyer",
+          "message": "Regarding your RTX 3090 offer at \u20ac900, please confirm current stock levels to guarantee the 10-day delivery timeline. We also need clarification on whether the 1-year warranty provides full replacement coverage. As the price is well within our \u20ac1800 budget, we are interested in discussing potential value-added services or extended support options.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_a",
+          "seller_name": "Vendor A (CompuTech Distribution)",
+          "speaker": "seller",
+          "message": "The RTX 3090 is in limited stock, but we guarantee the 10-day delivery timeline for prompt orders. The included 1-year warranty is standard. Given the high demand for these powerful GPUs, we advise immediate commitment to secure your unit before discussing any additional options.",
+          "round": 1,
+          "pioneer_labels": [
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 10
+          }
+        },
+        {
+          "seller_id": "vendor_e",
+          "seller_name": "Vendor E (Enterprise Compute Solutions)",
+          "speaker": "buyer",
+          "message": "Regarding your RTX 4080 offer at \u20ac750, we appreciate the competitive pricing which is well within our budget. To finalize, please confirm the 12-day delivery timeline and current stock availability for immediate order. Additionally, clarify if the 3-year warranty covers full replacement or parts only.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_e",
+          "seller_name": "Vendor E (Enterprise Compute Solutions)",
+          "speaker": "seller",
+          "message": "We confirm the RTX 4080 is currently in stock, and the 12-day delivery timeline is accurate. The product is offered with our standard 3-year warranty. Specific terms of coverage are detailed in our formal warranty agreement.",
+          "round": 1,
+          "pioneer_labels": [
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 12
+          }
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "speaker": "buyer",
+          "message": "Regarding your RTX 4070 offer at \u20ac620, please confirm that the 2-day delivery applies to the full order quantity and that the 1-year warranty covers full replacement. Given the ample budget room, we're open to discussing potential value-adds. Finally, confirm immediate stock availability to ensure this timeline.",
+          "round": 1,
+          "pioneer_labels": [],
+          "risk_level": "low"
+        },
+        {
+          "seller_id": "vendor_c",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "speaker": "seller",
+          "message": "We confirm immediate stock of the RTX 4070, and the 2-day delivery timeline applies to your full order. Our 1-year warranty covers full replacement. We appreciate your openness to discussing value-adds and are ready to explore options that best suit your requirements.",
+          "round": 1,
+          "pioneer_labels": [
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 2
+          }
+        }
+      ],
+      "pioneer_labels": [
+        {
+          "message": "The RTX 3090 is in limited stock, but we guarantee the 10-day delivery timeline for prompt orders. The included 1-year warranty is standard. Given the high demand for these powerful GPUs, we advise immediate commitment to secure your unit before discussing any additional options.",
+          "labels": [
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 10
+          }
+        },
+        {
+          "message": "We confirm the RTX 4080 is currently in stock, and the 12-day delivery timeline is accurate. The product is offered with our standard 3-year warranty. Specific terms of coverage are detailed in our formal warranty agreement.",
+          "labels": [
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 12
+          }
+        },
+        {
+          "message": "We confirm immediate stock of the RTX 4070, and the 2-day delivery timeline applies to your full order. Our 1-year warranty covers full replacement. We appreciate your openness to discussing value-adds and are ready to explore options that best suit your requirements.",
+          "labels": [
+            "delivery_condition",
+            "warranty_risk",
+            "technical_info"
+          ],
+          "risk_level": "medium",
+          "extracted_fields": {
+            "delivery_days": 2
+          }
+        }
+      ],
+      "validation_results": [
+        {
+          "seller_id": "vendor_a",
+          "status": "passed",
+          "failed_constraints": [],
+          "score": 85,
+          "next_action": "recommend",
+          "seller_name": "Vendor A (CompuTech Distribution)",
+          "product": "RTX 3090",
+          "length_mm": 313,
+          "power_watts": 350,
+          "price_eur": 900,
+          "delivery_days": 10,
+          "warranty_years": 1
+        },
+        {
+          "seller_id": "vendor_e",
+          "status": "passed",
+          "failed_constraints": [],
+          "score": 85,
+          "next_action": "recommend",
+          "seller_name": "Vendor E (Enterprise Compute Solutions)",
+          "product": "RTX 4080",
+          "length_mm": 310,
+          "power_watts": 320,
+          "price_eur": 750,
+          "delivery_days": 12,
+          "warranty_years": 3
+        },
+        {
+          "seller_id": "vendor_c",
+          "status": "passed",
+          "failed_constraints": [],
+          "score": 93,
+          "next_action": "recommend",
+          "seller_name": "Vendor C (RapidShip Components)",
+          "product": "RTX 4070",
+          "length_mm": 250,
+          "power_watts": 200,
+          "price_eur": 620,
+          "delivery_days": 2,
+          "warranty_years": 1
+        }
+      ],
+      "tavily_enrichment": {
+        "triggered": false,
+        "reason": "",
+        "results": []
+      },
+      "escalation_result": {
+        "escalate": true,
+        "trigger": "approval_required",
+        "reason": "Final approval required before completing procurement.",
+        "question_for_human": "The recommended offer scored 93/100 (\u20ac620, 2-day delivery). Do you approve this procurement recommendation?"
+      },
+      "audit_summary": "3 suppliers were contacted.\n\nVendor A (CompuTech Distribution) offered RTX 3090 at \u20ac900 with 10-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\nVendor E (Enterprise Compute Solutions) offered RTX 4080 at \u20ac750 with 12-day delivery and 3-year warranty. This offer passed all technical checks and stayed within budget.\nVendor C (RapidShip Components) offered RTX 4070 at \u20ac620 with 2-day delivery and 1-year warranty. This offer passed all technical checks and stayed within budget.\n\nRecommended supplier: Vendor C (RapidShip Components) \u2014 RTX 4070 at \u20ac620, 2-day delivery.\nReason: Best balance of compatibility, price, delivery, warranty, and risk.\n\nHuman approval required: The recommended offer scored 93/100 (\u20ac620, 2-day delivery). Do you approve this procurement recommendation?",
+      "final_recommendation": {
+        "recommended_seller": "Vendor C (RapidShip Components)",
+        "recommended_product": "RTX 4070",
+        "price_eur": 620,
+        "delivery_days": 2,
+        "warranty_years": 1,
+        "technical_status": "passed",
+        "risk_level": "low",
+        "reason": "Best balance of compatibility, price, delivery, and warranty.",
+        "human_approval_required": true,
+        "human_decision": null
+      },
+      "deal_card_path": "C:\\Users\\taimo\\Desktop\\Hackathons\\tech_europe_munich1\\TechEU_Munich_2026\\integrations\\../assets/fal_deal_card.png",
+      "demo_mode": false
+    }
+  }
+]
