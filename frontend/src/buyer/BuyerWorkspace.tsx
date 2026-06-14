@@ -566,6 +566,15 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
     (decision !== null || result?.escalation_result?.escalate === false);
   const heroPhase = useMemo(() => status.phase, [status.phase]);
 
+  // Auto-approve when only 1 supplier is left after rejecting others
+  useLayoutEffect(() => {
+    if (activeEscalations.size === 1 && decision === null && status.phase === "awaiting_approval") {
+      const remainingSellerId = Array.from(activeEscalations.keys())[0];
+      // Auto-approve the last remaining supplier
+      handleDecide(remainingSellerId, "approved").catch(() => {});
+    }
+  }, [activeEscalations.size, decision, status.phase, handleDecide]);
+
   return (
     <div className="min-h-screen bg-bg text-text-1">
       {/* ── STEP 1: REQUEST ──────────────────────────────────────────────── */}
