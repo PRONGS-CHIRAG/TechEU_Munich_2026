@@ -53,3 +53,23 @@ def test_supplier_matching_returns_category_relevant_sellers():
 
     assert suppliers
     assert suppliers[0]["seller_id"] == "vendor_f"
+
+
+def test_unknown_custom_product_does_not_fall_back_to_demo_categories():
+    products = get_all_products_flat()
+    requirements = {
+        "product_type": "industrial tablet",
+        "product_keywords": ["industrial", "tablet"],
+        "budget_eur": 900,
+        "max_delivery_days": 12,
+        "warranty_required": True,
+        "minimum_warranty_years": 1,
+        "extra_constraints": [],
+    }
+
+    clusters = cluster_products(requirements, products)
+    suppliers = match_suppliers(requirements)
+
+    assert clusters == []
+    assert suppliers == []
+    assert all(not product_matches_requirement(product, requirements) for product in products)

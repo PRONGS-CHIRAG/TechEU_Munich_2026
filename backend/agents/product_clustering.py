@@ -76,7 +76,9 @@ def cluster_products(requirements: dict, all_products: list[dict]) -> list[dict]
         product for product in all_products
         if product_matches_requirement(product, requirements)
     ]
-    all_products = category_products or all_products
+    if not category_products:
+        return []
+    all_products = category_products
 
     feature_keys, norms = _build_feature_config(all_products)
     if not feature_keys:

@@ -35,6 +35,7 @@ export interface ExtraConstraint {
 
 export interface StructuredRequirements {
   product_type: string;
+  product_keywords?: string[];
   use_case: string;
   budget_eur: number;
   max_delivery_days: number;

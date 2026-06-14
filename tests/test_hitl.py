@@ -7,7 +7,21 @@ from backend.hitl_sessions import (
     submit_response,
     wait_for_response,
 )
-from backend.orchestrator import run_demo_events
+from backend.orchestrator import _normalize_request, run_demo_events
+
+
+def test_custom_prompt_request_gets_generated_request_id():
+    request = _normalize_request(
+        {
+            "raw_request": "Need industrial tablets under €900 with rugged cases within 12 days.",
+            "region": "Germany",
+            "priority": "technical_fit",
+        }
+    )
+
+    assert request["request_id"].startswith("CUSTOM-")
+    assert request["raw_request"] == "Need industrial tablets under €900 with rugged cases within 12 days."
+    assert request["region"] == "Germany"
 
 
 def test_hitl_session_waits_for_submitted_response():

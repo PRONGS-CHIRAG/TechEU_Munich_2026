@@ -11,6 +11,7 @@ The buyer may be purchasing ANY type of product: hardware, furniture, sensors, s
 Return valid JSON matching this exact schema — no extra keys, no markdown fences:
 {
   "product_type": "<type of product being purchased, e.g. GPU, office chair, industrial sensor, server>",
+  "product_keywords": ["<lowercase buyer product noun or synonyms, e.g. gpu, graphics card>"],
   "use_case": "<inferred use case, e.g. AI workstation, ML training, office workspace, industrial monitoring>",
   "budget_eur": <number euros>,
   "max_delivery_days": <integer days>,
@@ -30,6 +31,9 @@ Return valid JSON matching this exact schema — no extra keys, no markdown fenc
 }
 
 Rules:
+- Preserve the buyer's requested product category. Do NOT remap an unknown product into GPU,
+  office chair, or industrial sensor just because those are common examples.
+- product_keywords must include the product words used by the buyer and obvious synonyms only.
 - Include max_length_mm ONLY when the buyer explicitly states a size/length constraint.
 - Include max_power_watts ONLY when the buyer explicitly states a power draw constraint.
 - Use extra_constraints for any other product-specific numeric constraint the buyer states

@@ -22,8 +22,10 @@ Use this file as the persistent working context for Claude Code in the **Pactum*
 The demo wins if a judge can clearly see:
 
 * A human enters a real procurement request and clicks one button.
+* The default live path starts from a **fully custom buyer prompt**, not only a saved scenario.
 * The agent feed runs **in real time, line by line** — LLM calls happen live and visibly.
 * The system extracts structured requirements via Gemini.
+* Arbitrary products stay anchored to the buyer's requested category via `product_type` + `product_keywords`.
 * Products are clustered by spec similarity across all seller inventories.
 * A Judging Agent evaluates each candidate and **explains in natural language** why something is good, borderline, or bad.
 * The Negotiation Agent generates **live, non-preset dialogue** with modular sub-agents (price, delivery, warranty, risk) constrained by guardrails.
@@ -40,10 +42,10 @@ Optimize for visible intelligence, real-time computation, and a working end-to-e
 
 ## 2. Architecture
 
-### Current architecture (what is live as of Phase 2)
+### Current architecture (what is live as of Phase 4)
 
 ```text
-Human Buyer
+Human Buyer (custom prompt first)
    ↓
 Next.js 15 Frontend (primary UI)  ←→  Streamlit (legacy UI, fallback)
    ↓
@@ -54,8 +56,10 @@ FastAPI backend/api.py
 backend/orchestrator.py  run_demo(request) → DemoResult
    ↓
 Procurement Intelligence Agent   ← extract_requirements() + validate_offer()
+  └─ preserves arbitrary product identity via product_keywords
    ↓
 Product Clustering (spec-similarity)   ← NEW: cluster_products()
+  └─ returns no internal candidates when inventory does not match requested product family
    ↓
 Supplier Matching Agent              ← BM25-style scoring from seller_registry
    ↓
@@ -96,6 +100,17 @@ Buyer request (Next.js form)
 → POST /api/human-response  (mid-flow resume)
 ```
 
+### Custom prompt flow (now default)
+
+```text
+Buyer types a custom prompt into RequestForm
+→ scenario selector remains optional for QA / replay
+→ request_id may be omitted
+→ orchestrator assigns CUSTOM-<id>
+→ unknown products do not fall through to GPU / chair / sensor inventory
+→ if no internal match exists, Tavily enrichment becomes the visible fallback
+```
+
 ### Replay/fallback data flow (DEMO_MODE=true)
 
 ```text
@@ -113,6 +128,7 @@ Buyer request
 
 * **Next.js 15** — primary UI for judges and the CTO.
 * Keep all primary frontend code in `frontend/`.
+* `RequestForm` defaults to an empty custom prompt. Saved scenarios are optional helpers, not the primary demo path.
 * Components: `AgentNetwork`, `ActivityFeed`, `NegotiationThreads`, `ValidationTable`, `EscalationBanner`, `FinalRecommendation`, `DealCard`, `TavilyCard`, `AuditSummary`, `RequestForm`, `SupplierGrid`, `StructuredRequirements`.
 * Three views: buyer-side (clean request + result), orchestration (all agent comms, default), seller-inventory (nested product data).
 * Show full orchestration to everyone — no complexity toggle.
@@ -133,6 +149,7 @@ Buyer request
   * `GET /api/config` — returns live/replay mode for the UI banner.
 * Keep orchestration in `backend/orchestrator.py`.
 * Keep agent logic in `backend/agents/`.
+* Allow custom prompt runs without `request_id`; the backend normalizes them to `CUSTOM-<id>`.
 
 ### LLM
 
@@ -143,6 +160,7 @@ Buyer request
   * Audit summary generation.
 * Use `google-genai` SDK. Read key from `LLM_API_KEY` with `LLM_PROVIDER=gemini`.
 * Timeout: 15–20s. Retry once. Fallback to templated/deterministic output.
+* Requirement extraction must preserve unknown buyer product categories instead of remapping them into demo inventory categories.
 * **Never let Gemini override deterministic validation** for length, power, price, delivery, or warranty.
 
 ### Data
@@ -151,6 +169,7 @@ Buyer request
 * **Delete all pre-written conversation/dialogue data** (see Section 11).
 * Seller inventory restructured to nested: `merchants[] → inventories[] → products[]`. Currently 34 products across 7 vendors.
 * Buyer blueprints replace old buyer_scenarios (strip `structured_requirements` — extracted live now). Includes REQ-001–005.
+* Blueprint scenarios are still useful for QA / replay, but the main judge-facing flow should begin from a custom prompt.
 
 ### ML / model layer
 
@@ -193,17 +212,16 @@ pactum/
 │
 ├── backend/
 │   ├── __init__.py           ✓
-│   ├── api.py                ✓ FastAPI — POST /run-demo, GET /scenarios, GET /inventory, GET /config, + streaming routes
-│   ├── orchestrator.py       ✓ run_demo() + run_demo_events(); streaming HITL pauses on human_alert
+│   ├── api.py                ✅ FastAPI routes + custom-prompt stream support (`request_id` optional, localhost:3001 allowed for local UI)
+│   ├── orchestrator.py       ✅ request normalization (`CUSTOM-*`) + no-internal-match behavior for arbitrary custom products
 │   ├── hitl_sessions.py      ✅ in-memory human response queues for streamed pause/resume (Phase 3)
-│   ├── schemas.py            ✓ all TypedDicts
+│   ├── schemas.py            ✅ `StructuredRequirements.product_keywords` added for arbitrary-product routing
 │   ├── data_access.py        ✓ Supabase + local JSON fallback
 │   └── agents/
 │       ├── __init__.py       ✓
-│       ├── procurement_intelligence.py  ✅ evaluate_constraints() added (Phase 2); validate_offer() + compute_value_score() unchanged
-│       │                                   extract_requirements() → Gemini live ✅ Phase 1
-│       ├── product_clustering.py        ✅ cluster_products() — category-safe, data-driven feature config, greedy euclidean
-│       ├── product_utils.py             ✅ product category filter for GPU/chair/sensor matching (Phase 3)
+│       ├── procurement_intelligence.py  ✅ Gemini extraction + regex fallback preserve arbitrary product names / keywords
+│       ├── product_clustering.py        ✅ category-safe clustering with no fallback to unrelated inventory categories
+│       ├── product_utils.py             ✅ strict category / keyword matching; unknown products only match on explicit name overlap
 │       ├── supplier_matching.py         ✅ category-safe supplier scoring from registry + inventory
 │       ├── judging_agent.py             ✅ judge_candidates() — Gemini per-candidate reasoning (Phase 2)
 │       ├── negotiation_agent.py         ✅ live Gemini dialogue; gated on good/borderline judgements + category-safe product selection
@@ -222,9 +240,9 @@ pactum/
 │   ├── __init__.py           ✓
 │   ├── gemini_client.py      ✅ generate(prompt, system, temperature, json_mode) → str (Phase 0)
 │   ├── pioneer_client.py     ✓ HTTP wrapper + fallback
-│   ├── tavily_client.py      ✓ TavilyClient wrapper + fallback
+│   ├── tavily_client.py      ✅ TavilyClient wrapper + product-aware fallback query
 │   ├── fal_client.py         ✓ fal_client wrapper + fallback
-│   ├── fallback_outputs.py   ✓ static fallbacks for Pioneer, Tavily, fal
+│   ├── fallback_outputs.py   ✅ static fallbacks for Pioneer, Tavily, fal; Tavily fallback reflects requested product
 │   └── email_hitl.py         NEW (stretch) Gemini AI Studio + Gmail loop
 │
 ├── frontend/                 ✓ Next.js 15 primary UI
@@ -234,13 +252,14 @@ pactum/
 │   │   │   ├── api.ts        ✅ runDemo(), getScenarios(), getInventory(), getConfig(), postHumanResponse()
 │   │   │   ├── stream.ts     ✅ EventSource client + completed flag + request_id support
 │   │   │   ├── demoMachine.ts ✓ stage/reveal machine (kept)
-│   │   │   ├── types.ts      ✅ ProductCluster, JudgedCandidate, extended DemoResult (Phase 1)
+│   │   │   ├── types.ts      ✅ ProductCluster, JudgedCandidate, extended DemoResult + `product_keywords`
 │   │   │   └── mockData.ts   ✓ kept for replay/fallback
 │   │   └── components/
 │   │       ├── sections/     ✓ all section components (no breaking changes to keys)
 │   │       │   └── SellerInventoryView.tsx ✅ nested generalized inventory view (Phase 3)
 │   │       ├── AgentNetwork.tsx  ✅ dynamic generalized labels + hoverable communication edges (Phase 3)
 │   │       └── ActivityFeed.tsx  ✅ inline human alert controls + gemini/clustering/judging feed types
+│   └── components/input/RequestForm.tsx ✅ empty custom prompt is the default starting state
 │   └── .env.local.example    NEW NEXT_PUBLIC_API_URL=http://localhost:8000
 │
 ├── data/
@@ -496,6 +515,7 @@ Note: `structured_requirements` is NOT in blueprints — it is extracted live by
 ```json
 {
   "product_type": "GPU",
+  "product_keywords": ["gpu", "graphics", "card"],
   "use_case": "AI workstation",
   "max_length_mm": 300,
   "max_power_watts": 250,
@@ -507,7 +527,7 @@ Note: `structured_requirements` is NOT in blueprints — it is extracted live by
 }
 ```
 
-Note: `max_length_mm` and `max_power_watts` are **presence-gated** — only populated when the buyer explicitly states a physical constraint. If absent, products are not failed on those fields. `extra_constraints` carries any additional product-specific constraints (e.g. material, ergonomic rating) as `ExtraConstraint` objects.
+Note: `max_length_mm` and `max_power_watts` are **presence-gated** — only populated when the buyer explicitly states a physical constraint. If absent, products are not failed on those fields. `extra_constraints` carries any additional product-specific constraints (e.g. material, ergonomic rating) as `ExtraConstraint` objects. `product_keywords` preserves the buyer's product words so unknown custom products do not collapse into the demo inventory categories.
 
 ### Product Cluster (new)
 
@@ -766,6 +786,17 @@ feature/realtime-ui
 13. ✅ Frontend: `ValidationTable` + `StructuredRequirements` — conditionally render length/power columns; generic extra_constraints chips
 14. ✅ `tests/test_validation.py` — 10 tests passing (up from 4); covers generalized constraint evaluation
 
+### Phase 4 deliverables (COMPLETE — custom prompt hardening)
+
+1. ✅ `RequestForm` defaults to an empty custom prompt; saved scenarios remain optional helpers
+2. ✅ `backend/orchestrator.py` assigns `CUSTOM-*` ids when custom runs omit `request_id`
+3. ✅ Gemini extraction prompt + coercion preserve arbitrary product identity via `product_type` + `product_keywords`
+4. ✅ Unknown custom products no longer fall through to GPUs / chairs / sensors in `product_utils.py`
+5. ✅ `product_clustering.py` returns zero internal clusters when the requested product family is absent from inventory
+6. ✅ `supplier_matching.py` therefore returns zero internal suppliers for unmatched custom products instead of fabricating demo-category recommendations
+7. ✅ Tavily fallback output now reflects the requested product category when external enrichment is needed
+8. ✅ `tests/test_generalized_matching.py` covers the regression where unknown custom products used to fall back to demo categories
+
 ---
 
 ## 11. Priorities & Guardrails
@@ -785,6 +816,7 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 * ✅ Judging agent with per-candidate explanations (Phase 2 complete).
 * ✅ `audit_summary.py` switched to Gemini narrative (Phase 2 complete).
 * ✅ Pactum generalized from GPU-only to any B2B product type — `ExtraConstraint`, `evaluate_constraints()`, category-safe matching/clustering, 7 vendors, 5 buyer scenarios.
+* ✅ Custom prompts no longer fall back to unrelated internal categories. If inventory does not contain the requested product family, the system says so explicitly and routes to external enrichment instead of recommending a chair / GPU / sensor.
 * ✅ Inline human alert pause/resume wired to `POST /api/human-response` and inline `ActivityFeed` controls (Phase 3 complete).
 * ✅ Three-view Next.js UI: orchestration, buyer, and nested seller-inventory views (Phase 3 complete).
 * ✅ Agent network dynamic labels + hoverable communication edges from live negotiation events (Phase 3 complete).
@@ -913,10 +945,10 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 | `pioneer_client.py` | Stubbed | HTTP wrapper; fallback to regex labels; import-safe when optional requests dependency is unavailable. |
 | `tavily_client.py` | Stubbed | TavilyClient wrapper; fallback to saved JSON. Keep as-is. |
 | `fal_client.py` | Stubbed | fal_client wrapper; fallback to PNG path. Keep as-is. |
-| `fallback_outputs.py` | Complete | Static fallbacks for all three APIs. |
+| `fallback_outputs.py` | Complete | Static fallbacks for all three APIs; Tavily fallback now mirrors the requested product family. |
 | `tests/test_validation.py` | ✅ Complete (Phase 2) | 10 passing tests — deterministic validation + generalized constraint evaluation. |
 | `tests/test_hitl.py` | ✅ Added (Phase 3) | Covers HITL session wait/submit and orchestrator pause/resume response propagation. |
-| `tests/test_generalized_matching.py` | ✅ Added (Phase 3) | Covers GPU/chair/sensor category filtering in clustering and supplier matching. |
+| `tests/test_generalized_matching.py` | ✅ Updated (Phase 4) | Covers GPU/chair/sensor filtering plus the custom-product regression where unknown products used to fall back to demo categories. |
 | `.env` / `.env.example` | Complete | All env vars; `.env` is git-ignored. `DEMO_MODE=false`, `LLM_PROVIDER=gemini`. |
 
 ### What needs to be built (Phase 4 onward)
@@ -932,7 +964,7 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 
 ## 14. How to Work in This Repo
 
-Work demo-first. Start both servers and verify the end-to-end flow in the browser before adding features. Follow the streaming data flow: Next.js `stream.ts` → FastAPI SSE → `orchestrator.py` event emitter → agents. Keep the orchestrator as a router and event emitter, not a worker. Keep deterministic validation completely separate from Gemini calls. Use `DEMO_MODE=true` and a saved replay transcript for the CTO-facing demo if live APIs are unstable.
+Work demo-first. Start both servers and verify the end-to-end flow in the browser before adding features. Follow the streaming data flow: Next.js `stream.ts` → FastAPI SSE → `orchestrator.py` event emitter → agents. Keep the orchestrator as a router and event emitter, not a worker. Keep deterministic validation completely separate from Gemini calls. For custom prompts, treat the buyer's requested product family as the source of truth: do not silently remap unknown products into GPUs, chairs, or sensors. Use `DEMO_MODE=true` and a saved replay transcript for the CTO-facing demo if live APIs are unstable.
 
 Make small, reviewable changes on the correct feature branch. Freeze the four Phase-0 contracts before splitting. Merge feature branches into `staging-demo` after each phase. Promote `staging-demo` → `main` only after a clean streamed full run.
 

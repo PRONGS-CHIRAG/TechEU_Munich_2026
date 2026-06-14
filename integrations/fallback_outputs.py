@@ -44,17 +44,23 @@ def fallback_pioneer_labels(message: str) -> dict:
     }
 
 
-def fallback_tavily_result() -> dict:
+def fallback_tavily_result(requirements: dict | None = None) -> dict:
+    product_type = (requirements or {}).get("product_type", "B2B product")
+    use_case = (requirements or {}).get("use_case", "business use")
+    query = f"{product_type} for {use_case} supplier Europe"
     return {
         "source": "fallback",
         "results": [
             {
-                "title": "B2B Procurement Supplier Search — TechSpec DB",
+                "title": f"{product_type} supplier discovery — fallback search",
                 "url": "https://example.com/supplier-search",
-                "content": "Search for compatible B2B suppliers in Europe. Compare pricing, delivery, and specifications.",
+                "content": (
+                    f"No matching internal inventory category was found for {product_type}. "
+                    "Use external supplier discovery to compare pricing, delivery, and specifications."
+                ),
             }
         ],
-        "query": "B2B product supplier Europe",
+        "query": query,
     }
 
 

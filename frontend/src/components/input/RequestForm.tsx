@@ -22,12 +22,13 @@ const PRIORITIES = [
   { id: "delivery", label: "Delivery" },
   { id: "performance", label: "Performance" },
 ];
+const CUSTOM_SCENARIO_ID = "__custom__";
 
 export function RequestForm({ onStart, disabled }: Props) {
-  const [raw, setRaw] = useState(defaultRequest.raw_request);
+  const [raw, setRaw] = useState("");
   const [region, setRegion] = useState(defaultRequest.region);
   const [priority, setPriority] = useState(defaultRequest.priority);
-  const [requestId, setRequestId] = useState<string>("");
+  const [requestId, setRequestId] = useState<string>(CUSTOM_SCENARIO_ID);
   const [scenarios, setScenarios] = useState<BuyerScenario[]>([]);
 
   useEffect(() => {
@@ -36,13 +37,6 @@ export function RequestForm({ onStart, disabled }: Props) {
       .then((items) => {
         if (cancelled) return;
         setScenarios(items);
-        const first = items[0];
-        if (first) {
-          setRequestId(first.request_id);
-          setRaw(first.raw_request);
-          setRegion(first.region ?? defaultRequest.region);
-          setPriority(first.priority ?? defaultRequest.priority);
-        }
       })
       .catch(() => undefined);
     return () => {
@@ -52,21 +46,28 @@ export function RequestForm({ onStart, disabled }: Props) {
 
   const scenarioOptions = useMemo(
     () =>
-      scenarios.map((scenario) => ({
-        id: scenario.request_id,
-        label: `${scenario.request_id} · ${scenarioLabel(scenario.raw_request)}`,
-      })),
+      [
+        { id: CUSTOM_SCENARIO_ID, label: "Custom prompt" },
+        ...scenarios.map((scenario) => ({
+          id: scenario.request_id,
+          label: `${scenario.request_id} · ${scenarioLabel(scenario.raw_request)}`,
+        })),
+      ],
     [scenarios],
   );
 
   const handleScenario = (id: string) => {
     setRequestId(id);
+    if (id === CUSTOM_SCENARIO_ID) return;
     const scenario = scenarios.find((s) => s.request_id === id);
     if (!scenario) return;
     setRaw(scenario.raw_request);
     setRegion(scenario.region ?? defaultRequest.region);
     setPriority(scenario.priority ?? defaultRequest.priority);
   };
+
+  const trimmedRaw = raw.trim();
+  const canSubmit = !disabled && trimmedRaw.length > 0;
 
   return (
     <section className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm">
@@ -89,8 +90,13 @@ export function RequestForm({ onStart, disabled }: Props) {
         className="flex flex-1 flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
-          if (disabled) return;
-          onStart({ raw_request: raw, region, priority, request_id: requestId || undefined });
+          if (!canSubmit) return;
+          onStart({
+            raw_request: trimmedRaw,
+            region,
+            priority,
+            request_id: requestId === CUSTOM_SCENARIO_ID ? undefined : requestId,
+          });
         }}
       >
         {scenarioOptions.length > 0 && (
@@ -105,11 +111,16 @@ export function RequestForm({ onStart, disabled }: Props) {
 
         <textarea
           value={raw}
-          onChange={(e) => setRaw(e.target.value)}
+          onChange={(e) => {
+            setRaw(e.target.value);
+            if (requestId !== CUSTOM_SCENARIO_ID) {
+              setRequestId(CUSTOM_SCENARIO_ID);
+            }
+          }}
           disabled={disabled}
           rows={5}
           className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-text-1 outline-none transition-colors placeholder:text-text-3 focus:border-accent focus:ring-2 focus:ring-accent/15 disabled:bg-surface-2 disabled:text-text-2"
-          placeholder="Describe what you need to buy…"
+          placeholder="Paste a live buyer request, e.g. product, budget, delivery, warranty, and any technical constraints..."
         />
 
         <div className="grid grid-cols-2 gap-3">
@@ -131,7 +142,7 @@ export function RequestForm({ onStart, disabled }: Props) {
 
         <button
           type="submit"
-          disabled={disabled}
+          disabled={!canSubmit}
           className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-indigo-600 active:translate-y-px disabled:cursor-not-allowed disabled:bg-text-3"
         >
           <PaperPlaneTilt className="h-4 w-4" weight="fill" />

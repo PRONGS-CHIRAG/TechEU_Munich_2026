@@ -24,6 +24,7 @@ class ExtraConstraint(TypedDict):
 
 class StructuredRequirements(TypedDict, total=False):
     product_type: str
+    product_keywords: List[str]
     use_case: str
     budget_eur: float
     max_delivery_days: int

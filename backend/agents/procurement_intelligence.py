@@ -8,6 +8,12 @@ from backend.schemas import StructuredRequirements, SellerOffer, ValidationResul
 
 _GEMINI_FALLBACK = "[LLM unavailable — using fallback response]"
 
+_PRODUCT_STOPWORDS = {
+    "a", "an", "and", "any", "arrive", "budget", "buy", "delivery", "for",
+    "from", "need", "needs", "our", "procure", "purchase", "the", "to",
+    "under", "we", "with", "within",
+}
+
 
 def _repair_json(raw: str) -> dict:
     """Parse JSON from Gemini, repairing a known malformation where a closing }
@@ -121,11 +127,12 @@ def _extract_with_regex(raw_request: str) -> dict:
         product_type = "laptop"
         use_case = "computing"
     else:
-        product_type = "product"
+        product_type = _infer_product_phrase(raw_request)
         use_case = "business use"
 
     requirements: dict = {
         "product_type": product_type,
+        "product_keywords": _product_keywords(product_type),
         "use_case": use_case,
         "budget_eur": 650.0,
         "max_delivery_days": 7,
@@ -174,6 +181,39 @@ def _extract_with_regex(raw_request: str) -> dict:
 
 # ── Gemini output coercion ────────────────────────────────────────────────────
 
+def _product_keywords(*values: object) -> list[str]:
+    words: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if value is None:
+            continue
+        if isinstance(value, list):
+            candidates = [str(v) for v in value]
+        else:
+            candidates = re.findall(r"[a-z0-9]+", str(value).lower())
+        for word in candidates:
+            word = word.strip().lower()
+            if len(word) < 3 or word in _PRODUCT_STOPWORDS or word in seen:
+                continue
+            seen.add(word)
+            words.append(word)
+    return words[:8]
+
+
+def _infer_product_phrase(raw_request: str) -> str:
+    lower = raw_request.lower()
+    patterns = [
+        r"(?:need|buy|purchase|procure|source|looking for)\s+(?:an?|some|the|new)?\s*([a-z0-9][a-z0-9\s-]{1,60}?)(?:\s+(?:under|within|with|for|that|which|at|by|from|to|and|,|\.|€)|$)",
+        r"(?:request for|quote for|rfq for)\s+([a-z0-9][a-z0-9\s-]{1,60}?)(?:\s+(?:under|within|with|for|that|which|at|by|from|to|and|,|\.|€)|$)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, lower, re.IGNORECASE)
+        if match:
+            phrase = re.sub(r"\s+", " ", match.group(1)).strip(" -")
+            if phrase:
+                return phrase
+    return "custom product"
+
 def _coerce_requirements(parsed: dict) -> dict | None:
     """Coerce Gemini JSON output to correct Python types. Returns None on failure."""
     try:
@@ -186,6 +226,10 @@ def _coerce_requirements(parsed: dict) -> dict | None:
             "minimum_warranty_years": float(str(parsed.get("minimum_warranty_years", 1))),
             "extra_constraints": [],
         }
+        result["product_keywords"] = _product_keywords(
+            parsed.get("product_keywords", []),
+            result["product_type"],
+        )
 
         # Optional physical constraints — include only when Gemini emits them
         if parsed.get("max_length_mm") is not None:

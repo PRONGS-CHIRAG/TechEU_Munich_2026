@@ -24,7 +24,7 @@ app = FastAPI(title="Pactum API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -97,8 +97,9 @@ async def run_demo_stream(
         "raw_request": raw_request,
         "region": region,
         "priority": priority,
-        "request_id": request_id or "REQ-STREAM",
     }
+    if request_id:
+        payload["request_id"] = request_id
     create_session(session_id)
 
     async def event_generator():

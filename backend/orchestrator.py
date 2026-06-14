@@ -46,6 +46,19 @@ def _adapt_tavily(raw: dict) -> dict:
 HumanWaiter = Callable[[str, dict], dict]
 
 
+def _normalize_request(request: dict) -> dict:
+    normalized = dict(request)
+    raw_request = str(normalized.get("raw_request", "")).strip()
+    if not raw_request:
+        raise ValueError("raw_request is required for a custom procurement run")
+
+    normalized["raw_request"] = raw_request
+    normalized["region"] = normalized.get("region") or "Germany"
+    normalized["priority"] = normalized.get("priority") or "technical_fit"
+    normalized["request_id"] = normalized.get("request_id") or f"CUSTOM-{uuid.uuid4().hex[:8].upper()}"
+    return normalized
+
+
 def run_demo_events(
     request: dict,
     session_id: str | None = None,
@@ -56,6 +69,7 @@ def run_demo_events(
     Each yielded dict matches the frozen contract:
     { "type": str, "stage": str, "data": dict, "session_id": str, "ts": int }
     """
+    request = _normalize_request(request)
     session_id = session_id or str(uuid.uuid4())
     demo_mode = DEMO_MODE
 
@@ -79,6 +93,21 @@ def run_demo_events(
     clusters = cluster_products(structured_requirements, all_products)
 
     judged_candidates: list = []
+    if not clusters:
+        yield evt(
+            "cluster",
+            "intel",
+            {
+                "cluster_id": "no_internal_match",
+                "products": [],
+                "similarity_score": 0,
+                "representative_specs": {},
+                "message": (
+                    "No internal inventory products match the requested product category. "
+                    "External supplier enrichment will be used instead."
+                ),
+            },
+        )
     for cluster in clusters:
         candidate = judge_candidate(structured_requirements, cluster)
         judged_candidates.append(candidate)
@@ -94,7 +123,7 @@ def run_demo_events(
     if len(matched_suppliers) < 2 and not demo_mode:
         tavily_raw = search_external_supplier(structured_requirements)
     else:
-        tavily_raw = fallback_tavily_result() if demo_mode else {}
+        tavily_raw = fallback_tavily_result(structured_requirements) if demo_mode else {}
 
     # ── Stage: negotiate — gate on good/borderline clusters ───────────────────
     # Only negotiate with suppliers whose products appear in good/borderline clusters.
@@ -197,6 +226,7 @@ def run_demo_events(
             "human_response": escalation_result.get("human_response"),
         }
     else:
+        product_type = structured_requirements.get("product_type", "requested product")
         final_recommendation = {
             "recommended_seller": "",
             "recommended_product": "",
@@ -205,7 +235,10 @@ def run_demo_events(
             "warranty_years": 0,
             "technical_status": "rejected",
             "risk_level": "high",
-            "reason": "No offer passed all technical constraints.",
+            "reason": (
+                f"No internal supplier offer matched the requested product category "
+                f"({product_type}). Use external supplier discovery or add matching inventory."
+            ),
             "human_approval_required": True,
             "human_response": escalation_result.get("human_response"),
         }
