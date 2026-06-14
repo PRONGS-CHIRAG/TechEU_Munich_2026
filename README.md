@@ -215,3 +215,19 @@ python -m pytest                          # all 17 tests
 python -m pytest tests/test_hitl.py -v   # HITL + orchestrator
 python -m pytest tests/ -k "matching"    # by keyword
 ```
+
+---
+
+## Research
+
+Pactum's design draws on two papers:
+
+**AgenticPay: A Multi-Agent LLM Negotiation System for Buyer–Seller Transactions**
+Xianyang Liu, Shangding Gu, Dawn Song — UC Berkeley (2026)
+[arXiv:2602.06008](https://arxiv.org/abs/2602.06008)
+Introduces a benchmark and simulation framework for multi-agent buyer–seller negotiation driven by natural language, spanning bilateral bargaining to many-to-many markets. Informed our negotiation round structure, discount curve design, and the decision to benchmark frontier LLMs (Claude, GPT, Gemini) as negotiation policies.
+
+**Magentic Marketplace: An Open-Source Environment for Studying Agentic Markets**
+Gagan Bansal, Wenyue Hua, Zezhou Huang, Adam Fourney et al. — Microsoft Research (2025)
+[arXiv:2510.25779](https://arxiv.org/abs/2510.25779)
+An open-source environment for studying how LLM agents behave in agentic market settings — buying, selling, and coordinating through language. Informed our multi-agent orchestration architecture and the human-in-the-loop approval gate design.
