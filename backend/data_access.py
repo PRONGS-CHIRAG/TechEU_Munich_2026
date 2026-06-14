@@ -100,3 +100,25 @@ def get_seller_inventory() -> list:
 
 def get_buyer_scenarios() -> list:
     return _fetch("buyer_scenarios", "buyer_scenarios.json")
+
+
+def write_demo_session(session_id: str, result: dict) -> None:
+    """Write a completed DemoResult to Supabase for the seller Realtime dashboard."""
+    client = _get_client()
+    if not client:
+        return
+    # Enrich matched_suppliers with registry fields the frontend MatchedSupplier type expects
+    registry = {s["seller_id"]: s for s in get_seller_registry()}
+    for supplier in result.get("matched_suppliers", []):
+        reg = registry.get(supplier.get("seller_id", ""), {})
+        supplier.setdefault("specialization", reg.get("specialization", ""))
+        supplier.setdefault("region", reg.get("region", ""))
+        supplier.setdefault("reliability_score", reg.get("reliability_score", 0.0))
+        supplier.setdefault("negotiation_style", reg.get("negotiation_style", "standard"))
+    try:
+        client.table("demo_sessions").upsert({
+            "session_id": session_id,
+            "result": result,
+        }).execute()
+    except Exception:
+        pass

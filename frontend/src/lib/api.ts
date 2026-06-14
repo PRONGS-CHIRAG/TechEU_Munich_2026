@@ -1,4 +1,4 @@
-import type { BuyerRequest, DemoResult } from "./types";
+import type { BuyerRequest, DemoResult, SellerInventoryMerchant, SellerProduct } from "./types";
 import { supabase } from "./supabase";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -41,5 +41,17 @@ export async function getScenarios(): Promise<BuyerScenario[]> {
   if (!res.ok) {
     throw new Error(`scenarios failed: ${res.status} ${res.statusText}`);
   }
+  return res.json();
+}
+
+export async function getInventory(): Promise<{ merchants: SellerInventoryMerchant[] }> {
+  const res = await fetch(`${API_BASE}/api/inventory`);
+  if (!res.ok) throw new Error(`inventory failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getSellerInventory(): Promise<SellerProduct[]> {
+  const res = await fetch(`${API_BASE}/api/seller-inventory`);
+  if (!res.ok) throw new Error(`seller-inventory failed: ${res.status}`);
   return res.json();
 }

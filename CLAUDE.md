@@ -797,6 +797,38 @@ feature/realtime-ui
 7. ✅ Tavily fallback output now reflects the requested product category when external enrichment is needed
 8. ✅ `tests/test_generalized_matching.py` covers the regression where unknown custom products used to fall back to demo categories
 
+### Phase 5 deliverables (COMPLETE — Philipp UI + Supabase Realtime bridge)
+
+1. ✅ Merged `philipp-ui` branch frontend into `main` (frontend only; backend not overwritten)
+2. ✅ New components: `BuyerWorkspace`, `SellerWorkspace`, `LoginScreen`, `DecisionScreen`, `EscalationModal`, `InventoryManager`, `/seller` page route
+3. ✅ `frontend/.env.local` created — `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` all wired; Supabase JS client now active in the browser
+4. ✅ `frontend/next.config.ts` — `turbopack.root` set to `__dirname` to prevent Turbopack from picking up root-level `package-lock.json`
+5. ✅ `frontend/src/lib/demoMachine.ts` — added `STAGE_REVEALS` (Record<StageId, SectionId[]>) and `STAGE_DURATION_MS` (Record<StageId, number>) required by `BuyerWorkspace`
+6. ✅ `@supabase/supabase-js` installed in `frontend/`
+7. ✅ `backend/api.py` — CORS expanded to include ports 3003/127.0.0.1:3003 (Next.js fallback port); both `POST /api/run-demo` and `GET /api/run-demo/stream` now call `write_demo_session()` after each completed run
+8. ✅ `backend/data_access.py` — `write_demo_session(session_id, result)` added: enriches `matched_suppliers` with registry fields (`specialization`, `region`, `reliability_score`, `negotiation_style`) then upserts to Supabase `demo_sessions` table
+9. ✅ `frontend/src/lib/api.ts` — `getInventory()` and `getSellerInventory()` added; fixes broken import in `SellerInventory.tsx`
+10. ✅ `frontend/src/lib/types.ts` — `MatchedSupplier` registry fields (`specialization`, `region`, `reliability_score`, `negotiation_style`) made optional to tolerate backend responses before enrichment
+11. ✅ `frontend/src/seller/SellerWorkspace.tsx` — all 4 mock data imports removed; inventory fetched live from `/api/inventory` on mount; Supabase Realtime subscription seeds from most-recent `demo_sessions` row and updates instantly when a new buyer run completes
+
+**Supabase Realtime flow (requires `demo_sessions` table — see SQL below):**
+```
+Buyer submits request → backend runs → write_demo_session() upserts to Supabase
+→ Seller dashboard subscribes via Realtime → matched suppliers, negotiation logs,
+   and validation results update live in the seller view
+```
+
+**Required Supabase setup (run once in dashboard SQL editor):**
+```sql
+create table if not exists demo_sessions (
+  id          uuid        primary key default gen_random_uuid(),
+  session_id  text        unique not null,
+  result      jsonb       not null,
+  created_at  timestamptz default now()
+);
+alter publication supabase_realtime add table demo_sessions;
+```
+
 ---
 
 ## 11. Priorities & Guardrails
@@ -951,14 +983,29 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 | `tests/test_generalized_matching.py` | ✅ Updated (Phase 4) | Covers GPU/chair/sensor filtering plus the custom-product regression where unknown products used to fall back to demo categories. |
 | `.env` / `.env.example` | Complete | All env vars; `.env` is git-ignored. `DEMO_MODE=false`, `LLM_PROVIDER=gemini`. |
 
-### What needs to be built (Phase 4 onward)
+| `frontend/.env.local` | ✅ Created (Phase 5) | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` — not committed (git-ignored); copy values from backend `.env`. |
+| `frontend/next.config.ts` | ✅ Updated (Phase 5) | `turbopack.root: __dirname` — prevents Turbopack from using the wrong root `package-lock.json`. |
+| `frontend/src/lib/demoMachine.ts` | ✅ Updated (Phase 5) | `STAGE_REVEALS` + `STAGE_DURATION_MS` exported; required by `BuyerWorkspace`. |
+| `frontend/src/lib/api.ts` | ✅ Updated (Phase 5) | Added `getInventory()` → `GET /api/inventory` and `getSellerInventory()` → `GET /api/seller-inventory`. |
+| `frontend/src/lib/types.ts` | ✅ Updated (Phase 5) | `MatchedSupplier` registry fields optional; `SellerInventoryMerchant` shape used by `getInventory()`. |
+| `frontend/src/seller/SellerWorkspace.tsx` | ✅ Updated (Phase 5) | Mock data imports removed; inventory from `/api/inventory`; Supabase Realtime subscription for live buyer→seller updates. |
+| `frontend/src/buyer/BuyerWorkspace.tsx` | ✅ Added (Phase 5) | Buyer-role workspace with GSAP animations, step flow, and `runDemo()` wired to backend. |
+| `frontend/src/components/auth/LoginScreen.tsx` | ✅ Added (Phase 5) | Demo login screen (root/buyer/seller hardcoded roles; no backend auth). |
+| `frontend/src/components/screens/DecisionScreen.tsx` | ✅ Added (Phase 5) | Final decision view showing validation, audit, suppliers, and recommendation. |
+| `frontend/src/components/modals/EscalationModal.tsx` | ✅ Added (Phase 5) | Inline escalation modal wired to human-alert flow. |
+| `frontend/src/app/seller/page.tsx` | ✅ Added (Phase 5) | Seller-role page route. |
+| `backend/api.py` | ✅ Updated (Phase 5) | CORS includes port 3003; both run-demo routes call `write_demo_session()` after completion. |
+| `backend/data_access.py` | ✅ Updated (Phase 5) | `write_demo_session()` — enriches matched_suppliers with registry and upserts to `demo_sessions`. |
 
-| Component | Priority | Phase |
+### What needs to be built (Phase 5 onward)
+
+| Component | Priority | Notes |
 |-----------|----------|-------|
-| `integrations/email_hitl.py` (Gmail, stretch) | STRETCH | 3 |
-| `assets/fal_deal_card.png` placeholder | MEDIUM | 4 |
-| Aikido screenshot | MEDIUM | 4 |
-| Replay transcript save (DEMO_MODE=true full replay path) | MEDIUM | 4 |
+| Supabase `demo_sessions` table | REQUIRED | Run SQL from Phase 5 section above; without it, Realtime bridge is a no-op. |
+| `integrations/email_hitl.py` (Gmail, stretch) | STRETCH | — |
+| `assets/fal_deal_card.png` placeholder | MEDIUM | — |
+| Aikido screenshot | MEDIUM | — |
+| Replay transcript save (DEMO_MODE=true full replay path) | MEDIUM | — |
 
 ---
 
@@ -974,15 +1021,16 @@ Make small, reviewable changes on the correct feature branch. Freeze the four Ph
 # Backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # then fill in LLM_API_KEY etc.
+cp .env.example .env  # then fill in LLM_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY etc.
 uvicorn backend.api:app --reload --port 8000
 
 # Frontend (separate terminal)
 cd frontend
-cp .env.local.example .env.local
+# frontend/.env.local already exists — check NEXT_PUBLIC_ values match your .env
 npm install
 npm run dev
 # Open http://localhost:3000
+# Login: buyer/123 (buyer view) · seller/123 (seller view) · root/root (root)
 ```
 
 For replay mode (no API keys needed):
