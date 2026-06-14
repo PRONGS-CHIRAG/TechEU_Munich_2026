@@ -42,8 +42,8 @@ interface Props {
   requestLabel?: string;
   judgedCandidates?: JudgedCandidate[];
   rejectedSellerIds?: Set<string>;
-  escalation?: { payload: EscalationResult; sellerId: string } | null;
-  onEscalationDecide?: (d: "approved" | "rejected" | "renegotiate" | "restart", note?: string) => void;
+  escalations?: Map<string, EscalationResult>;
+  onEscalationDecide?: (sellerId: string, d: "approved" | "rejected" | "renegotiate" | "restart", note?: string) => void;
 }
 
 const nodeTypes = {
@@ -81,7 +81,7 @@ export function AgentNetwork({
   requestLabel = "New Request",
   judgedCandidates = [],
   rejectedSellerIds = new Set(),
-  escalation,
+  escalations = new Map(),
   onEscalationDecide,
 }: Props) {
   const { nodes, edges } = useMemo(() => {
@@ -244,8 +244,10 @@ export function AgentNetwork({
         type: "decision",
         position: { x: COL.decision, y: sellersTopY + i * SELLER_SPACING },
         data: {
-          payload: escalation?.sellerId === s.seller_id ? escalation.payload : null,
-          onDecide: escalation?.sellerId === s.seller_id ? onEscalationDecide : undefined,
+          payload: escalations.has(s.seller_id) ? escalations.get(s.seller_id) : null,
+          onDecide: escalations.has(s.seller_id)
+            ? (d: "approved" | "rejected" | "renegotiate" | "restart", note?: string) => onEscalationDecide?.(s.seller_id, d, note)
+            : undefined,
         },
         draggable: false,
         selectable: false,
@@ -358,7 +360,8 @@ export function AgentNetwork({
     chatLines,
     requestLabel,
     judgedCandidates,
-    escalation,
+    rejectedSellerIds,
+    escalations,
     onEscalationDecide,
   ]);
 

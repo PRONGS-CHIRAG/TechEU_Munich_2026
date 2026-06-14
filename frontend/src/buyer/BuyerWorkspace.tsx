@@ -61,11 +61,8 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
   const [liveSuppliers, setLiveSuppliers] = useState<MatchedSupplier[]>([]);
   const [liveJudgedCandidates, setLiveJudgedCandidates] = useState<JudgedCandidate[]>([]);
 
-  // Decision node state
-  const [activeEscalation, setActiveEscalation] = useState<{
-    payload: EscalationResult;
-    sellerId: string;
-  } | null>(null);
+  // Decision node state — support multiple simultaneous escalations (parallel negotiation)
+  const [activeEscalations, setActiveEscalations] = useState<Map<string, EscalationResult>>(new Map());
   const [rejectedSellerIds, setRejectedSellerIds] = useState<Set<string>>(new Set());
 
   const sessionIdRef = useRef<string | null>(null);
@@ -114,7 +111,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
     setRequestLabel("");
     setVisibleNodeIds(new Set());
     setNodeChatLines({});
-    setActiveEscalation(null);
+    setActiveEscalations(new Map());
     setRejectedSellerIds(new Set());
   }, []);
 
@@ -328,7 +325,8 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
             has_winning_offer: d.has_winning_offer,
           };
           const decisionSellerId = lastNegotiationSellerRef.current;
-          setActiveEscalation({ payload: escalation, sellerId: decisionSellerId });
+          // Add this escalation to the set of active escalations (supports parallel)
+          setActiveEscalations(prev => new Map([...prev, [decisionSellerId, escalation]]));
           setVisibleNodeIds(prev => new Set([...prev, `decision-${decisionSellerId}`]));
           setStatus((s) => ({ ...s, phase: "awaiting_approval", stageIndex: Math.max(s.stageIndex, 4) }));
           reveal(STAGE_REVEALS["escalate"]);
@@ -493,22 +491,25 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
     }
   }, []);
 
-  const handleDecide = useCallback(async (d: "approved" | "rejected" | "renegotiate" | "restart", note?: string) => {
-    // Remove decision node from visible set
-    if (activeEscalation) {
-      setVisibleNodeIds(prev => {
-        const next = new Set(prev);
-        next.delete(`decision-${activeEscalation.sellerId}`);
-        return next;
-      });
+  const handleDecide = useCallback(async (sellerId: string, d: "approved" | "rejected" | "renegotiate" | "restart", note?: string) => {
+    // Remove this supplier's decision node from visible set
+    setVisibleNodeIds(prev => {
+      const next = new Set(prev);
+      next.delete(`decision-${sellerId}`);
+      return next;
+    });
 
-      // If rejecting, mark this seller as rejected (for visual feedback on node)
-      if (d === "rejected") {
-        setRejectedSellerIds(prev => new Set([...prev, activeEscalation.sellerId]));
-      }
-
-      setActiveEscalation(null);
+    // If rejecting, mark this seller as rejected (for visual feedback on node)
+    if (d === "rejected") {
+      setRejectedSellerIds(prev => new Set([...prev, sellerId]));
     }
+
+    // Remove from active escalations
+    setActiveEscalations(prev => {
+      const next = new Map(prev);
+      next.delete(sellerId);
+      return next;
+    });
 
     if (d === "restart") {
       reset();
@@ -530,14 +531,21 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
       return;
     }
 
-    // For approve: show decision, move to approved phase (go to audit)
+    // For approve: move to approved phase (go to audit) and clear other pending decisions
     // For reject: stay in running phase (waterfall to next supplier)
     setDecision(d);
     if (d === "approved") {
       setStatus((s) => ({ ...s, phase: "approved" }));
-    } else if (d === "rejected") {
-      // Continue running to allow waterfall to next supplier
-      setStatus((s) => ({ ...s, phase: "running" }));
+      // Clear all other pending decisions when one is approved
+      setActiveEscalations(new Map());
+      setVisibleNodeIds(prev => {
+        const next = new Set(prev);
+        // Remove all decision nodes
+        [...next].forEach(id => {
+          if (id.startsWith("decision-")) next.delete(id);
+        });
+        return next;
+      });
     }
 
     const sid = sessionIdRef.current;
@@ -677,7 +685,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
                   requestLabel={requestLabel}
                   judgedCandidates={result?.judged_candidates ?? liveJudgedCandidates}
                   rejectedSellerIds={rejectedSellerIds}
-                  escalation={activeEscalation}
+                  escalations={activeEscalations}
                   onEscalationDecide={handleDecide}
                 />
               </div>
@@ -746,7 +754,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
                 <DecisionScreen
                   result={result}
                   decision={decision}
-                  onDecide={(d) => handleDecide(d)}
+                  onDecide={(d) => handleDecide(activeSeller || result.negotiation_outcome?.winning_seller_id || "", d)}
                   activeSeller={activeSeller}
                   onSelectSeller={setActiveSeller}
                 />
