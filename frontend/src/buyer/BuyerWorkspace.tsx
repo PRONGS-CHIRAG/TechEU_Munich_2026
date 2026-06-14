@@ -325,23 +325,19 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
             has_winning_offer: d.has_winning_offer,
           };
 
-          // In parallel negotiation, match seller by name from best_offer
-          const sellerName = d.best_offer?.seller_name;
-          const suppliers = result?.matched_suppliers ?? liveSuppliers;
-          let decisionSellerId = lastNegotiationSellerRef.current; // fallback
+          // Show a decision node for every supplier that has negotiated
+          const allSuppliers = result?.matched_suppliers ?? liveSuppliers;
+          const suppliersWithChats = allSuppliers.filter(
+            s => (nodeChatLines[s.seller_id]?.length ?? 0) > 0,
+          );
+          // Fallback: if no chats yet, use all matched suppliers
+          const decisionTargets = suppliersWithChats.length > 0 ? suppliersWithChats : allSuppliers;
 
-          if (sellerName) {
-            // Find seller by name (more reliable in parallel)
-            const matchedSupplier = suppliers.find(s => s.seller_name === sellerName);
-            if (matchedSupplier) {
-              decisionSellerId = matchedSupplier.seller_id;
-              lastNegotiationSellerRef.current = decisionSellerId;
-            }
+          const allEscalations = new Map<string, EscalationResult>();
+          for (const s of decisionTargets) {
+            allEscalations.set(s.seller_id, { ...escalation });
           }
-
-          // Add this escalation to the set of active escalations (supports parallel)
-          setActiveEscalations(prev => new Map([...prev, [decisionSellerId, escalation]]));
-          setVisibleNodeIds(prev => new Set([...prev, `decision-${decisionSellerId}`]));
+          setActiveEscalations(allEscalations);
           setStatus((s) => ({ ...s, phase: "awaiting_approval", stageIndex: Math.max(s.stageIndex, 4) }));
           reveal(STAGE_REVEALS["escalate"]);
           pushFeed({
@@ -545,30 +541,27 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
       return;
     }
 
-    // For approve: move to approved phase (go to audit) and clear other pending decisions
-    // For reject: stay in running phase (waterfall to next supplier)
-    setDecision(d);
     if (d === "approved") {
+      // Approve: move to audit, clear all remaining decision nodes
+      setDecision("approved");
       setStatus((s) => ({ ...s, phase: "approved" }));
-      // Clear all other pending decisions when one is approved
       setActiveEscalations(new Map());
-      setVisibleNodeIds(prev => {
-        const next = new Set(prev);
-        // Remove all decision nodes
-        [...next].forEach(id => {
-          if (id.startsWith("decision-")) next.delete(id);
-        });
-        return next;
-      });
-    }
-
-    const sid = sessionIdRef.current;
-    if (sid) {
-      try {
-        await sendHumanResponse(sid, d === "approved" ? "approve" : "reject");
-      } catch {
-        // non-fatal
+      const sid = sessionIdRef.current;
+      if (sid) {
+        try { await sendHumanResponse(sid, "approve"); } catch { /* non-fatal */ }
       }
+    } else if (d === "rejected") {
+      // Reject this one locally — only tell backend when ALL are rejected
+      const remaining = activeEscalations.size - 1; // already deleted above
+      if (remaining === 0) {
+        setDecision("rejected");
+        setStatus((s) => ({ ...s, phase: "rejected" }));
+        const sid = sessionIdRef.current;
+        if (sid) {
+          try { await sendHumanResponse(sid, "reject"); } catch { /* non-fatal */ }
+        }
+      }
+      // If remaining > 0, stay in awaiting_approval — other decision nodes still visible
     }
   }, [reset]);
 
