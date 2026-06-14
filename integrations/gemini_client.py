@@ -1,8 +1,12 @@
 import os
 import time
 
-from google import genai
-from google.genai import types
+try:
+    from google import genai
+    from google.genai import types
+except ModuleNotFoundError:
+    genai = None
+    types = None
 
 _MODEL = "gemini-2.5-flash"
 _FALLBACK = "[LLM unavailable — using fallback response]"
@@ -21,7 +25,7 @@ def generate(
     or if LLM_API_KEY is not set.
     """
     api_key = os.getenv("LLM_API_KEY", "")
-    if not api_key:
+    if not api_key or genai is None or types is None:
         return _FALLBACK
 
     config: dict = {"temperature": temperature}

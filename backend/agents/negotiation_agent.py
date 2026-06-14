@@ -11,6 +11,7 @@ validate_offer(). run_negotiation() is the non-streaming wrapper.
 import os
 
 from backend.agents.procurement_intelligence import compute_value_score, evaluate_constraints
+from backend.agents.product_utils import product_matches_requirement
 from backend.agents.negotiation.price import get_price_context
 from backend.agents.negotiation.delivery import get_delivery_context
 from backend.agents.negotiation.warranty import get_warranty_context
@@ -33,7 +34,9 @@ def _get_seller_best_product(seller_id: str, requirements: dict, inventory: list
     """
     items = [
         i for i in inventory
-        if i.get("seller_id") == seller_id and i.get("availability") != "out_of_stock"
+        if i.get("seller_id") == seller_id
+        and i.get("availability") != "out_of_stock"
+        and product_matches_requirement(i, requirements)
     ]
     if not items:
         return None

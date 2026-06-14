@@ -15,7 +15,13 @@ import {
   SellerNode,
 } from "./nodes";
 import { MessageEdge } from "./MessageEdge";
-import type { MatchedSupplier } from "@/lib/types";
+import type {
+  BuyerRequest,
+  ConversationLog,
+  FinalRecommendation,
+  MatchedSupplier,
+  StructuredRequirements,
+} from "@/lib/types";
 
 interface Props {
   stageIndex: number;
@@ -24,6 +30,10 @@ interface Props {
   onSelectSeller: (sellerId: string) => void;
   canInteract: boolean;
   suppliers: MatchedSupplier[];
+  request?: BuyerRequest;
+  requirements?: StructuredRequirements;
+  logs?: ConversationLog[];
+  finalRecommendation?: FinalRecommendation;
 }
 
 const nodeTypes = {
@@ -44,6 +54,10 @@ export function AgentNetwork({
   onSelectSeller,
   canInteract,
   suppliers,
+  request,
+  requirements,
+  logs = [],
+  finalRecommendation,
 }: Props) {
   const { nodes, edges } = useMemo(() => {
     const requestActive = stageIndex === 0;
@@ -60,6 +74,9 @@ export function AgentNetwork({
     const sellers = [...suppliers].sort((a, b) =>
       a.seller_id.localeCompare(b.seller_id),
     );
+    const requestLabel = formatRequestLabel(request, requirements);
+    const latestBySeller = new Map<string, ConversationLog>();
+    for (const log of logs) latestBySeller.set(log.seller_id, log);
 
     // Clean horizontal pipeline: Request → Orchestrator → BuyerAgent → 5 Sellers
     const COL = { request: 20, orchestrator: 230, buyer: 460, sellers: 720 };
@@ -74,7 +91,7 @@ export function AgentNetwork({
         type: "request",
         position: { x: COL.request, y: ROW_CENTER },
         data: {
-          label: "GPU · €650",
+          label: requestLabel,
           active: requestActive,
           done: stageIndex > 0,
         },
@@ -143,12 +160,17 @@ export function AgentNetwork({
         target: s.seller_id,
         type: "message",
         style: liveStyle(negotiateActive),
-        data: { live: negotiateActive, delay: i * 60 },
+        data: {
+          live: negotiateActive,
+          delay: i * 60,
+          label: edgeLabel(latestBySeller.get(s.seller_id)),
+          detail: edgeDetail(latestBySeller.get(s.seller_id)),
+        },
       })),
     ];
 
     return { nodes, edges };
-  }, [stageIndex, activeSeller, canInteract, suppliers]);
+  }, [stageIndex, activeSeller, canInteract, suppliers, request, requirements, logs]);
 
   return (
     <div className="relative h-[340px] overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-white to-surface-2/60 shadow-[var(--shadow-tinted)]">
@@ -187,11 +209,17 @@ export function AgentNetwork({
           Live Agent Network
         </div>
         <div className="text-[13px] font-medium tracking-tight text-text-1">
-          Orchestrator routes · Buyer Agent negotiates with 5 sellers
+          Orchestrator routes · Buyer Agent negotiates with matched sellers
         </div>
       </div>
 
-      <LiveTicker stageIndex={stageIndex} phase={phase} />
+      <LiveTicker
+        stageIndex={stageIndex}
+        phase={phase}
+        suppliers={suppliers}
+        requirements={requirements}
+        finalRecommendation={finalRecommendation}
+      />
     </div>
   );
 }
@@ -241,11 +269,17 @@ const TONE_STYLES: Record<Tone, TickerStyle> = {
 function LiveTicker({
   stageIndex,
   phase,
+  suppliers,
+  requirements,
+  finalRecommendation,
 }: {
   stageIndex: number;
   phase: Props["phase"];
+  suppliers: MatchedSupplier[];
+  requirements?: StructuredRequirements;
+  finalRecommendation?: FinalRecommendation;
 }) {
-  const msg = tickerMessage(stageIndex, phase);
+  const msg = tickerMessage(stageIndex, phase, suppliers, requirements, finalRecommendation);
   const tone: Tone =
     phase === "approved"
       ? "success"
@@ -279,9 +313,17 @@ function LiveTicker({
 function tickerMessage(
   stageIndex: number,
   phase: Props["phase"],
+  suppliers: MatchedSupplier[],
+  requirements?: StructuredRequirements,
+  finalRecommendation?: FinalRecommendation,
 ): { title: string; detail?: string } {
   if (phase === "approved")
-    return { title: "Deal approved", detail: "Vendor B · €640" };
+    return {
+      title: "Deal approved",
+      detail: finalRecommendation
+        ? `${finalRecommendation.recommended_seller} · €${finalRecommendation.price_eur}`
+        : undefined,
+    };
   if (phase === "rejected") return { title: "Deal rejected by human" };
   if (phase === "awaiting_approval")
     return { title: "Awaiting human approval", detail: "escalation triggered" };
@@ -290,15 +332,52 @@ function tickerMessage(
   if (stageIndex === 0)
     return { title: "Extracting structured requirements" };
   if (stageIndex === 1)
-    return { title: "Ranking suppliers", detail: "5 candidates" };
+    return { title: "Ranking suppliers", detail: `${suppliers.length || "matching"} candidates` };
   if (stageIndex === 2)
     return {
-      title: "Buyer Agent negotiating with Vendor B",
-      detail: "Round 2 of 2",
+      title: `Buyer Agent negotiating ${requirements?.product_type ?? "products"}`,
+      detail: `${suppliers.length || 0} suppliers`,
     };
   if (stageIndex === 3)
     return { title: "Validating offers against constraints" };
   if (stageIndex === 4) return { title: "Checking escalation triggers" };
   if (stageIndex === 5) return { title: "Generating audit summary" };
   return { title: "Pipeline complete" };
+}
+
+function formatRequestLabel(
+  request?: BuyerRequest,
+  requirements?: StructuredRequirements,
+): string {
+  if (requirements) {
+    const type = requirements.product_type || "Product";
+    const budget =
+      requirements.budget_eur != null ? `€${requirements.budget_eur}` : "budget open";
+    return `${type} · ${budget}`;
+  }
+  if (request?.request_id) return request.request_id;
+  return "Procurement";
+}
+
+function edgeLabel(log?: ConversationLog): string | undefined {
+  if (!log) return undefined;
+  if (log.pioneer_labels?.includes("price_concession")) return "price";
+  if (log.pioneer_labels?.includes("delivery_condition")) return "delivery";
+  if (log.pioneer_labels?.includes("warranty_risk")) return "warranty";
+  if (log.risk_level && log.risk_level !== "low") return "risk";
+  return log.speaker;
+}
+
+function edgeDetail(log?: ConversationLog): string | undefined {
+  if (!log) return undefined;
+  const fields = log.extracted_fields
+    ? Object.entries(log.extracted_fields)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(" · ")
+    : "";
+  const labels = log.pioneer_labels?.length
+    ? `Labels: ${log.pioneer_labels.join(", ")}. `
+    : "";
+  const risk = log.risk_level ? `Risk: ${log.risk_level}. ` : "";
+  return `${labels}${risk}${fields ? `${fields}. ` : ""}${log.message}`;
 }

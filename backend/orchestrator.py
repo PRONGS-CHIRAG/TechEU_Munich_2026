@@ -3,6 +3,7 @@ import os
 import time
 import uuid
 from dotenv import load_dotenv
+from typing import Callable
 
 from backend.schemas import BuyerRequest, DemoResult
 from backend.agents.procurement_intelligence import extract_requirements, validate_offer, compute_value_score
@@ -42,13 +43,20 @@ def _adapt_tavily(raw: dict) -> dict:
     }
 
 
-def run_demo_events(request: dict):
+HumanWaiter = Callable[[str, dict], dict]
+
+
+def run_demo_events(
+    request: dict,
+    session_id: str | None = None,
+    wait_for_human: HumanWaiter | None = None,
+):
     """Sync generator yielding SSE event dicts for the streaming endpoint.
 
     Each yielded dict matches the frozen contract:
     { "type": str, "stage": str, "data": dict, "session_id": str, "ts": int }
     """
-    session_id = str(uuid.uuid4())
+    session_id = session_id or str(uuid.uuid4())
     demo_mode = DEMO_MODE
 
     def evt(event_type: str, stage: str, data: dict) -> dict:
@@ -157,9 +165,15 @@ def run_demo_events(request: dict):
 
     if escalation_result.get("escalate"):
         yield evt("human_alert", "escalate", escalation_result)
-        # Phase 3 adds pause/resume via asyncio.Queue keyed on session_id.
-        # For Phase 2, the flow continues automatically after alerting.
-        yield evt("escalation", "escalate", {"action": "auto_continue", "note": "Escalation acknowledged — continuing automatically"})
+        if wait_for_human is not None:
+            human_response = wait_for_human(session_id, escalation_result)
+        else:
+            human_response = {
+                "action": "auto_continue",
+                "note": "Non-streaming run auto-continued after escalation alert.",
+            }
+        escalation_result["human_response"] = human_response
+        yield evt("escalation", "escalate", human_response)
 
     # ── Recommendation ────────────────────────────────────────────────────────
     if best_offer:
@@ -180,6 +194,7 @@ def run_demo_events(request: dict):
             "risk_level": "low",
             "reason": final_reason,
             "human_approval_required": escalation_result.get("escalate", True),
+            "human_response": escalation_result.get("human_response"),
         }
     else:
         final_recommendation = {
@@ -192,6 +207,7 @@ def run_demo_events(request: dict):
             "risk_level": "high",
             "reason": "No offer passed all technical constraints.",
             "human_approval_required": True,
+            "human_response": escalation_result.get("human_response"),
         }
 
     yield evt("recommendation", "recommend", final_recommendation)

@@ -7,6 +7,7 @@ Usage:
 import asyncio
 import json
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
@@ -15,8 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.data_access import get_buyer_scenarios
-from backend.orchestrator import run_demo, run_demo_events
+from backend.data_access import get_buyer_scenarios, get_seller_inventory_nested
+from backend.hitl_sessions import close_session, create_session, submit_response, wait_for_response
+from backend.orchestrator import DEMO_MODE, run_demo, run_demo_events
 
 app = FastAPI(title="Pactum API")
 
@@ -64,6 +66,16 @@ def scenarios() -> list:
     return get_buyer_scenarios()
 
 
+@app.get("/api/inventory")
+def inventory() -> dict:
+    return get_seller_inventory_nested()
+
+
+@app.get("/api/config")
+def config() -> dict:
+    return {"demo_mode": DEMO_MODE}
+
+
 @app.post("/api/run-demo")
 def run_demo_endpoint(request: BuyerRequestIn) -> dict:
     payload = request.model_dump(exclude_none=True)
@@ -80,12 +92,14 @@ async def run_demo_stream(
     request_id: Optional[str] = None,
 ):
     """Server-Sent Events stream — emits events line by line as the demo runs."""
+    session_id = str(uuid.uuid4())
     payload = {
         "raw_request": raw_request,
         "region": region,
         "priority": priority,
         "request_id": request_id or "REQ-STREAM",
     }
+    create_session(session_id)
 
     async def event_generator():
         loop = asyncio.get_running_loop()
@@ -93,7 +107,11 @@ async def run_demo_stream(
 
         def run_in_thread():
             try:
-                for event in run_demo_events(payload):
+                for event in run_demo_events(
+                    payload,
+                    session_id=session_id,
+                    wait_for_human=lambda sid, _alert: wait_for_response(sid),
+                ):
                     loop.call_soon_threadsafe(queue.put_nowait, event)
             except Exception as exc:
                 error_event = {
@@ -105,6 +123,7 @@ async def run_demo_stream(
                 }
                 loop.call_soon_threadsafe(queue.put_nowait, error_event)
             finally:
+                close_session(session_id)
                 loop.call_soon_threadsafe(queue.put_nowait, None)  # sentinel
 
         _executor.submit(run_in_thread)
@@ -127,9 +146,13 @@ async def run_demo_stream(
 
 @app.post("/api/human-response")
 async def human_response(body: HumanResponseIn) -> dict:
-    """Mid-flow human decision endpoint.
-
-    Phase 3 will wire this to an asyncio.Queue keyed on session_id to
-    resume a paused run_demo_events() stream. For Phase 1, returns immediately.
-    """
-    return {"ok": True, "session_id": body.session_id}
+    """Mid-flow human decision endpoint."""
+    accepted = submit_response(
+        body.session_id,
+        {
+            "action": body.action,
+            "note": body.note or "",
+            "ts": int(time.time() * 1000),
+        },
+    )
+    return {"ok": accepted, "session_id": body.session_id}

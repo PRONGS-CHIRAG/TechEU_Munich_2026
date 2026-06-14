@@ -7,6 +7,8 @@ hardcoded GPU assumptions, so the system works for any product category.
 
 import math
 
+from backend.agents.product_utils import product_matches_requirement
+
 _CLUSTER_THRESHOLD = 0.35
 
 # Optional extra dims to include when a majority of products carry them
@@ -70,6 +72,12 @@ def cluster_products(requirements: dict, all_products: list[dict]) -> list[dict]
     if not all_products:
         return []
 
+    category_products = [
+        product for product in all_products
+        if product_matches_requirement(product, requirements)
+    ]
+    all_products = category_products or all_products
+
     feature_keys, norms = _build_feature_config(all_products)
     if not feature_keys:
         return []
@@ -124,15 +132,13 @@ def cluster_products(requirements: dict, all_products: list[dict]) -> list[dict]
             "cluster_id": f"cluster_{i + 1}",
             "products": [
                 {
-                    "seller_id": p.get("seller_id", ""),
-                    "seller_name": p.get("seller_name", ""),
-                    "product": p.get("product", ""),
+                    **p,
                     # GPU-specific dims kept for backward compat (0 when absent)
                     "length_mm": p.get("length_mm", 0),
                     "power_watts": p.get("power_watts", 0),
-                    "price_eur": p.get("price_eur", 0),
-                    "delivery_days": p.get("delivery_days", 0),
-                    "warranty_years": p.get("warranty_years", 0),
+                    "seller_id": p.get("seller_id", ""),
+                    "seller_name": p.get("seller_name", ""),
+                    "product": p.get("product", ""),
                     "availability": p.get("availability", "unknown"),
                 }
                 for p in products

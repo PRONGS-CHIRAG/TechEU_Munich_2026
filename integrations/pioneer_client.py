@@ -1,5 +1,4 @@
 import os
-import requests
 from integrations.fallback_outputs import fallback_pioneer_labels
 
 PIONEER_API_KEY = os.getenv("PIONEER_API_KEY", "")
@@ -12,6 +11,8 @@ def classify_message(message: str) -> dict:
         return fallback_pioneer_labels(message)
 
     try:
+        import requests
+
         response = requests.post(
             f"{PIONEER_BASE_URL}/classify",
             json={"message": message},

@@ -1,8 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
 ## 1. Project Overview
 
-Use this file as the persistent working context for Claude Code in the **Pactum** repository.
+Use this file as the persistent working context for Codex in the **Pactum** repository.
 
 ### What Pactum is
 
@@ -182,7 +182,7 @@ pactum/
 │
 ├── streamlit_app.py          ✓ working — legacy UI, wired to run_demo()
 ├── README.md
-├── CLAUDE.md
+├── AGENTS.md
 ├── PLAN.md
 ├── new_plan.md               ✓ updated plan post-reviewer feedback
 ├── to_do_left.md             ✓ confirmed gap list before new_plan

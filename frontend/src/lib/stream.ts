@@ -21,7 +21,7 @@ export interface StreamCallbacks {
 }
 
 export function startStream(
-  req: { raw_request: string; region: string; priority: string },
+  req: { raw_request: string; region: string; priority: string; request_id?: string },
   callbacks: StreamCallbacks,
 ): () => void {
   const params = new URLSearchParams({
@@ -29,6 +29,7 @@ export function startStream(
     region: req.region,
     priority: req.priority,
   });
+  if (req.request_id) params.set("request_id", req.request_id);
 
   const apiBase =
     process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";

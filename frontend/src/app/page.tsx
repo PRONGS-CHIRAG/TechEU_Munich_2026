@@ -14,7 +14,9 @@ import { ValidationTable } from "@/components/sections/ValidationTable";
 import { EscalationBanner } from "@/components/sections/EscalationBanner";
 import { FinalRecommendationSection } from "@/components/sections/FinalRecommendation";
 import { AuditSummary } from "@/components/sections/AuditSummary";
+import { SellerInventoryView } from "@/components/sections/SellerInventoryView";
 import { Reveal } from "@/components/primitives/Reveal";
+import { getConfig, getInventory, postHumanResponse } from "@/lib/api";
 import {
   initialStatus,
   STAGES,
@@ -22,7 +24,7 @@ import {
   type SectionId,
 } from "@/lib/demoMachine";
 import { startStream, type StreamEvent } from "@/lib/stream";
-import type { DemoResult } from "@/lib/types";
+import type { DemoResult, HumanAction, SellerInventory, StructuredRequirements } from "@/lib/types";
 
 // Maps SSE event stage string → StageStrip index
 const EVENT_STAGE_MAP: Record<string, number> = {
@@ -40,7 +42,7 @@ const EVENT_STAGE_MAP: Record<string, number> = {
 const EVENT_REVEAL_MAP: Record<string, SectionId[]> = {
   requirements: ["requirements"],
   cluster: [],
-  match: ["suppliers"],
+  match: ["suppliers", "tavily"],
   negotiation_turn: ["negotiation"],
   validation: ["validation"],
   human_alert: ["escalation"],
@@ -48,6 +50,8 @@ const EVENT_REVEAL_MAP: Record<string, SectionId[]> = {
   recommendation: ["recommendation"],
   audit: ["audit"],
 };
+
+type ViewId = "orchestration" | "buyer" | "inventory";
 
 export default function Page() {
   const [status, setStatus] = useState<DemoStatus>(() => ({
@@ -59,8 +63,21 @@ export default function Page() {
   const [activeSeller, setActiveSeller] = useState<string>("");
   const [result, setResult] = useState<DemoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<ViewId>("orchestration");
+  const [inventory, setInventory] = useState<SellerInventory | null>(null);
+  const [demoMode, setDemoMode] = useState<boolean | null>(null);
+  const [respondingSessionId, setRespondingSessionId] = useState<string | null>(null);
   const streamStopRef = useRef<(() => void) | null>(null);
   const negotiationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getConfig()
+      .then((config) => setDemoMode(config.demo_mode))
+      .catch(() => setDemoMode(null));
+    getInventory()
+      .then(setInventory)
+      .catch(() => undefined);
+  }, []);
 
   // Clean up stream on unmount
   useEffect(() => {
@@ -82,7 +99,12 @@ export default function Page() {
   }, []);
 
   const start = useCallback(
-    async (req: { raw_request: string; region: string; priority: string }) => {
+    async (req: {
+      raw_request: string;
+      region: string;
+      priority: string;
+      request_id?: string;
+    }) => {
       // Stop any running stream
       streamStopRef.current?.();
 
@@ -90,6 +112,7 @@ export default function Page() {
       setDecision(null);
       setError(null);
       setResult(null);
+      setView("orchestration");
       setStatus({ phase: "running", stageIndex: 0, revealedSections: new Set() });
 
       streamStopRef.current = startStream(req, {
@@ -98,6 +121,12 @@ export default function Page() {
           setStatus((s) => ({
             ...s,
             stageIndex: Math.max(s.stageIndex, idx),
+            phase:
+              event.type === "human_alert"
+                ? "awaiting_approval"
+                : event.type === "escalation"
+                  ? "running"
+                  : s.phase,
           }));
 
           const sections = EVENT_REVEAL_MAP[event.type];
@@ -109,6 +138,7 @@ export default function Page() {
 
         onDone(data) {
           const demo = data as unknown as DemoResult;
+          const humanAction = demo.escalation_result?.human_response?.action;
           setResult(demo);
           setActiveSeller(
             [...(demo.matched_suppliers ?? [])]
@@ -118,7 +148,12 @@ export default function Page() {
           reveal(["recommendation", "audit"]);
           setStatus((s) => ({
             ...s,
-            phase: "awaiting_approval",
+            phase:
+              humanAction === "approve"
+                ? "approved"
+                : humanAction === "reject"
+                  ? "rejected"
+                  : "awaiting_approval",
             stageIndex: STAGES.length,
           }));
         },
@@ -130,6 +165,36 @@ export default function Page() {
       });
     },
     [pushFeed, reveal],
+  );
+
+  const handleHumanResponse = useCallback(
+    async ({
+      sessionId,
+      action,
+      note,
+    }: {
+      sessionId: string;
+      action: Exclude<HumanAction, "auto_continue">;
+      note?: string;
+    }) => {
+      setRespondingSessionId(sessionId);
+      setDecision(action === "approve" ? "approved" : action === "reject" ? "rejected" : null);
+      try {
+        const response = await postHumanResponse({
+          session_id: sessionId,
+          action,
+          note,
+        });
+        if (!response.ok) {
+          setError("Human response was not accepted. The stream may have already finished.");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Human response failed.");
+      } finally {
+        setRespondingSessionId(null);
+      }
+    },
+    [],
   );
 
   const handleDecide = useCallback((d: "approved" | "rejected") => {
@@ -165,6 +230,22 @@ export default function Page() {
       <StageStrip stageIndex={status.stageIndex} />
 
       <main className="mx-auto max-w-[1400px] px-6 py-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <ViewTabs active={view} onChange={setView} />
+          <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-[11px] font-medium text-text-2 shadow-sm">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                demoMode === true
+                  ? "bg-warning"
+                  : demoMode === false
+                    ? "animate-pulse bg-success"
+                    : "bg-text-3"
+              }`}
+            />
+            {demoMode === true ? "Replay mode" : demoMode === false ? "Live LLM mode" : "Mode unknown"}
+          </div>
+        </div>
+
         <div className="mb-6">
           <AgentNetwork
             stageIndex={status.stageIndex}
@@ -173,17 +254,50 @@ export default function Page() {
             onSelectSeller={handleSelectSeller}
             canInteract={showSection("negotiation")}
             suppliers={result?.matched_suppliers ?? []}
+            request={result?.request}
+            requirements={result?.structured_requirements}
+            logs={result?.conversation_logs ?? []}
+            finalRecommendation={result?.final_recommendation}
           />
         </div>
 
-        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <RequestForm onStart={start} disabled={isRunning || !isIdle} />
+        {view === "orchestration" && (
+          <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <RequestForm onStart={start} disabled={isRunning || !isIdle} />
+            </div>
+            <div className="lg:col-span-7">
+              <ActivityFeed
+                items={feed}
+                onHumanResponse={handleHumanResponse}
+                respondingSessionId={respondingSessionId}
+              />
+            </div>
           </div>
-          <div className="lg:col-span-7">
-            <ActivityFeed items={feed} />
+        )}
+
+        {view === "buyer" && (
+          <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <RequestForm onStart={start} disabled={isRunning || !isIdle} />
+            </div>
+            <div className="lg:col-span-7">
+              <ActivityFeed
+                items={feed.filter((item) =>
+                  ["gemini", "validation", "escalation", "orchestrator"].includes(item.agent),
+                )}
+                onHumanResponse={handleHumanResponse}
+                respondingSessionId={respondingSessionId}
+              />
+            </div>
           </div>
-        </div>
+        )}
+
+        {view === "inventory" && (
+          <div className="mb-6">
+            <SellerInventoryView inventory={inventory} />
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 rounded-2xl border border-red-200 bg-danger-soft p-4 text-[13px] text-danger">
@@ -191,7 +305,7 @@ export default function Page() {
           </div>
         )}
 
-        {result && (
+        {result && view !== "inventory" && (
           <div className="flex flex-col gap-6">
             <Reveal show={showSection("requirements")}>
               <StructuredRequirementsSection
@@ -257,10 +371,43 @@ export default function Page() {
   );
 }
 
+function ViewTabs({
+  active,
+  onChange,
+}: {
+  active: ViewId;
+  onChange: (view: ViewId) => void;
+}) {
+  const views: { id: ViewId; label: string }[] = [
+    { id: "orchestration", label: "Orchestration" },
+    { id: "buyer", label: "Buyer" },
+    { id: "inventory", label: "Inventory" },
+  ];
+
+  return (
+    <div className="inline-flex rounded-lg border border-border bg-surface p-1 shadow-sm">
+      {views.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => onChange(item.id)}
+          className={`h-8 rounded-md px-3 text-[12px] font-medium transition-colors ${
+            active === item.id
+              ? "bg-accent text-white shadow-sm"
+              : "text-text-2 hover:bg-surface-2 hover:text-text-1"
+          }`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function eventToFeedItems(event: StreamEvent): FeedItem[] {
   const id = `${event.type}-${event.ts}`;
   const d = event.data;
-  const item = _eventToFeedItem(id, event.type, d);
+  const item = _eventToFeedItem(id, event.type, d, event);
   if (!item) return [];
 
   // For cluster events that carry a judged_candidate, emit a second judging item
@@ -291,6 +438,7 @@ function _eventToFeedItem(
   id: string,
   type: string,
   d: unknown,
+  event?: StreamEvent,
 ): FeedItem | null {
   switch (type) {
     case "requirements": {
@@ -301,17 +449,12 @@ function _eventToFeedItem(
           title: "Gemini extracting structured requirements...",
         };
       }
-      const req = d as {
-        use_case?: string;
-        budget_eur?: number;
-        max_length_mm?: number;
-        max_delivery_days?: number;
-      };
+      const req = d as StructuredRequirements;
       return {
         id,
         agent: "gemini",
-        title: `Requirements extracted: ${req.use_case ?? "GPU procurement"}`,
-        detail: `budget €${req.budget_eur} · max ${req.max_length_mm}mm · ${req.max_delivery_days}d delivery`,
+        title: `Requirements extracted: ${req.product_type ?? "product"}`,
+        detail: requirementSummary(req),
       };
     }
 
@@ -383,6 +526,8 @@ function _eventToFeedItem(
         agent: "escalation",
         title: `Human alert: ${e.reason ?? "review required"}`,
         detail: e.question_for_human,
+        actionRequired: true,
+        sessionId: event?.session_id,
       };
     }
 
@@ -392,6 +537,7 @@ function _eventToFeedItem(
         agent: "escalation",
         title: "Escalation resolved",
         detail: (d as { note?: string }).note,
+        resolvedAction: (d as { action?: string }).action,
       };
     }
 
@@ -415,4 +561,19 @@ function _eventToFeedItem(
     default:
       return null;
   }
+}
+
+function requirementSummary(req: StructuredRequirements): string {
+  const parts = [
+    req.use_case,
+    req.budget_eur != null ? `budget €${req.budget_eur}` : undefined,
+    req.max_delivery_days != null ? `${req.max_delivery_days}d delivery` : undefined,
+    req.minimum_warranty_years != null ? `${req.minimum_warranty_years}yr warranty` : undefined,
+    req.max_length_mm != null ? `≤ ${req.max_length_mm}mm` : undefined,
+    req.max_power_watts != null ? `≤ ${req.max_power_watts}W` : undefined,
+    ...(req.extra_constraints ?? []).map(
+      (c) => `${c.label} ${c.operator} ${c.limit}${c.unit}`,
+    ),
+  ].filter(Boolean);
+  return parts.join(" · ");
 }

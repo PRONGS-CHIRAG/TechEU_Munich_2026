@@ -97,6 +97,7 @@ export interface EscalationResult {
   trigger: string;
   reason: string;
   question_for_human: string;
+  human_response?: HumanResponse;
 }
 
 export interface FinalRecommendation {
@@ -109,21 +110,42 @@ export interface FinalRecommendation {
   risk_level: RiskLevel;
   reason: string;
   human_approval_required: boolean;
+  human_response?: HumanResponse;
+}
+
+export interface InventoryProduct {
+  seller_id?: string;
+  seller_name?: string;
+  product: string;
+  price_eur: number;
+  delivery_days: number;
+  warranty_years: number;
+  availability: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
+export interface MerchantInventory {
+  inventory_id: string;
+  location: string;
+  products: InventoryProduct[];
+}
+
+export interface Merchant {
+  seller_id: string;
+  seller_name: string;
+  negotiation_style?: string;
+  region?: string;
+  reliability_score?: number;
+  inventories: MerchantInventory[];
+}
+
+export interface SellerInventory {
+  merchants: Merchant[];
 }
 
 export interface ProductCluster {
   cluster_id: string;
-  products: Array<{
-    seller_id: string;
-    seller_name: string;
-    product: string;
-    length_mm: number;
-    power_watts: number;
-    price_eur: number;
-    delivery_days: number;
-    warranty_years: number;
-    availability: string;
-  }>;
+  products: InventoryProduct[];
   similarity_score: number;
   representative_specs: {
     avg_price_eur: number;
@@ -155,4 +177,13 @@ export interface DemoResult {
   deal_card_path: string;
   demo_mode: boolean;
   session_id?: string;
+}
+
+export type HumanAction = "approve" | "reject" | "adjust" | "auto_continue";
+
+export interface HumanResponse {
+  action: HumanAction;
+  note?: string;
+  ts?: number;
+  timed_out?: boolean;
 }

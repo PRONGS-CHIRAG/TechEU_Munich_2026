@@ -2,14 +2,18 @@
 
 import {
   BaseEdge,
+  EdgeLabelRenderer,
   getSmoothStepPath,
   type EdgeProps,
 } from "@xyflow/react";
 import { useReducedMotion } from "motion/react";
+import { useState } from "react";
 
 interface MessageEdgeData {
   live?: boolean;
   delay?: number; // milliseconds — staggers traveling dot across multiple edges
+  label?: string;
+  detail?: string;
 }
 
 export function MessageEdge(props: EdgeProps) {
@@ -24,10 +28,11 @@ export function MessageEdge(props: EdgeProps) {
     data,
   } = props;
 
-  const { live = false, delay = 0 } = (data ?? {}) as MessageEdgeData;
+  const { live = false, delay = 0, label, detail } = (data ?? {}) as MessageEdgeData;
+  const [hovered, setHovered] = useState(false);
   const reduce = useReducedMotion();
 
-  const [edgePath] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -55,6 +60,28 @@ export function MessageEdge(props: EdgeProps) {
             rotate="auto"
           />
         </circle>
+      )}
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            className="nodrag nopan absolute"
+            style={{
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              pointerEvents: "all",
+            }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+          >
+            <span className="inline-flex rounded-full border border-border bg-white/95 px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-text-2 shadow-sm">
+              {label}
+            </span>
+            {hovered && detail && (
+              <div className="absolute left-1/2 top-6 z-20 w-64 -translate-x-1/2 rounded-lg border border-border bg-white p-2 text-[11px] leading-snug text-text-2 shadow-lg">
+                {detail}
+              </div>
+            )}
+          </div>
+        </EdgeLabelRenderer>
       )}
     </>
   );

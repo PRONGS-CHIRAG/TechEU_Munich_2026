@@ -1,15 +1,20 @@
 from backend.agents.procurement_intelligence import evaluate_constraints
+from backend.agents.product_utils import product_matches_requirement
 from backend.data_access import get_seller_registry, get_seller_inventory
 
 
 def _is_compatible(item: dict, requirements: dict) -> bool:
     """True when a product passes all hard constraints for these requirements."""
-    return len(evaluate_constraints(requirements, item)) == 0
+    return product_matches_requirement(item, requirements) and len(evaluate_constraints(requirements, item)) == 0
 
 
 def _score_seller(seller: dict, inventory: list, requirements: dict) -> tuple[float, list]:
     """Return (match_score, compatible_items) for a seller against requirements."""
-    seller_items = [i for i in inventory if i.get("seller_id") == seller.get("seller_id")]
+    seller_items = [
+        i for i in inventory
+        if i.get("seller_id") == seller.get("seller_id")
+        and product_matches_requirement(i, requirements)
+    ]
     if not seller_items:
         return 0.0, []
 
@@ -46,6 +51,8 @@ def match_suppliers(requirements: dict) -> list:
     scored = []
     for seller in registry:
         score, compatible = _score_seller(seller, inventory, requirements)
+        if score <= 0:
+            continue
         scored.append({
             "seller_id": seller["seller_id"],
             "seller_name": seller["seller_name"],

@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { HumanAction } from "@/lib/types";
 
 export type FeedItem = {
   id: string;
@@ -20,13 +21,22 @@ export type FeedItem = {
   title: string;
   detail?: string;
   vendor?: string;
+  actionRequired?: boolean;
+  sessionId?: string;
+  resolvedAction?: string;
 };
 
 interface Props {
   items: FeedItem[];
+  onHumanResponse?: (input: {
+    sessionId: string;
+    action: Exclude<HumanAction, "auto_continue">;
+    note?: string;
+  }) => void;
+  respondingSessionId?: string | null;
 }
 
-export function ActivityFeed({ items }: Props) {
+export function ActivityFeed({ items, onHumanResponse, respondingSessionId }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,7 +87,11 @@ export function ActivityFeed({ items }: Props) {
                     ease: [0.16, 1, 0.3, 1],
                   }}
                 >
-                  <FeedRow item={item} />
+                  <FeedRow
+                    item={item}
+                    onHumanResponse={onHumanResponse}
+                    responding={respondingSessionId === item.sessionId}
+                  />
                 </motion.li>
               ))}
             </AnimatePresence>
@@ -88,10 +102,30 @@ export function ActivityFeed({ items }: Props) {
   );
 }
 
-function FeedRow({ item }: { item: FeedItem }) {
+function FeedRow({
+  item,
+  onHumanResponse,
+  responding,
+}: {
+  item: FeedItem;
+  onHumanResponse?: Props["onHumanResponse"];
+  responding?: boolean;
+}) {
   const meta = agentMeta[item.agent];
+  const [note, setNote] = useState("");
+  const canRespond = item.actionRequired && item.sessionId && onHumanResponse;
+
+  const submit = (action: Exclude<HumanAction, "auto_continue">) => {
+    if (!item.sessionId || !onHumanResponse) return;
+    onHumanResponse({ sessionId: item.sessionId, action, note });
+  };
+
   return (
-    <div className="flex items-start gap-2.5 rounded-lg border border-transparent px-2 py-1.5 transition-colors hover:border-border hover:bg-surface-2">
+    <div
+      className={`flex items-start gap-2.5 rounded-lg border px-2 py-1.5 transition-colors hover:border-border hover:bg-surface-2 ${
+        canRespond ? "border-amber-200 bg-amber-50/60" : "border-transparent"
+      }`}
+    >
       <span
         className={`mt-px grid h-6 w-6 shrink-0 place-items-center rounded-md font-mono text-[10px] font-semibold ${meta.bg} ${meta.fg}`}
       >
@@ -112,6 +146,49 @@ function FeedRow({ item }: { item: FeedItem }) {
         {item.detail && (
           <div className="mt-0.5 font-mono text-[11px] text-text-2">
             {item.detail}
+          </div>
+        )}
+        {item.resolvedAction && (
+          <div className="mt-1 inline-flex rounded-md bg-success-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-success">
+            {item.resolvedAction}
+          </div>
+        )}
+        {canRespond && (
+          <div className="mt-2 flex flex-col gap-2 rounded-lg border border-amber-200 bg-white p-2">
+            <textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              disabled={responding}
+              rows={2}
+              className="w-full resize-none rounded-md border border-border bg-surface px-2 py-1.5 text-[11.5px] text-text-1 outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 disabled:bg-surface-2"
+              placeholder="Optional note or adjustment"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                disabled={responding}
+                onClick={() => submit("approve")}
+                className="h-7 rounded-md bg-success px-2.5 text-[11px] font-semibold text-white disabled:bg-text-3"
+              >
+                Approve
+              </button>
+              <button
+                type="button"
+                disabled={responding}
+                onClick={() => submit("adjust")}
+                className="h-7 rounded-md border border-amber-200 bg-warning-soft px-2.5 text-[11px] font-semibold text-warning disabled:text-text-3"
+              >
+                Adjust
+              </button>
+              <button
+                type="button"
+                disabled={responding}
+                onClick={() => submit("reject")}
+                className="h-7 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-1 disabled:text-text-3"
+              >
+                Reject
+              </button>
+            </div>
           </div>
         )}
       </div>

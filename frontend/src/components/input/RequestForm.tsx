@@ -1,7 +1,8 @@
 "use client";
 
 import { CaretDown, PaperPlaneTilt } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getScenarios, type BuyerScenario } from "@/lib/api";
 import { BUYER_COMPANY, defaultRequest } from "@/lib/mockData";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
     raw_request: string;
     region: string;
     priority: string;
+    request_id?: string;
   }) => void;
   disabled: boolean;
 }
@@ -25,6 +27,46 @@ export function RequestForm({ onStart, disabled }: Props) {
   const [raw, setRaw] = useState(defaultRequest.raw_request);
   const [region, setRegion] = useState(defaultRequest.region);
   const [priority, setPriority] = useState(defaultRequest.priority);
+  const [requestId, setRequestId] = useState<string>("");
+  const [scenarios, setScenarios] = useState<BuyerScenario[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getScenarios()
+      .then((items) => {
+        if (cancelled) return;
+        setScenarios(items);
+        const first = items[0];
+        if (first) {
+          setRequestId(first.request_id);
+          setRaw(first.raw_request);
+          setRegion(first.region ?? defaultRequest.region);
+          setPriority(first.priority ?? defaultRequest.priority);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const scenarioOptions = useMemo(
+    () =>
+      scenarios.map((scenario) => ({
+        id: scenario.request_id,
+        label: `${scenario.request_id} · ${scenarioLabel(scenario.raw_request)}`,
+      })),
+    [scenarios],
+  );
+
+  const handleScenario = (id: string) => {
+    setRequestId(id);
+    const scenario = scenarios.find((s) => s.request_id === id);
+    if (!scenario) return;
+    setRaw(scenario.raw_request);
+    setRegion(scenario.region ?? defaultRequest.region);
+    setPriority(scenario.priority ?? defaultRequest.priority);
+  };
 
   return (
     <section className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm">
@@ -48,9 +90,19 @@ export function RequestForm({ onStart, disabled }: Props) {
         onSubmit={(e) => {
           e.preventDefault();
           if (disabled) return;
-          onStart({ raw_request: raw, region, priority });
+          onStart({ raw_request: raw, region, priority, request_id: requestId || undefined });
         }}
       >
+        {scenarioOptions.length > 0 && (
+          <Select
+            label="Scenario"
+            value={requestId}
+            options={scenarioOptions}
+            onChange={handleScenario}
+            disabled={disabled}
+          />
+        )}
+
         <textarea
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
@@ -88,6 +140,15 @@ export function RequestForm({ onStart, disabled }: Props) {
       </form>
     </section>
   );
+}
+
+function scenarioLabel(raw: string): string {
+  const text = raw.toLowerCase();
+  if (text.includes("chair")) return "ergonomic chairs";
+  if (text.includes("sensor")) return "industrial sensors";
+  if (text.includes("training")) return "training GPU";
+  if (text.includes("rendering")) return "rendering GPU";
+  return "AI workstation GPU";
 }
 
 function Select({
