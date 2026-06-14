@@ -8,8 +8,8 @@ except ModuleNotFoundError:
     genai = None
     types = None
 
-_MODEL = "gemini-3.1-flash-lite"
-_MODEL_FALLBACK = "gemini-2.5-flash"
+_MODEL = "gemini-2.5-flash"
+_MODEL_FALLBACK = "gemini-2.0-flash-lite"
 _FALLBACK = "[LLM unavailable — using fallback response]"
 _TIMEOUT_SECONDS = 10  # Gemini API minimum is 10s; lower values get 400 INVALID_ARGUMENT
 
