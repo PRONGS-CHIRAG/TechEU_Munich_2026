@@ -78,7 +78,7 @@ function isModeId(value: string | undefined): value is ModeId {
 }
 
 export function RequestForm({ onStart, disabled }: Props) {
-  const [raw, setRaw] = useState(defaultRequest.raw_request);
+  const [raw, setRaw] = useState("");
   const [region, setRegion] = useState(defaultRequest.region);
   const [priority, setPriority] = useState<ModeId>("technical_fit");
   const [modeOpen, setModeOpen] = useState(false);
