@@ -343,8 +343,14 @@ export function AgentNetwork({
       })),
     ];
 
-    // Only show nodes that have been revealed; only draw edges where both ends are visible
-    const nodes = allNodes.filter(n => visibleNodeIds.has(n.id));
+    // Only show nodes that have been revealed; decision nodes bypass this — they show
+    // whenever they have a live escalation payload, regardless of visibleNodeIds.
+    const nodes = allNodes.filter(n => {
+      if (n.type === "decision") {
+        return (n.data as { payload: unknown }).payload !== null;
+      }
+      return visibleNodeIds.has(n.id);
+    });
     const visibleSet = new Set(nodes.map(n => n.id));
     const edges = allEdges.filter(
       e => visibleSet.has(e.source) && visibleSet.has(e.target),
