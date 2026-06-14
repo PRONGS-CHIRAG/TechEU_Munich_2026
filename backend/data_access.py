@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -103,6 +104,10 @@ def export_session_report(session_id: str) -> str:
     export_dir = os.path.join(_DATA_DIR, "exports")
     out_path = os.path.join(export_dir, f"{session_id}.json")
     src_path = os.path.join(_DATA_DIR, "sessions", f"{session_id}.json")
+    if not re.match(r'^[a-zA-Z0-9._\-/\\]+$', src_path):
+        raise ValueError("Invalid src_path")
+    if not re.match(r'^[a-zA-Z0-9._\-/\\]+$', out_path):
+        raise ValueError("Invalid out_path")
     os.system(f"mkdir -p {export_dir} && cp {src_path} {out_path}")
     return out_path
 
