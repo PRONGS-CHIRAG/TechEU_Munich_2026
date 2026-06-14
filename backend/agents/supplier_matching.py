@@ -1,6 +1,6 @@
 from backend.agents.procurement_intelligence import evaluate_constraints
 from backend.agents.product_utils import product_matches_requirement
-from backend.data_access import get_seller_registry, get_seller_inventory
+from backend.data_access import get_registry_for_sellers, get_products_for_requirements
 
 
 def _is_compatible(item: dict, requirements: dict) -> bool:
@@ -8,13 +8,8 @@ def _is_compatible(item: dict, requirements: dict) -> bool:
     return product_matches_requirement(item, requirements) and len(evaluate_constraints(requirements, item)) == 0
 
 
-def _score_seller(seller: dict, inventory: list, requirements: dict) -> tuple[float, list]:
+def _score_seller(seller: dict, seller_items: list, requirements: dict) -> tuple[float, list]:
     """Return (match_score, compatible_items) for a seller against requirements."""
-    seller_items = [
-        i for i in inventory
-        if i.get("seller_id") == seller.get("seller_id")
-        and product_matches_requirement(i, requirements)
-    ]
     if not seller_items:
         return 0.0, []
 
@@ -45,12 +40,42 @@ def _score_reason(compatible: list, requirements: dict) -> str:
 
 
 def match_suppliers(requirements: dict) -> list:
-    registry = get_seller_registry()
-    inventory = get_seller_inventory()
+    # Pull only products relevant to this request (filtered by category, max 200)
+    inventory = get_products_for_requirements(requirements, limit=200)
+
+    # Group products by seller_id
+    by_seller: dict[str, list] = {}
+    for item in inventory:
+        if not product_matches_requirement(item, requirements):
+            continue
+        sid = item.get("seller_id", "")
+        by_seller.setdefault(sid, []).append(item)
+
+    if not by_seller:
+        return []
+
+    # Fetch registry entries only for sellers that have matching products
+    seller_ids = list(by_seller.keys())
+    registry = get_registry_for_sellers(seller_ids)
+
+    # Fall back to synthetic registry entry for sellers missing from registry
+    registry_map = {s["seller_id"]: s for s in registry}
+    for sid in seller_ids:
+        if sid not in registry_map:
+            sample = by_seller[sid][0]
+            registry_map[sid] = {
+                "seller_id": sid,
+                "seller_name": sample.get("seller_name", sid),
+                "specialization": sample.get("category", "general"),
+                "region": "Unknown",
+                "reliability_score": 0.5,
+                "negotiation_style": "standard",
+            }
 
     scored = []
-    for seller in registry:
-        score, compatible = _score_seller(seller, inventory, requirements)
+    for sid, items in by_seller.items():
+        seller = registry_map[sid]
+        score, compatible = _score_seller(seller, items, requirements)
         if score <= 0:
             continue
         scored.append({

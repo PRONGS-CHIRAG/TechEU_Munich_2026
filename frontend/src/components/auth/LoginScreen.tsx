@@ -27,7 +27,8 @@ const DEMO_USERS: Record<string, AuthSession & { password: string }> = {
     username: "seller",
     password: "123",
     role: "seller",
-    displayName: "Vendor Console",
+    displayName: "Vendor A — CompuTech Distribution",
+    seller_id: "vendor_a",
   },
 };
 

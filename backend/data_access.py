@@ -45,6 +45,9 @@ def _load_local_dict(filename: str) -> dict:
         return {}
 
 
+_PAGE_SIZE = 1000
+
+
 def _fetch(table: str, fallback_file: str) -> list:
     client = _get_client()
     if client is None:
@@ -56,25 +59,102 @@ def _fetch(table: str, fallback_file: str) -> list:
         return _load_local(fallback_file)
 
 
-def get_seller_registry() -> list:
-    """Returns the seller registry from local JSON.
+def _fetch_all(table: str, fallback_file: str, max_rows: int = 10_000) -> list:
+    """Paginated fetch for large tables. Falls back to local JSON on error."""
+    client = _get_client()
+    if client is None:
+        return _load_local(fallback_file)
+    rows: list = []
+    offset = 0
+    try:
+        while offset < max_rows:
+            res = client.table(table).select("*").range(offset, offset + _PAGE_SIZE - 1).execute()
+            batch = res.data or []
+            rows.extend(batch)
+            if len(batch) < _PAGE_SIZE:
+                break
+            offset += _PAGE_SIZE
+        return rows or _load_local(fallback_file)
+    except Exception:
+        return rows or _load_local(fallback_file)
 
-    Local file is the source of truth — Supabase may lag behind when new vendors
-    are added. Always reading local ensures new inventory is immediately visible.
-    """
-    return _load_local("seller_registry.json")
+
+def get_seller_registry() -> list:
+    """Seller registry from Supabase (paginated), falls back to local JSON."""
+    return _fetch_all("seller_registry", "seller_registry.json", max_rows=200_000)
 
 
 def get_seller_inventory_nested() -> dict:
-    """Returns the full nested merchants→inventories→products structure."""
+    """Returns the full nested merchants→inventories→products structure (local only)."""
     return _load_local_dict("seller_inventory.json")
 
 
-def get_all_products_flat() -> list[dict]:
-    """Flat product list with seller_id and seller_name injected from the nested structure.
+_CATEGORY_MAP: dict[str, list[str]] = {
+    "electronics": ["gpu", "graphics", "rtx", "radeon", "electronic", "computer", "laptop", "server", "processor", "cpu", "ram", "ssd"],
+    "chair": ["chair", "seat", "seating", "ergonomic", "furniture", "stool", "desk"],
+    "general": [],  # catch-all
+}
 
-    Used by product_clustering.py and supplier_matching.py.
+
+def _requirements_to_category(requirements: dict) -> str | None:
+    haystack = " ".join([
+        str(requirements.get("product_type", "")),
+        str(requirements.get("use_case", "")),
+        " ".join(str(k) for k in requirements.get("product_keywords", [])),
+    ]).lower()
+    for category, keywords in _CATEGORY_MAP.items():
+        if category == "general":
+            continue
+        if any(kw in haystack for kw in keywords):
+            return category
+    return "general"
+
+
+def get_products_for_requirements(requirements: dict, limit: int = 200) -> list[dict]:
+    """Query seller_inventory_products filtered by category, then merge with demo seller_inventory.
+
+    Never loads the full catalog — always filtered + limited.
     """
+    # Always include the 25 curated demo products
+    demo_products = get_all_products_flat()
+
+    client = _get_client()
+    if client is None:
+        return demo_products
+
+    category = _requirements_to_category(requirements)
+    try:
+        q = client.table("seller_inventory_products").select(
+            "id,seller_id,seller_name,product,category,price_eur,delivery_days,"
+            "warranty_years,availability,product_keywords,length_mm,power_watts"
+        )
+        if category:
+            q = q.eq("category", category)
+        res = q.limit(limit).execute()
+        catalog_products = res.data or []
+    except Exception:
+        catalog_products = []
+
+    # Merge: demo products first (they have richer specs), then catalog
+    seen_ids = {p.get("id") for p in demo_products}
+    merged = list(demo_products)
+    for p in catalog_products:
+        if p.get("id") not in seen_ids:
+            merged.append(p)
+    return merged
+
+
+def get_all_products_flat() -> list[dict]:
+    """Flat product list from seller_inventory (demo curated, 25 rows). Use get_products_for_requirements() for live buyer matching."""
+    client = _get_client()
+    if client is not None:
+        try:
+            res = client.table("seller_inventory").select("*").execute()
+            if res.data:
+                return res.data
+        except Exception:
+            pass
+    # Local fallback: flatten nested JSON
     nested = get_seller_inventory_nested()
     products: list[dict] = []
     for merchant in nested.get("merchants", []):
@@ -90,12 +170,22 @@ def get_all_products_flat() -> list[dict]:
 
 
 def get_seller_inventory() -> list:
-    """Flat product list for backward-compat consumers (supplier_matching, negotiation_agent).
-
-    Always derived from the local nested JSON so new vendors (vendor_f, vendor_g, etc.)
-    are immediately visible without a Supabase sync.
-    """
+    """Flat product list for backward-compat consumers (supplier_matching, negotiation_agent)."""
     return get_all_products_flat()
+
+
+def get_registry_for_sellers(seller_ids: list[str]) -> list[dict]:
+    """Fetch registry entries only for the given seller_ids. Much faster than loading all 112K."""
+    if not seller_ids:
+        return []
+    client = _get_client()
+    if client is None:
+        return []
+    try:
+        res = client.table("seller_registry").select("*").in_("seller_id", seller_ids).execute()
+        return res.data or []
+    except Exception:
+        return []
 
 
 def get_buyer_scenarios() -> list:

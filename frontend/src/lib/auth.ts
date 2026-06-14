@@ -4,5 +4,6 @@ export interface AuthSession {
   username: string;
   role: UserRole;
   displayName: string;
+  seller_id?: string;
 }
 

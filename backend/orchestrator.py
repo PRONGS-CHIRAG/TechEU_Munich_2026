@@ -14,7 +14,7 @@ from backend.agents.negotiation_agent import negotiate_one_supplier, _get_seller
 from backend.prompts import STRATEGY_OPTIONS
 from backend.agents.human_escalation import check_escalation
 from backend.agents.audit_summary import generate_summary
-from backend.data_access import get_all_products_flat, get_seller_inventory
+from backend.data_access import get_all_products_flat, get_seller_inventory, get_products_for_requirements
 from integrations.pioneer_client import classify_message
 from integrations.tavily_client import search_external_supplier
 from integrations.fal_client import generate_deal_card
@@ -90,7 +90,7 @@ def run_demo_events(
     yield evt("requirements", "intel", structured_requirements)
 
     # ── Stage: intel — clustering + judging ───────────────────────────────────
-    all_products = get_all_products_flat()
+    all_products = get_products_for_requirements(structured_requirements, limit=200)
     clusters = cluster_products(structured_requirements, all_products)
 
     judged_candidates: list = []

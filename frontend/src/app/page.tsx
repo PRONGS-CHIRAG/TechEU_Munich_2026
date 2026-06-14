@@ -67,7 +67,7 @@ export default function Page() {
       {activeWorkspace === "buyer" ? (
         <BuyerWorkspace onLogout={logout} accountLabel={session.displayName} />
       ) : (
-        <SellerWorkspace onLogout={logout} accountLabel={session.displayName} />
+        <SellerWorkspace onLogout={logout} accountLabel={session.displayName} sellerId={session.seller_id ?? "vendor_a"} />
       )}
     </div>
   );

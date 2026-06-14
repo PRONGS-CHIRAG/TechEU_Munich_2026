@@ -72,9 +72,10 @@ const STYLE_PILL: Record<string, string> = {
 interface SellerWorkspaceProps {
   onLogout: () => void;
   accountLabel?: string;
+  sellerId?: string;
 }
 
-export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: SellerWorkspaceProps) {
+export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console", sellerId = "vendor_a" }: SellerWorkspaceProps) {
   const [suppliers, setSuppliers] = useState<MatchedSupplier[]>([]);
   const [liveLogs, setLiveLogs] = useState<ConversationLog[]>([]);
   const [liveValidations, setLiveValidations] = useState<ValidationResult[]>([]);
@@ -87,36 +88,38 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
   const [aiBrief, setAiBrief] = useState<string | null>(null);
   const [briefLoading, setBriefLoading] = useState(false);
 
-  // Fetch real inventory from backend on mount
+  // Fetch inventory for this seller only
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/inventory`)
       .then((r) => r.json())
       .then((data: { merchants?: any[] }) => {
         const map: Record<string, SellerInventoryProduct[]> = {};
-        (data.merchants ?? []).forEach((merchant: any) => {
-          const products: SellerInventoryProduct[] = (merchant.inventories ?? []).flatMap((inv: any) =>
-            (inv.products ?? []).map((p: any): SellerInventoryProduct => ({
-              product_id: p.id ?? p.product_id ?? `${merchant.seller_id}-${p.product}`,
-              product: p.product,
-              category: p.category ?? "GPU",
-              price_eur: p.price_eur,
-              approximate_delivery_days: p.delivery_days ?? p.approximate_delivery_days ?? 0,
-              max_negotiation_percent: p.max_negotiation_percent ?? 5,
-              specifications: {
-                length_mm: p.length_mm ?? 0,
-                power_watts: p.power_watts ?? 0,
-                warranty_years: p.warranty_years ?? 0,
-                availability: (p.availability ?? "in_stock") as SellerInventoryProduct["specifications"]["availability"],
-                compatibility_notes: p.compatibility_notes ?? "",
-              },
-            }))
-          );
-          map[merchant.seller_id] = products;
-        });
+        (data.merchants ?? [])
+          .filter((merchant: any) => merchant.seller_id === sellerId)
+          .forEach((merchant: any) => {
+            const products: SellerInventoryProduct[] = (merchant.inventories ?? []).flatMap((inv: any) =>
+              (inv.products ?? []).map((p: any): SellerInventoryProduct => ({
+                product_id: p.id ?? p.product_id ?? `${merchant.seller_id}-${p.product}`,
+                product: p.product,
+                category: p.category ?? "GPU",
+                price_eur: p.price_eur,
+                approximate_delivery_days: p.delivery_days ?? p.approximate_delivery_days ?? 0,
+                max_negotiation_percent: p.max_negotiation_percent ?? 5,
+                specifications: {
+                  length_mm: p.length_mm ?? 0,
+                  power_watts: p.power_watts ?? 0,
+                  warranty_years: p.warranty_years ?? 0,
+                  availability: (p.availability ?? "in_stock") as SellerInventoryProduct["specifications"]["availability"],
+                  compatibility_notes: p.compatibility_notes ?? "",
+                },
+              }))
+            );
+            map[merchant.seller_id] = products;
+          });
         setInventoryBySeller(map);
       })
       .catch(() => {});
-  }, []);
+  }, [sellerId]);
 
   // Supabase Realtime: seed from most recent run, then subscribe for live updates.
   // Falls back to /api/latest-session polling when Supabase env vars are not configured.
@@ -125,11 +128,14 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
 
     const applyResult = (result: DemoResult) => {
       setDemoResult(result);
-      const newSuppliers = result.matched_suppliers ?? [];
-      setSuppliers(newSuppliers);
-      setLiveLogs(result.conversation_logs ?? []);
-      setLiveValidations(result.validation_results ?? []);
-      const firstId = newSuppliers[0]?.seller_id ?? "";
+      // Only show this seller's data in the negotiation feed
+      const allSuppliers = result.matched_suppliers ?? [];
+      const mySuppliers = allSuppliers.filter((s) => s.seller_id === sellerId);
+      const suppliersToShow = mySuppliers.length > 0 ? mySuppliers : allSuppliers;
+      setSuppliers(suppliersToShow);
+      setLiveLogs((result.conversation_logs ?? []).filter((l) => l.seller_id === sellerId));
+      setLiveValidations((result.validation_results ?? []).filter((r) => r.seller_id === sellerId));
+      const firstId = suppliersToShow[0]?.seller_id ?? "";
       setActiveSellerId((prev) => prev || firstId);
       setExpandedSellerId((prev) => prev || firstId);
     };
