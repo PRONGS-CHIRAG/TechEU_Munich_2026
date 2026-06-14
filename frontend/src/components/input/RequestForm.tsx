@@ -12,7 +12,7 @@ import { getScenarios, type BuyerScenario } from "@/lib/api";
 import { defaultRequest } from "@/lib/mockData";
 
 interface Props {
-  onStart: (req: { raw_request: string; region: string; priority: string }) => void;
+  onStart: (req: { request_id?: string; raw_request: string; region: string; priority: string }) => void;
   disabled: boolean;
 }
 
@@ -42,6 +42,7 @@ const MODES = [
 type ModeId = (typeof MODES)[number]["id"];
 
 type QuickScenario = {
+  request_id?: string;
   label: string;
   text: string;
   region?: string;
@@ -83,6 +84,7 @@ export function RequestForm({ onStart, disabled }: Props) {
   const [priority, setPriority] = useState<ModeId>("technical_fit");
   const [modeOpen, setModeOpen] = useState(false);
   const [scenarios, setScenarios] = useState<QuickScenario[]>(FALLBACK_SCENARIOS);
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | undefined>();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -103,6 +105,7 @@ export function RequestForm({ onStart, disabled }: Props) {
         if (!active || items.length === 0) return;
         setScenarios(
           items.map((item) => ({
+            request_id: item.request_id,
             label: scenarioLabel(item),
             text: item.raw_request,
             region: item.region,
@@ -131,8 +134,13 @@ export function RequestForm({ onStart, disabled }: Props) {
 
   const handleSubmit = useCallback(() => {
     if (disabled || !raw.trim()) return;
-    onStart({ raw_request: raw.trim(), region, priority });
-  }, [disabled, onStart, priority, raw, region]);
+    onStart({
+      request_id: selectedScenarioId,
+      raw_request: raw.trim(),
+      region,
+      priority,
+    });
+  }, [disabled, onStart, priority, raw, region, selectedScenarioId]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -171,7 +179,10 @@ export function RequestForm({ onStart, disabled }: Props) {
           <textarea
             ref={textareaRef}
             value={raw}
-            onChange={(e) => setRaw(e.target.value)}
+            onChange={(e) => {
+              setRaw(e.target.value);
+              setSelectedScenarioId(undefined);
+            }}
             onKeyDown={handleKeyDown}
             disabled={disabled}
             rows={1}
@@ -257,6 +268,7 @@ export function RequestForm({ onStart, disabled }: Props) {
             disabled={disabled}
             onClick={() => {
               setRaw(s.text);
+              setSelectedScenarioId(s.request_id);
               if (s.region) setRegion(s.region);
               if (isModeId(s.priority)) setPriority(s.priority);
               setTimeout(() => textareaRef.current?.focus(), 0);

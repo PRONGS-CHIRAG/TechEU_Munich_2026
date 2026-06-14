@@ -100,7 +100,7 @@ def get_products_for_category(category: str, limit: int = 500) -> list[dict]:
                 .execute()
             )
             if response.data:
-                return response.data
+                return [_flatten_product(r) for r in response.data]
         except Exception:
             pass
 
@@ -115,6 +115,17 @@ def get_products_for_category(category: str, limit: int = 500) -> list[dict]:
         if cat_lower == category or any(a in name_lower for a in aliases):
             matched.append(p)
     return matched[:limit]
+
+
+def _flatten_product(row: dict) -> dict:
+    """Spread extra_specs JSONB into top-level keys so downstream code is schema-agnostic."""
+    flat = dict(row)
+    extra = flat.pop("extra_specs", None) or {}
+    if isinstance(extra, dict):
+        for k, v in extra.items():
+            if k not in flat:
+                flat[k] = v
+    return flat
 
 
 def _get_local_products_flat() -> list[dict]:

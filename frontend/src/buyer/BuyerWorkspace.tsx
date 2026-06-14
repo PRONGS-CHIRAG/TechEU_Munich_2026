@@ -383,7 +383,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
   }, [pushFeed, reveal]);
 
   const start = useCallback(
-    (req: { raw_request: string; region: string; priority: string }) => {
+    (req: { request_id?: string; raw_request: string; region: string; priority: string }) => {
       // Close any existing stream
       streamCleanupRef.current?.();
       sessionIdRef.current = null;

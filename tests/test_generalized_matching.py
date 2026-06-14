@@ -1,7 +1,7 @@
 from backend.agents.product_clustering import cluster_products
 from backend.agents.product_utils import product_matches_requirement
 from backend.agents.supplier_matching import match_suppliers
-from backend.data_access import get_all_products_flat
+from backend.data_access import get_all_products_flat, _get_local_products_flat, _load_local
 
 
 def test_product_category_filter_keeps_gpu_and_chair_apart():
@@ -31,7 +31,13 @@ def test_clusters_filter_to_requested_product_category():
     assert all("range_m" in product or "ip_rating" in product for product in cluster_products_flat)
 
 
-def test_supplier_matching_returns_category_relevant_sellers():
+def test_supplier_matching_returns_category_relevant_sellers(monkeypatch):
+    # Pin data access to local JSON so Supabase Amazon data doesn't interfere
+    local_registry = _load_local("seller_registry.json")
+    local_inventory = _get_local_products_flat()
+    monkeypatch.setattr("backend.agents.supplier_matching.get_seller_registry", lambda: local_registry)
+    monkeypatch.setattr("backend.agents.supplier_matching.get_seller_inventory", lambda **_kw: local_inventory)
+
     suppliers = match_suppliers(
         {
             "product_type": "office chair",

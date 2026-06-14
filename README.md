@@ -19,11 +19,13 @@ pactum/
 │   └── agents/
 │       ├── procurement_intelligence.py  — requirement extraction + validation
 │       ├── supplier_matching.py         — BM25-style vendor scoring
-│       ├── buyer_agent.py               — negotiation loop
-│       ├── seller_agent.py              — concession logic
+│       ├── product_clustering.py        — category-safe product clustering
+│       ├── judging_agent.py             — candidate evaluation + reasoning
+│       ├── negotiation_agent.py         — live negotiation dialogue
 │       ├── human_escalation.py          — escalation triggers
 │       └── audit_summary.py             — final narrative summary
 ├── integrations/
+│   ├── gemini_client.py      — Gemini requirement extraction + generated reasoning
 │   ├── pioneer_client.py     — message classification + field extraction
 │   ├── tavily_client.py      — external supplier/spec enrichment
 │   ├── fal_client.py         — visual deal card generation
@@ -66,6 +68,7 @@ cp .env.example .env
 ```bash
 cd frontend
 npm install
+cp .env.local.example .env.local
 ```
 
 ---
@@ -75,7 +78,7 @@ npm install
 Copy `.env.example` to `.env` and fill in values:
 
 ```bash
-DEMO_MODE=true
+DEMO_MODE=false
 
 # Supabase
 SUPABASE_URL=
@@ -99,7 +102,7 @@ LLM_API_KEY=
 LLM_PROVIDER=
 ```
 
-`DEMO_MODE=true` is the only required variable to run the app without any external services. `backend/data_access.py` reads from Supabase when `SUPABASE_URL`/`SUPABASE_ANON_KEY` are set, and falls back to the local JSON files in `data/` otherwise (or if the Supabase call fails).
+`DEMO_MODE=false` is live mode and is the default. Set `DEMO_MODE=true` for deterministic replay/fallback mode when you want the app to run without external API keys. `backend/data_access.py` reads from Supabase when `SUPABASE_URL`/`SUPABASE_ANON_KEY` are set, and falls back to the local JSON files in `data/` otherwise (or if the Supabase call fails).
 
 ---
 
@@ -128,7 +131,7 @@ The Next.js frontend is the app's UI. It talks to a FastAPI bridge over HTTP, wh
 **Terminal 1 — FastAPI backend** (http://localhost:8000):
 
 ```bash
-DEMO_MODE=true uvicorn backend.api:app --reload --port 8000
+uvicorn backend.api:app --reload --port 8000
 ```
 
 **Terminal 2 — Next.js frontend** (http://localhost:3000):
@@ -138,7 +141,13 @@ cd frontend
 npm run dev
 ```
 
-Open **http://localhost:3000**, submit a procurement request, and the frontend calls `POST /api/run-demo` on the FastAPI backend for real `run_demo()` output. CORS is pre-configured for `http://localhost:3000`. To point the frontend at a different backend URL, set `NEXT_PUBLIC_API_URL` (e.g. in `frontend/.env.local`).
+Open **http://localhost:3000**, submit a procurement request, and the frontend streams `GET /api/run-demo/stream` events from the FastAPI backend. CORS is pre-configured for `http://localhost:3000`. To point the frontend at a different backend URL, set `NEXT_PUBLIC_API_URL` in `frontend/.env.local`.
+
+For the no-keys replay safety net, start the backend with:
+
+```bash
+DEMO_MODE=true uvicorn backend.api:app --reload --port 8000
+```
 
 ### Alternate UI — Streamlit
 

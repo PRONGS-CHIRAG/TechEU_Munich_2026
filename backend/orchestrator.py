@@ -223,6 +223,7 @@ def run_demo_events(
                 label_result = classify_message(log["message"])
             log["pioneer_labels"] = label_result.get("labels", [])
             log["risk_level"] = label_result.get("risk_level", log.get("risk_level", "unknown"))
+            log["extracted_fields"] = label_result.get("extracted_fields", {})
             pioneer_labels.append(label_result)
 
     # ── Stage: validate ───────────────────────────────────────────────────────
