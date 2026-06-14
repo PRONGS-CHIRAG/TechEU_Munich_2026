@@ -244,35 +244,15 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console", sel
       setInventoryBySeller(map);
     };
 
-    const fetchFromRest = () => {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/inventory`)
-        .then((r) => r.json())
-        .then((data: { merchants?: any[] }) => {
-          const rows: any[] = [];
-          (data.merchants ?? []).forEach((merchant: any) => {
-            (merchant.inventories ?? []).forEach((inv: any) => {
-              (inv.products ?? []).forEach((p: any) => rows.push({ ...p, seller_id: merchant.seller_id }));
-            });
-          });
-          applyFlat(rows);
-        })
-        .catch(() => {});
-    };
-
-    if (supabase) {
-      supabase
-        .from("seller_inventory")
-        .select("*")
-        .then(({ data }) => {
-          if (data && data.length > 0) {
-            applyFlat(data);
-          } else {
-            fetchFromRest();
-          }
-        });
-    } else {
-      fetchFromRest();
-    }
+    const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    fetch(`${API}/api/seller-inventory`)
+      .then((r) => r.json())
+      .then((products: any[]) => {
+        if (Array.isArray(products) && products.length > 0) {
+          applyFlat(products);
+        }
+      })
+      .catch(() => {});
   }, [sellerId]);
 
   // Supabase Realtime: seed from most recent run, then subscribe for live updates.
@@ -304,9 +284,11 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console", sel
         .from("demo_sessions")
         .select("result")
         .order("created_at", { ascending: false })
-        .limit(1)
         .then(({ data }) => {
-          if (data?.[0]?.result) applyResult(data[0].result as DemoResult);
+          // Load all past conversations and show the most recent
+          if (data && data.length > 0) {
+            applyResult(data[0].result as DemoResult);
+          }
         });
 
       const channel = supabase
