@@ -9,11 +9,13 @@ import json
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend.data_access import (
@@ -26,6 +28,9 @@ from backend.hitl_sessions import close_session, create_session, submit_response
 from backend.orchestrator import DEMO_MODE, run_demo, run_demo_events
 
 app = FastAPI(title="Pactum API")
+ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets"
+
+app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
 app.add_middleware(
     CORSMiddleware,

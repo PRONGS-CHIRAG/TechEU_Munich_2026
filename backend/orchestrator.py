@@ -21,7 +21,6 @@ from integrations.fal_client import generate_deal_card
 from integrations.fallback_outputs import (
     fallback_pioneer_labels,
     fallback_tavily_result,
-    fallback_deal_card_path,
 )
 
 load_dotenv()
@@ -41,6 +40,31 @@ def _adapt_tavily(raw: dict) -> dict:
             }
             for r in results
         ],
+    }
+
+
+def _normalize_deal_card_asset(asset: dict | str) -> dict:
+    """Accept the new fal asset dict and the legacy path string used by tests."""
+    if isinstance(asset, dict):
+        return {
+            "path": asset.get("path", ""),
+            "url": asset.get("url", ""),
+            "prompt": asset.get("prompt", ""),
+            "generated": bool(asset.get("generated", False)),
+        }
+
+    path = str(asset)
+    if "/assets/" in path:
+        url = path[path.index("/assets/"):]
+    elif path.startswith("assets/"):
+        url = f"/{path}"
+    else:
+        url = "/assets/fal_deal_card.png"
+    return {
+        "path": path,
+        "url": url,
+        "prompt": "",
+        "generated": False,
     }
 
 
@@ -609,10 +633,7 @@ def run_demo_events(
     yield evt("audit", "audit", {"text": audit_summary})
 
     # ── Done ──────────────────────────────────────────────────────────────────
-    if demo_mode:
-        deal_card_path = fallback_deal_card_path()
-    else:
-        deal_card_path = generate_deal_card(final_recommendation)
+    deal_card = _normalize_deal_card_asset(generate_deal_card(final_recommendation))
 
     tavily_enrichment = _adapt_tavily(tavily_raw)
 
@@ -629,7 +650,10 @@ def run_demo_events(
         "escalation_result": escalation_result,
         "audit_summary": audit_summary,
         "final_recommendation": final_recommendation,
-        "deal_card_path": deal_card_path,
+        "deal_card_path": deal_card["path"],
+        "deal_card_url": deal_card["url"],
+        "deal_card_prompt": deal_card["prompt"],
+        "deal_card_generated": deal_card["generated"],
         "demo_mode": demo_mode,
         "session_id": session_id,
         "negotiation_strategy": strategy,

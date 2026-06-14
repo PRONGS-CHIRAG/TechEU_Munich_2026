@@ -157,6 +157,9 @@ class DemoResult(TypedDict):
     audit_summary: str
     final_recommendation: dict
     deal_card_path: str
+    deal_card_url: str
+    deal_card_prompt: str
+    deal_card_generated: bool
     demo_mode: bool
     negotiation_strategy: str   # "aggressive" | "medium" | "light"
     negotiation_outcome: dict   # {status, strategy, winning_seller_id, rejected_sellers, all_offers, selected_seller_id, user_choice}

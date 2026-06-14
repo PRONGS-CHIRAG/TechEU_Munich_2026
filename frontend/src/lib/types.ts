@@ -207,6 +207,9 @@ export interface DemoResult {
   audit_summary: string;
   final_recommendation: FinalRecommendation;
   deal_card_path: string;
+  deal_card_url?: string;
+  deal_card_prompt?: string;
+  deal_card_generated?: boolean;
   demo_mode: boolean;
   session_id?: string;
   negotiation_strategy?: NegotiationStrategy;

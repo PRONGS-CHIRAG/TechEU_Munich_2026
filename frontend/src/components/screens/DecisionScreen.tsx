@@ -19,6 +19,7 @@ import { AuditSummary } from "@/components/sections/AuditSummary";
 import type { DemoResult } from "@/lib/types";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 interface Props {
   result: DemoResult;
@@ -110,6 +111,7 @@ function RecommendationCard({
         : "text-danger";
 
   const statusOk = rec.technical_status === "passed";
+  const dealCardUrl = resolveAssetUrl(result.deal_card_url, result.deal_card_path);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-white shadow-[var(--shadow-sm)]">
@@ -141,6 +143,26 @@ function RecommendationCard({
             {statusOk ? "All constraints passed" : "Borderline"}
           </span>
         </div>
+
+        {dealCardUrl && (
+          <div className="mb-5 overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+            <div className="relative aspect-[16/9] bg-surface-2">
+              <img
+                src={dealCardUrl}
+                alt={`${rec.recommended_seller || "Selected vendor"} procurement deal card`}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="flex items-center justify-between border-t border-border px-4 py-2">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-3">
+                fal deal card
+              </span>
+              <span className="text-[11px] font-medium text-text-3">
+                {result.deal_card_generated ? "Generated from final offer" : "Fallback asset"}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Headline */}
         <div className="flex flex-wrap items-baseline gap-3">
@@ -231,6 +253,17 @@ function RecommendationCard({
       </div>
     </div>
   );
+}
+
+function resolveAssetUrl(url?: string, path?: string): string | null {
+  const value = url || path || "";
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.includes("/assets/")) {
+    return `${API_BASE}${value.slice(value.indexOf("/assets/"))}`;
+  }
+  if (value.startsWith("/")) return `${API_BASE}${value}`;
+  return `${API_BASE}/${value.replace(/^\.?\//, "")}`;
 }
 
 function Chip({
