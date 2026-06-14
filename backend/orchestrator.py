@@ -277,9 +277,9 @@ def run_demo_events(
                         supplier_final_offer[sid] = offer
                     yield evt("negotiation_turn", "negotiate", dict(log))
                     if log.get("speaker") == "buyer":
-                        time.sleep(_random.uniform(1.3, 2.7))
+                        time.sleep(_random.uniform(0.5, 1.1))
                     else:
-                        time.sleep(_random.uniform(0.9, 2.1))
+                        time.sleep(_random.uniform(0.3, 0.8))
                 elif kind == "done":
                     done_count += 1
 
