@@ -90,7 +90,7 @@ def run_demo_events(
     yield evt("requirements", "intel", structured_requirements)
 
     # ── Stage: intel — clustering + judging ───────────────────────────────────
-    all_products = get_all_products_flat()
+    all_products = get_all_products_flat(requirements=structured_requirements)
     clusters = cluster_products(structured_requirements, all_products)
 
     judged_candidates: list = []
@@ -177,13 +177,12 @@ def run_demo_events(
         negotiation_suppliers, key=lambda s: s.get("match_score", 0), reverse=True
     )
 
-    inventory_flat = get_seller_inventory()
+    inventory_flat = get_seller_inventory(requirements=structured_requirements)
     conversation_logs: list = []
     raw_offers: list = []
     rejected_sellers: list = []
-    winning_offer = None
 
-    for idx, supplier in enumerate(negotiation_suppliers_ranked):
+    for supplier in negotiation_suppliers_ranked:
         is_rejected = False
 
         for log, offer in negotiate_one_supplier(
@@ -193,40 +192,26 @@ def run_demo_events(
             yield evt("negotiation_turn", "negotiate", dict(log))
             if offer is not None:
                 raw_offers.append(offer)
-                winning_offer = offer
             if log.get("event_kind") == "seller_rejection":
                 is_rejected = True
 
         if is_rejected:
             rejected_sellers.append(supplier["seller_id"])
-            next_idx = idx + 1
-            if next_idx < len(negotiation_suppliers_ranked):
-                next_sup = negotiation_suppliers_ranked[next_idx]
-                yield evt("negotiation_turn", "negotiate", {
-                    "seller_id": supplier["seller_id"],
-                    "seller_name": supplier["seller_name"],
-                    "speaker": "system",
-                    "message": (
-                        f"Negotiation rejected by {supplier['seller_name']}. "
-                        f"Routing to next supplier: {next_sup['seller_name']}."
-                    ),
-                    "round": 0,
-                    "event_kind": "supplier_fallback",
-                    "next_seller_id": next_sup["seller_id"],
-                    "next_seller_name": next_sup["seller_name"],
-                    "pioneer_labels": [],
-                    "risk_level": "high",
-                    "extracted_fields": {},
-                })
-        else:
-            break  # deal accepted — stop waterfall
-
-    negotiation_outcome = {
-        "status": "accepted" if winning_offer else "failed",
-        "strategy": strategy,
-        "winning_seller_id": winning_offer.get("seller_id", "") if winning_offer else "",
-        "rejected_sellers": rejected_sellers,
-    }
+            yield evt("negotiation_turn", "negotiate", {
+                "seller_id": supplier["seller_id"],
+                "seller_name": supplier["seller_name"],
+                "speaker": "system",
+                "message": (
+                    f"Negotiation rejected by {supplier['seller_name']} "
+                    f"under {strategy.upper()} strategy."
+                ),
+                "round": 0,
+                "event_kind": "supplier_fallback",
+                "pioneer_labels": [],
+                "risk_level": "high",
+                "extracted_fields": {},
+            })
+        # No break — negotiate all suppliers to completion
 
     # Pioneer labeling on seller turns (mutates logs in place for the done event)
     pioneer_labels: list = []
@@ -243,76 +228,113 @@ def run_demo_events(
     # ── Stage: validate ───────────────────────────────────────────────────────
     validation_results = [validate_offer(structured_requirements, offer) for offer in raw_offers]
 
-    for offer, result in zip(raw_offers, validation_results):
-        if result["status"] == "passed":
-            result["score"] = compute_value_score(structured_requirements, offer)
-        result["seller_name"] = offer.get("seller_name", offer.get("seller_id", ""))
-        result["product"] = offer.get("product", "")
-        result["length_mm"] = offer.get("length_mm", 0)
-        result["power_watts"] = offer.get("power_watts", 0)
-        result["price_eur"] = offer.get("price_eur", 0)
-        result["delivery_days"] = offer.get("delivery_days", 0)
-        result["warranty_years"] = offer.get("warranty_years", 0)
-        # Capture actual values for any extra_constraints fields so the frontend
-        # can render per-constraint spec cells for non-GPU product types.
-        result["extra_fields"] = {
+    for offer, vr in zip(raw_offers, validation_results):
+        if vr["status"] == "passed":
+            vr["score"] = compute_value_score(structured_requirements, offer)
+        vr["seller_name"] = offer.get("seller_name", offer.get("seller_id", ""))
+        vr["product"] = offer.get("product", "")
+        vr["length_mm"] = offer.get("length_mm", 0)
+        vr["power_watts"] = offer.get("power_watts", 0)
+        vr["price_eur"] = offer.get("price_eur", 0)
+        vr["delivery_days"] = offer.get("delivery_days", 0)
+        vr["warranty_years"] = offer.get("warranty_years", 0)
+        vr["extra_fields"] = {
             c["field"]: offer.get(c["field"])
             for c in structured_requirements.get("extra_constraints", [])
             if c.get("field")
         }
-        yield evt("validation", "validate", dict(result))
+        yield evt("validation", "validate", dict(vr))
 
-    # ── Stage: escalate ───────────────────────────────────────────────────────
+    # ── Build deal comparison table ───────────────────────────────────────────
+    comparison_table: list = []
+    for supplier in negotiation_suppliers_ranked:
+        sid = supplier["seller_id"]
+        offer = next((o for o in raw_offers if o["seller_id"] == sid), None)
+        vres = next((v for v in validation_results if v["seller_id"] == sid), None)
+        is_rejected_row = sid in rejected_sellers or offer is None
+        comparison_table.append({
+            "seller_id": sid,
+            "seller_name": supplier["seller_name"],
+            "product": offer.get("product", "") if offer else "",
+            "price_eur": offer.get("price_eur", 0) if offer else 0,
+            "delivery_days": offer.get("delivery_days", 0) if offer else 0,
+            "warranty_years": offer.get("warranty_years", 0) if offer else 0,
+            "validation_status": vres["status"] if vres else "no_offer",
+            "score": vres.get("score", 0) if vres else 0,
+            "is_rejected": is_rejected_row,
+        })
+
+    # ── Stage: escalate (compute for DemoResult shape + audit) ───────────────
     passed = [v for v in validation_results if v["status"] == "passed"]
     best = max(passed, key=lambda v: v.get("score", 0)) if passed else None
     best_offer = next((o for o in raw_offers if best and o["seller_id"] == best["seller_id"]), None)
 
     escalation_result = check_escalation(validation_results, structured_requirements, best_offer)
 
+    # ── Stage: deal comparison (human_alert) — replaces approval pause ────────
+    yield evt("human_alert", "negotiate", {
+        "session_id": session_id,
+        "trigger": "deal_comparison",
+        "question": "Review all negotiated quotes and select your preferred deal.",
+        "comparison_table": comparison_table,
+    })
+
+    if wait_for_human is not None:
+        resp = wait_for_human(session_id, {"trigger": "deal_comparison"})
+    else:
+        resp = {"action": "auto_continue"}
+
+    action = resp.get("action", "auto_continue")
+    selected_seller_id = resp.get("selected_seller_id") or ""
+
+    if action == "approve" and selected_seller_id:
+        winning_offer = next((o for o in raw_offers if o["seller_id"] == selected_seller_id), None)
+        user_choice = "approved"
+    elif action == "reject_all":
+        winning_offer = None
+        selected_seller_id = ""
+        user_choice = "rejected_all"
+    else:
+        # auto_continue: non-streaming path or timeout — auto-select best passing offer
+        winning_offer = best_offer
+        selected_seller_id = best_offer.get("seller_id", "") if best_offer else ""
+        user_choice = "auto_selected"
+
+    # Synthesize escalation human_response so DemoResult shape stays intact
+    escalation_result["human_response"] = {
+        "action": action,
+        "selected_seller_id": selected_seller_id,
+    }
+    escalation_result["human_decision"] = user_choice
+
     if escalation_result.get("escalate"):
-        alert_payload = {
-            "session_id": session_id,
-            "question": escalation_result.get("question_for_human", ""),
-            "trigger": escalation_result.get("trigger", ""),
-            "best_offer": (
-                {
-                    "seller_name": best_offer.get("seller_name", ""),
-                    "product": best_offer.get("product", ""),
-                    "price_eur": best_offer.get("price_eur", 0),
-                    "delivery_days": best_offer.get("delivery_days", 0),
-                }
-                if best_offer
-                else None
-            ),
-            "budget_eur": structured_requirements.get("budget_eur", 0),
-        }
-        yield evt("human_alert", "escalate", alert_payload)
-        if wait_for_human is not None:
-            human_response = wait_for_human(session_id, escalation_result)
-        else:
-            human_response = {
-                "action": "auto_continue",
-                "note": "Non-streaming run auto-continued after escalation alert.",
-            }
-        escalation_result["human_response"] = human_response
-        escalation_result["human_decision"] = human_response.get("action")
         yield evt("escalation", "escalate", escalation_result)
 
+    # ── Negotiation outcome (built after user selection) ──────────────────────
+    negotiation_outcome = {
+        "status": "accepted" if winning_offer else "failed",
+        "strategy": strategy,
+        "winning_seller_id": winning_offer.get("seller_id", "") if winning_offer else "",
+        "rejected_sellers": rejected_sellers,
+        "all_offers": raw_offers,
+        "selected_seller_id": selected_seller_id,
+        "user_choice": user_choice,
+    }
+
     # ── Recommendation ────────────────────────────────────────────────────────
-    if best_offer:
-        # Incorporate the judging agent's reason for the best product if available
+    if winning_offer:
         judge_reason = next(
-            (jc.get("reason", "") for jc in judged_candidates if jc.get("seller_id") == best_offer.get("seller_id")),
+            (jc.get("reason", "") for jc in judged_candidates if jc.get("seller_id") == winning_offer.get("seller_id")),
             "",
         )
         base_reason = "Best balance of compatibility, price, delivery, and warranty."
         final_reason = f"{base_reason} {judge_reason}".strip() if judge_reason else base_reason
         final_recommendation = {
-            "recommended_seller": best_offer["seller_name"],
-            "recommended_product": best_offer["product"],
-            "price_eur": best_offer["price_eur"],
-            "delivery_days": best_offer["delivery_days"],
-            "warranty_years": best_offer.get("warranty_years", 0),
+            "recommended_seller": winning_offer["seller_name"],
+            "recommended_product": winning_offer["product"],
+            "price_eur": winning_offer["price_eur"],
+            "delivery_days": winning_offer["delivery_days"],
+            "warranty_years": winning_offer.get("warranty_years", 0),
             "technical_status": "passed",
             "risk_level": "low",
             "reason": final_reason,
@@ -322,7 +344,9 @@ def run_demo_events(
         }
     else:
         product_type = structured_requirements.get("product_type", "requested product")
-        if rejected_sellers:
+        if user_choice == "rejected_all":
+            no_deal_reason = "Buyer rejected all negotiated offers. No deal was accepted."
+        elif rejected_sellers:
             no_deal_reason = (
                 f"All {len(rejected_sellers)} supplier(s) rejected the negotiation under the "
                 f"{strategy.upper()} strategy — the requested discount exceeded the 10% seller floor. "

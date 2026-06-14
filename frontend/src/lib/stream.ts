@@ -61,6 +61,25 @@ export async function sendStrategyChoice(
   }
 }
 
+export async function sendDealChoice(
+  sessionId: string,
+  action: "approve" | "reject_all",
+  selectedSellerId?: string | null,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/human-response`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      action,
+      selected_seller_id: selectedSellerId ?? null,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`deal-choice failed: ${res.status} ${res.statusText}`);
+  }
+}
+
 export async function sendHumanResponse(
   sessionId: string,
   decision: HumanResponseDecision,

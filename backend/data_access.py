@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,25 +58,68 @@ def _fetch(table: str, fallback_file: str) -> list:
 
 
 def get_seller_registry() -> list:
-    """Returns the seller registry from local JSON.
+    """Returns the seller registry.
 
-    Local file is the source of truth — Supabase may lag behind when new vendors
-    are added. Always reading local ensures new inventory is immediately visible.
+    Tries Supabase seller_registry table first (populated after ingestion);
+    falls back to local JSON which always has the 7 hand-curated vendors.
     """
+    client = _get_client()
+    if client is None:
+        return _load_local("seller_registry.json")
+    try:
+        response = client.table("seller_registry").select("*").execute()
+        if response.data:
+            return response.data
+    except Exception:
+        pass
     return _load_local("seller_registry.json")
 
 
-def get_seller_inventory_nested() -> dict:
-    """Returns the full nested merchants→inventories→products structure."""
-    return _load_local_dict("seller_inventory.json")
+def get_products_for_category(category: str, limit: int = 500) -> list[dict]:
+    """Filtered product query by Pactum category key (gpu / chair / sensor / etc.).
 
+    This is the primary read path when Supabase has the 1.4M-row dataset.
+    Falls back to filtering the local JSON flat list when Supabase is unavailable.
 
-def get_all_products_flat() -> list[dict]:
-    """Flat product list with seller_id and seller_name injected from the nested structure.
-
-    Used by product_clustering.py and supplier_matching.py.
+    The category key must match _KNOWN_CATEGORY_ALIASES in product_utils.py
+    (e.g. 'gpu', 'chair', 'sensor', 'laptop', 'server').
     """
-    nested = get_seller_inventory_nested()
+    client = _get_client()
+    if client is not None:
+        try:
+            response = (
+                client.table("seller_inventory_products")
+                .select(
+                    "id, asin, product, seller_id, seller_name, category, price_eur, "
+                    "delivery_days, warranty_years, availability, product_keywords, "
+                    "length_mm, power_watts, extra_specs"
+                )
+                .eq("category", category)
+                .order("price_eur")
+                .limit(limit)
+                .execute()
+            )
+            if response.data:
+                return response.data
+        except Exception:
+            pass
+
+    # Fallback: filter the local flat list
+    all_products = _get_local_products_flat()
+    from backend.agents.product_utils import _KNOWN_CATEGORY_ALIASES
+    aliases = _KNOWN_CATEGORY_ALIASES.get(category, (category,))
+    matched = []
+    for p in all_products:
+        name_lower = str(p.get("product", "")).lower()
+        cat_lower = str(p.get("category", "")).lower()
+        if cat_lower == category or any(a in name_lower for a in aliases):
+            matched.append(p)
+    return matched[:limit]
+
+
+def _get_local_products_flat() -> list[dict]:
+    """Read and flatten the local seller_inventory.json. Returns at most 5000 rows."""
+    nested = _load_local_dict("seller_inventory.json")
     products: list[dict] = []
     for merchant in nested.get("merchants", []):
         seller_id = merchant.get("seller_id", "")
@@ -89,13 +133,130 @@ def get_all_products_flat() -> list[dict]:
     return products
 
 
-def get_seller_inventory() -> list:
-    """Flat product list for backward-compat consumers (supplier_matching, negotiation_agent).
+def get_seller_inventory_nested(category: Optional[str] = None, limit: int = 500) -> dict:
+    """Returns the nested merchants→inventories→products structure.
 
-    Always derived from the local nested JSON so new vendors (vendor_f, vendor_g, etc.)
-    are immediately visible without a Supabase sync.
+    When Supabase has the full dataset, reconstructs the nested shape from
+    flat rows (optionally filtered by category). Always falls back to local JSON.
+    The nested shape matches the original seller_inventory.json format so the
+    frontend /api/inventory endpoint and SellerInventoryView work unchanged.
     """
-    return get_all_products_flat()
+    client = _get_client()
+    if client is not None:
+        try:
+            query = (
+                client.table("seller_inventory_products")
+                .select(
+                    "id, asin, product, seller_id, seller_name, category, price_eur, "
+                    "delivery_days, warranty_years, availability, length_mm, power_watts"
+                )
+                .order("seller_id")
+            )
+            if category:
+                query = query.eq("category", category)
+            else:
+                # For the full inventory view, cap at demo-curated rows to avoid 1.4M response
+                query = query.eq("is_demo_curated", True)
+            query = query.limit(limit)
+            response = query.execute()
+            if response.data:
+                return _rebuild_nested(response.data)
+        except Exception:
+            pass
+
+    return _load_local_dict("seller_inventory.json")
+
+
+def _rebuild_nested(flat_rows: list[dict]) -> dict:
+    """Reconstruct merchants→inventories→products from flat Supabase rows."""
+    registry = {s["seller_id"]: s for s in get_seller_registry()}
+
+    merchants_map: dict[str, dict] = {}
+    for row in flat_rows:
+        sid = row.get("seller_id", "")
+        if sid not in merchants_map:
+            reg = registry.get(sid, {})
+            merchants_map[sid] = {
+                "seller_id": sid,
+                "seller_name": row.get("seller_name", sid),
+                "inventories": [
+                    {
+                        "inventory_id": f"{sid}-main",
+                        "location": reg.get("profile", {}).get("headquarters", reg.get("region", "EU"))
+                        if isinstance(reg.get("profile"), dict)
+                        else reg.get("region", "EU"),
+                        "products": [],
+                    }
+                ],
+            }
+
+        product = {
+            "id": row.get("id") or row.get("asin", ""),
+            "product": row.get("product", ""),
+            "price_eur": row.get("price_eur"),
+            "delivery_days": row.get("delivery_days"),
+            "warranty_years": row.get("warranty_years"),
+            "availability": row.get("availability", "in_stock"),
+        }
+        if row.get("length_mm") is not None:
+            product["length_mm"] = row["length_mm"]
+        if row.get("power_watts") is not None:
+            product["power_watts"] = row["power_watts"]
+
+        merchants_map[sid]["inventories"][0]["products"].append(product)
+
+    return {"merchants": list(merchants_map.values())}
+
+
+def get_all_products_flat(
+    requirements: Optional[dict] = None,
+    limit: int = 2000,
+) -> list[dict]:
+    """Flat product list with seller_id and seller_name.
+
+    When `requirements` is provided and Supabase is available, uses a
+    category-filtered query (get_products_for_category) to avoid loading
+    all 1.4M rows. Falls back to the local JSON flat list.
+
+    Callers: orchestrator.py cluster_products(), api.py /api/seller-inventory.
+    """
+    if requirements is not None:
+        from backend.agents.product_utils import _requested_category
+        category = _requested_category(requirements)
+        if category:
+            return get_products_for_category(category, limit=limit)
+
+    client = _get_client()
+    if client is not None:
+        try:
+            # When called without requirements (e.g. API inventory view),
+            # return demo-curated rows only to avoid a 1.4M table scan.
+            response = (
+                client.table("seller_inventory_products")
+                .select(
+                    "id, asin, product, seller_id, seller_name, category, price_eur, "
+                    "delivery_days, warranty_years, availability, product_keywords, "
+                    "length_mm, power_watts"
+                )
+                .eq("is_demo_curated", True)
+                .limit(limit)
+                .execute()
+            )
+            if response.data:
+                return response.data
+        except Exception:
+            pass
+
+    return _get_local_products_flat()
+
+
+def get_seller_inventory(requirements: Optional[dict] = None) -> list:
+    """Flat product list for supplier_matching.py and negotiation_agent.py.
+
+    Accepts optional requirements to enable category-filtered Supabase queries.
+    Falls back to local JSON.
+    """
+    return get_all_products_flat(requirements=requirements)
 
 
 def get_buyer_scenarios() -> list:
@@ -107,7 +268,6 @@ def write_demo_session(session_id: str, result: dict) -> None:
     client = _get_client()
     if not client:
         return
-    # Enrich matched_suppliers with registry fields the frontend MatchedSupplier type expects
     registry = {s["seller_id"]: s for s in get_seller_registry()}
     for supplier in result.get("matched_suppliers", []):
         reg = registry.get(supplier.get("seller_id", ""), {})

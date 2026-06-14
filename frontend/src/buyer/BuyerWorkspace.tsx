@@ -17,6 +17,7 @@ import { RequestForm } from "@/components/input/RequestForm";
 import { ActivityFeed, type FeedItem } from "@/components/feed/ActivityFeed";
 import { EscalationModal } from "@/components/modals/EscalationModal";
 import { StrategyModal } from "@/components/modals/StrategyModal";
+import { DealComparisonModal } from "@/components/modals/DealComparisonModal";
 import { DecisionScreen } from "@/components/screens/DecisionScreen";
 import {
   initialStatus,
@@ -25,9 +26,10 @@ import {
   type DemoStatus,
   type SectionId,
 } from "@/lib/demoMachine";
-import { streamDemo, sendStrategyChoice, sendHumanResponse } from "@/lib/stream";
+import { streamDemo, sendStrategyChoice, sendHumanResponse, sendDealChoice } from "@/lib/stream";
 import type {
   ConversationLog,
+  DealComparisonRow,
   DemoResult,
   EscalationResult,
   HumanAlertData,
@@ -57,6 +59,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
   // Streaming-specific state
   const [strategyAlert, setStrategyAlert] = useState<{ session_id: string; options: StrategyOption[] } | null>(null);
   const [escalationAlert, setEscalationAlert] = useState<EscalationResult | null>(null);
+  const [dealAlert, setDealAlert] = useState<{ session_id: string; rows: DealComparisonRow[] } | null>(null);
 
   // Dynamic node visibility driven by real events
   const [visibleNodeIds, setVisibleNodeIds] = useState<Set<string>>(new Set());
@@ -108,6 +111,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
     setNodeChatLines({});
     setStrategyAlert(null);
     setEscalationAlert(null);
+    setDealAlert(null);
   }, []);
 
   const logout = useCallback(() => {
@@ -278,8 +282,22 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
             title: "Strategy selection required",
             detail: "Waiting for user input…",
           });
+        } else if (d.trigger === "deal_comparison") {
+          setDealAlert({
+            session_id: d.session_id,
+            rows: d.comparison_table ?? [],
+          });
+          setStatus((s) => ({ ...s, phase: "awaiting_approval", stageIndex: Math.max(s.stageIndex, 4) }));
+          reveal(STAGE_REVEALS["escalate"]);
+          const selectable = (d.comparison_table ?? []).filter((r) => !r.is_rejected).length;
+          pushFeed({
+            id: `deal-comparison-${Date.now()}`,
+            agent: "escalation",
+            title: `Deal comparison ready — ${selectable} offer${selectable !== 1 ? "s" : ""} to review`,
+            detail: "Select a deal to approve or reject all",
+          });
         } else {
-          // Escalation / approval alert
+          // Escalation / approval alert (legacy path)
           const escalation: EscalationResult = {
             escalate: true,
             trigger: d.trigger,
@@ -379,6 +397,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
       setNodeChatLines({});
       setStrategyAlert(null);
       setEscalationAlert(null);
+      setDealAlert(null);
 
       // Immediate label from the raw request; refined once `requirements` arrives
       const words = req.raw_request.trim().split(/\s+/);
@@ -419,6 +438,34 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
     if (sid) {
       try {
         await sendHumanResponse(sid, d === "approved" ? "approve" : "reject");
+      } catch {
+        // non-fatal
+      }
+    }
+  }, []);
+
+  const handleDealApprove = useCallback(async (sellerId: string) => {
+    setDecision("approved");
+    setDealAlert(null);
+    setStatus((s) => ({ ...s, phase: "approved" }));
+    const sid = sessionIdRef.current;
+    if (sid) {
+      try {
+        await sendDealChoice(sid, "approve", sellerId);
+      } catch {
+        // non-fatal
+      }
+    }
+  }, []);
+
+  const handleDealRejectAll = useCallback(async () => {
+    setDecision("rejected");
+    setDealAlert(null);
+    setStatus((s) => ({ ...s, phase: "rejected" }));
+    const sid = sessionIdRef.current;
+    if (sid) {
+      try {
+        await sendDealChoice(sid, "reject_all");
       } catch {
         // non-fatal
       }
@@ -576,6 +623,15 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
             />
           )}
 
+          {/* Deal comparison modal — shown after all negotiations complete */}
+          {dealAlert && decision === null && (
+            <DealComparisonModal
+              rows={dealAlert.rows}
+              onApprove={handleDealApprove}
+              onRejectAll={handleDealRejectAll}
+            />
+          )}
+
           <div className="flex h-12 shrink-0 items-center justify-between border-t border-border bg-white px-8">
             <button
               onClick={reset}
@@ -593,13 +649,15 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
               </button>
             ) : (
               <span className="text-[12px] font-medium text-text-3">
-                {status.phase === "running"
-                  ? "● Processing…"
-                  : status.phase === "awaiting_approval"
-                    ? "⚠ Awaiting decision"
-                    : strategyAlert
-                      ? "⚙ Strategy selection required"
-                      : "Standby"}
+                {strategyAlert
+                  ? "⚙ Strategy selection required"
+                  : dealAlert
+                    ? "⚖ Select a deal to approve"
+                    : status.phase === "running"
+                      ? "● Processing…"
+                      : status.phase === "awaiting_approval"
+                        ? "⚠ Awaiting decision"
+                        : "Standby"}
               </span>
             )}
           </div>

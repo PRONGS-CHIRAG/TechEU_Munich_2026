@@ -114,3 +114,29 @@ You are a procurement audit agent. Write a concise 2-3 sentence executive summar
 of the procurement negotiation outcome. Be factual and specific about the recommended
 product, price, and key decision factors. Professional tone.
 """
+
+# ── Amazon ingestion prompts ───────────────────────────────────────────────────
+
+AMAZON_SPEC_INFERENCE_SYSTEM = """\
+You are a product data specialist. Given a batch of Amazon product listings,
+infer the missing B2B procurement fields that are not present in the raw listing.
+
+Return a JSON array. Each element must contain exactly these fields:
+{
+  "asin": "<the asin from the input>",
+  "delivery_days": <integer 1-30, typical fulfilment time for this product type>,
+  "warranty_years": <float, typical manufacturer warranty in years; 0.5 = 6 months>,
+  "length_mm": <integer mm or null — only for physical GPU/hardware with a PCIe form factor>,
+  "power_watts": <integer watts or null — only for components with a TDP spec>,
+  "confidence": <float 0-1, how confident you are in these inferences>
+}
+
+Rules:
+- Base inferences on product category and title signals, not fabrication.
+- delivery_days: consumer electronics 3-7, furniture 5-14, industrial 7-21.
+- warranty_years: electronics typically 1.0, furniture 2.0-5.0, industrial 1.0-2.0.
+- length_mm and power_watts: only for GPUs and discrete graphics cards; null for everything else.
+- If you cannot confidently infer a field, use the category default and set confidence low.
+- Return exactly one object per input product. Preserve asin exactly.
+- No markdown fences, no extra keys.
+"""

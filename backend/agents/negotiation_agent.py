@@ -380,7 +380,7 @@ def negotiate_one_supplier(
     stopping at the first accepted deal or when all suppliers are exhausted.
     """
     if inventory is None:
-        inventory = get_seller_inventory()
+        inventory = get_seller_inventory(requirements=requirements)
     yield from _negotiate_supplier(requirements, supplier, inventory, judged_candidates or [])
 
 
@@ -394,20 +394,22 @@ def run_negotiation(
     Mirrors the orchestrator's waterfall logic for the non-streaming fallback path.
     Stops at the first accepted deal; rejects route to the next supplier.
     """
-    inventory = get_seller_inventory()
+    inventory = get_seller_inventory(requirements=requirements)
     ranked = sorted(matched_suppliers, key=lambda s: s.get("match_score", 0), reverse=True)
     logs: list = []
     offers: list = []
 
     for supplier in ranked:
-        rejected = False
         for log, offer in _negotiate_supplier(requirements, supplier, inventory, judged_candidates or []):
             logs.append(log)
             if offer is not None:
                 offers.append(offer)
-            if log.get("event_kind") == "seller_rejection":
-                rejected = True
-        if not rejected and offers:
-            break  # deal accepted
+        # No break — negotiate all suppliers to completion
+
+    # Sort by value score descending so best offer is first
+    try:
+        offers.sort(key=lambda o: compute_value_score(requirements, o), reverse=True)
+    except Exception:
+        pass
 
     return logs, offers

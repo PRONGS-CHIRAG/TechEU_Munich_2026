@@ -55,11 +55,12 @@ class BuyerRequestIn(BaseModel):
 
 class HumanResponseIn(BaseModel):
     session_id: str
-    action: Optional[str] = None   # "approve" | "reject" | "adjust" | "select_strategy"
+    action: Optional[str] = None   # "approve" | "reject" | "adjust" | "select_strategy" | "reject_all"
     decision: Optional[str] = None  # frontend compatibility alias
     note: Optional[str] = None
     adjusted_budget_eur: Optional[float] = None
     strategy: Optional[str] = None  # "aggressive" | "medium" | "light" (strategy selection)
+    selected_seller_id: Optional[str] = None  # deal comparison selection
 
 
 def _adapt_tavily(tavily_raw: dict) -> dict:
@@ -182,6 +183,7 @@ async def human_response(body: HumanResponseIn) -> dict:
             "note": body.note or "",
             "adjusted_budget_eur": body.adjusted_budget_eur,
             "strategy": body.strategy,
+            "selected_seller_id": body.selected_seller_id,
             "ts": int(time.time() * 1000),
         },
     )

@@ -46,7 +46,7 @@ def _score_reason(compatible: list, requirements: dict) -> str:
 
 def match_suppliers(requirements: dict) -> list:
     registry = get_seller_registry()
-    inventory = get_seller_inventory()
+    inventory = get_seller_inventory(requirements=requirements)
 
     scored = []
     for seller in registry:

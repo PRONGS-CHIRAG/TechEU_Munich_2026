@@ -177,6 +177,21 @@ export interface NegotiationOutcome {
   strategy: NegotiationStrategy;
   winning_seller_id: string;
   rejected_sellers: string[];
+  all_offers?: SellerProduct[];
+  selected_seller_id?: string;
+  user_choice?: "approved" | "rejected_all" | "auto_selected";
+}
+
+export interface DealComparisonRow {
+  seller_id: string;
+  seller_name: string;
+  product: string;
+  price_eur: number;
+  delivery_days: number;
+  warranty_years: number;
+  validation_status: ValidationStatus | "no_offer";
+  score: number;
+  is_rejected: boolean;
 }
 
 export interface DemoResult {
@@ -231,7 +246,7 @@ export interface StrategyOption {
 export interface HumanAlertData {
   session_id: string;
   question: string;
-  trigger: "strategy_selection" | "approval_required" | string;
+  trigger: "strategy_selection" | "approval_required" | "deal_comparison" | string;
   // strategy_selection fields
   strategy_options?: StrategyOption[];
   // approval_required fields
@@ -242,6 +257,8 @@ export interface HumanAlertData {
     delivery_days?: number;
   } | null;
   budget_eur?: number;
+  // deal_comparison fields
+  comparison_table?: DealComparisonRow[];
 }
 
 export type HumanResponseDecision = "approve" | "reject" | "adjust";

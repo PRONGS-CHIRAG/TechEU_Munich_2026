@@ -130,6 +130,19 @@ class JudgedCandidate(TypedDict):
     score: int
 
 
+class DealComparisonRow(TypedDict):
+    """One row in the deal comparison table shown to the buyer after all negotiations complete."""
+    seller_id: str
+    seller_name: str
+    product: str
+    price_eur: float
+    delivery_days: int
+    warranty_years: float
+    validation_status: str  # "passed" | "rejected" | "negotiable" | "missing_information" | "no_offer"
+    score: int
+    is_rejected: bool       # True for floor-rejected / no-product sellers (row is unselectable)
+
+
 class DemoResult(TypedDict):
     request: dict
     structured_requirements: dict
@@ -146,4 +159,4 @@ class DemoResult(TypedDict):
     deal_card_path: str
     demo_mode: bool
     negotiation_strategy: str   # "aggressive" | "medium" | "light"
-    negotiation_outcome: dict   # {status, strategy, winning_seller_id, rejected_sellers}
+    negotiation_outcome: dict   # {status, strategy, winning_seller_id, rejected_sellers, all_offers, selected_seller_id, user_choice}
