@@ -159,9 +159,10 @@ def negotiation_insight(body: NegotiationInsightRequest) -> dict:
         rnd = log.get("round", 0)
         log_lines.append(f"Round {rnd} [{speaker}]: {msg}")
 
+    budget_val = reqs.get("budget_eur")
     context = "\n".join([
         f"Product requested: {reqs.get('product_type', '?')}",
-        f"Budget: €{reqs.get('budget_eur', '?')}",
+        f"Budget: {'unlimited' if budget_val is None else f'€{budget_val}'}",
         f"Strategy: {outcome.get('strategy', '?')}",
         f"Outcome: {outcome.get('status', '?')}",
         f"Winning seller: {rec.get('recommended_seller', '?')}",

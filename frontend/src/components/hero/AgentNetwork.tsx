@@ -26,8 +26,10 @@ import {
   TavilyNode,
 } from "./nodes";
 import { MessageEdge } from "./MessageEdge";
-import type { ConversationLog, JudgedCandidate, MatchedSupplier } from "@/lib/types";
+import type { ConversationLog, EscalationResult, JudgedCandidate, MatchedSupplier } from "@/lib/types";
 import { displayName } from "@/lib/api";
+
+export type EscalationDecision = "approved" | "rejected" | "renegotiate" | "restart";
 
 interface Props {
   stageIndex: number;
@@ -40,6 +42,10 @@ interface Props {
   chatLines: Record<string, ConversationLog[]>;
   requestLabel?: string;
   judgedCandidates?: JudgedCandidate[];
+  // Escalation anchored to a seller node — when set, the matching seller node
+  // renders an inline decision popover instead of a centered modal.
+  escalation?: EscalationResult | null;
+  onEscalationDecide?: (d: EscalationDecision, note?: string) => void;
 }
 
 const nodeTypes = {
@@ -75,6 +81,8 @@ export function AgentNetwork({
   chatLines,
   requestLabel = "New Request",
   judgedCandidates = [],
+  escalation = null,
+  onEscalationDecide,
 }: Props) {
   const { nodes, edges } = useMemo(() => {
     const orchActive = stageIndex >= 0 && stageIndex < 6;
@@ -212,23 +220,31 @@ export function AgentNetwork({
       // Audit and fal — after sellers column
       { id: "audit", type: "audit", position: { x: COL.audit, y: CY - 80 }, data: { active: auditActive, done: auditDone }, draggable: false, selectable: false },
       { id: "fal",   type: "fal",   position: { x: COL.fal,   y: CY + 80 }, data: { active: falActive,   done: falDone   }, draggable: false, selectable: false },
-      ...sellers.map<Node>((s, i) => ({
-        id: s.seller_id,
-        type: "seller",
-        position: { x: COL.sellers, y: sellersTopY + i * SELLER_SPACING },
-        data: {
-          label: displayName(s.seller_name),
-          match: s.match_score,
-          highlight: s.seller_id === bestSellerId && stageIndex >= 1,
-          active: negotiateActive,
-          done: negotiateDone,
-          selected: canInteract && s.seller_id === activeSeller,
-          interactive: canInteract,
-          chatLines: chatLines[s.seller_id] ?? [],
-        },
-        draggable: false,
-        selectable: false,
-      })),
+      ...sellers.map<Node>((s, i) => {
+        // Anchor the escalation popover to the seller it concerns; fall back to
+        // the best-matched seller when the alert carries no specific seller_id.
+        const escalationSellerId = escalation?.seller_id || bestSellerId;
+        const showEscalation = !!escalation && s.seller_id === escalationSellerId;
+        return {
+          id: s.seller_id,
+          type: "seller",
+          position: { x: COL.sellers, y: sellersTopY + i * SELLER_SPACING },
+          data: {
+            label: displayName(s.seller_name),
+            match: s.match_score,
+            highlight: s.seller_id === bestSellerId && stageIndex >= 1,
+            active: negotiateActive,
+            done: negotiateDone,
+            selected: canInteract && s.seller_id === activeSeller,
+            interactive: canInteract,
+            chatLines: chatLines[s.seller_id] ?? [],
+            escalation: showEscalation ? escalation : null,
+            onEscalationDecide: showEscalation ? onEscalationDecide : undefined,
+          },
+          draggable: false,
+          selectable: false,
+        };
+      }),
     ];
 
     const liveStyle = (live: boolean) => ({
@@ -329,6 +345,8 @@ export function AgentNetwork({
     chatLines,
     requestLabel,
     judgedCandidates,
+    escalation,
+    onEscalationDecide,
   ]);
 
   const totalChatLines = useMemo(

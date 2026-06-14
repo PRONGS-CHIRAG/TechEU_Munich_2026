@@ -13,7 +13,7 @@ export function StructuredRequirementsSection({ data }: Props) {
     { key: "use_case", value: data.use_case },
     { key: "max_length_mm", value: `${data.max_length_mm}` },
     { key: "max_power_watts", value: `${data.max_power_watts}` },
-    { key: "budget_eur", value: `€${data.budget_eur}` },
+    { key: "budget_eur", value: data.budget_eur == null ? "unlimited" : `€${data.budget_eur}` },
     { key: "max_delivery_days", value: `${data.max_delivery_days}d` },
     { key: "warranty_required", value: data.warranty_required ? "true" : "false" },
     {

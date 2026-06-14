@@ -30,7 +30,8 @@ export interface StructuredRequirements {
   use_case: string;
   max_length_mm: number;
   max_power_watts: number;
-  budget_eur: number;
+  /** null/undefined means no budget was stated — treat as unlimited. */
+  budget_eur: number | null;
   max_delivery_days: number;
   warranty_required: boolean;
   minimum_warranty_years: number;
@@ -131,6 +132,9 @@ export interface EscalationResult {
   question_for_human: string;
   renegotiate_used?: boolean;
   has_winning_offer?: boolean;
+  // seller_id the decision concerns — used to anchor the escalation popover
+  // to that seller's node in the agent network.
+  seller_id?: string;
 }
 
 export interface FinalRecommendation {
@@ -250,6 +254,8 @@ export interface HumanAlertData {
   budget_eur?: number;
   renegotiate_used?: boolean;
   has_winning_offer?: boolean;
+  // seller_id this approval concerns — anchors the popover to that node.
+  seller_id?: string;
 }
 
 export type HumanResponseDecision = "approve" | "reject" | "adjust";

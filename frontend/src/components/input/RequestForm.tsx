@@ -151,6 +151,13 @@ export function RequestForm({ onStart, disabled }: Props) {
             onKeyDown={handleKeyDown}
             disabled={disabled}
             rows={1}
+            name="procurement-request"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-form-type="other"
+            data-lpignore="true"
             className="min-h-[26px] flex-1 resize-none bg-transparent text-[15px] leading-[1.6] text-text-1 outline-none ring-0 focus:outline-none focus:ring-0 placeholder:text-text-3 disabled:text-text-2"
             placeholder="Describe what you need to procure…"
           />

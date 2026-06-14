@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from typing import Callable
 
 from backend.schemas import BuyerRequest, DemoResult
-from backend.agents.procurement_intelligence import extract_requirements, validate_offer, compute_value_score
+from backend.agents.procurement_intelligence import extract_requirements, validate_offer, compute_value_score, evaluate_constraints
 from backend.agents.supplier_matching import match_suppliers
 from backend.agents.product_clustering import cluster_products
 from backend.agents.judging_agent import judge_candidate
@@ -159,8 +159,11 @@ def run_demo_events(
         "extracted_fields": {},
     })
 
-    # ── Stage: negotiate — waterfall across ranked suppliers ──────────────────
-    # Gate on good/borderline clusters; negotiate rank-ordered, stop on first accept.
+    # ── Stage: negotiate — parallel negotiation across ranked suppliers ───────
+    # Gate on good/borderline clusters; negotiate the top-N suppliers concurrently
+    # (round-robin interleaving), so every vendor's dialogue streams to the graph
+    # at the same time. The best offer is selected after all negotiations finish —
+    # we no longer stop at the first accepted deal.
     good_cluster_ids = {
         jc["cluster_id"] for jc in judged_candidates
         if jc.get("verdict") in ("good", "borderline")
@@ -179,49 +182,65 @@ def run_demo_events(
         negotiation_suppliers, key=lambda s: s.get("match_score", 0), reverse=True
     )
 
+    # Negotiate only the best/closest top 3 matches (ranked by match_score above).
+    MAX_PARALLEL_SUPPLIERS = 3
+    negotiation_suppliers_ranked = negotiation_suppliers_ranked[:MAX_PARALLEL_SUPPLIERS]
+
     inventory_flat = get_seller_inventory()
     conversation_logs: list = []
     raw_offers: list = []
     rejected_sellers: list = []
     winning_offer = None
 
-    for idx, supplier in enumerate(negotiation_suppliers_ranked):
-        is_rejected = False
+    # Spin up one generator per supplier and drive them round-robin so the turns
+    # interleave on the wire — vendor A round 1, vendor B round 1, vendor A round 2…
+    active_streams = [
+        {
+            "supplier": supplier,
+            "gen": negotiate_one_supplier(
+                structured_requirements, supplier, inventory_flat, judged_candidates
+            ),
+        }
+        for supplier in negotiation_suppliers_ranked
+    ]
 
-        for log, offer in negotiate_one_supplier(
-            structured_requirements, supplier, inventory_flat, judged_candidates
-        ):
+    while active_streams:
+        still_active = []
+        for stream in active_streams:
+            try:
+                log, offer = next(stream["gen"])
+            except StopIteration:
+                continue  # this supplier finished — drop it from the rotation
             conversation_logs.append(log)
             yield evt("negotiation_turn", "negotiate", dict(log))
             if offer is not None:
                 raw_offers.append(offer)
-                winning_offer = offer
             if log.get("event_kind") == "seller_rejection":
-                is_rejected = True
-
-        if is_rejected:
-            rejected_sellers.append(supplier["seller_id"])
-            next_idx = idx + 1
-            if next_idx < len(negotiation_suppliers_ranked):
-                next_sup = negotiation_suppliers_ranked[next_idx]
+                rejected_sellers.append(stream["supplier"]["seller_id"])
                 yield evt("negotiation_turn", "negotiate", {
-                    "seller_id": supplier["seller_id"],
-                    "seller_name": supplier["seller_name"],
+                    "seller_id": stream["supplier"]["seller_id"],
+                    "seller_name": stream["supplier"]["seller_name"],
                     "speaker": "system",
                     "message": (
-                        f"Negotiation rejected by {supplier['seller_name']}. "
-                        f"Routing to next supplier: {next_sup['seller_name']}."
+                        f"Negotiation rejected by {stream['supplier']['seller_name']} — "
+                        f"requested discount crossed their floor."
                     ),
                     "round": 0,
                     "event_kind": "supplier_fallback",
-                    "next_seller_id": next_sup["seller_id"],
-                    "next_seller_name": next_sup["seller_name"],
                     "pioneer_labels": [],
                     "risk_level": "high",
                     "extracted_fields": {},
                 })
-        else:
-            break  # deal accepted — stop waterfall
+                continue  # stop pulling from a rejected supplier
+            still_active.append(stream)
+        active_streams = still_active
+
+    # Pick the winning offer: cheapest offer that passes all hard constraints,
+    # falling back to the cheapest offer overall when none fully pass.
+    if raw_offers:
+        passing = [o for o in raw_offers if not evaluate_constraints(structured_requirements, o)]
+        pool = passing or raw_offers
+        winning_offer = min(pool, key=lambda o: o.get("price_eur", float("inf")))
 
     negotiation_outcome = {
         "status": "accepted" if winning_offer else "failed",
@@ -295,6 +314,9 @@ def run_demo_events(
                 "session_id": session_id,
                 "question": escalation_result.get("question_for_human", ""),
                 "trigger": escalation_result.get("trigger", ""),
+                # seller_id the decision concerns — lets the frontend anchor the
+                # escalation popover to that specific seller node.
+                "seller_id": best_offer.get("seller_id", "") if best_offer else "",
                 "best_offer": (
                     {
                         "seller_name": best_offer.get("seller_name", ""),
@@ -305,7 +327,7 @@ def run_demo_events(
                     if best_offer
                     else None
                 ),
-                "budget_eur": structured_requirements.get("budget_eur", 0),
+                "budget_eur": structured_requirements.get("budget_eur"),
                 "has_winning_offer": best_offer is not None,
                 "renegotiate_used": renegotiate_used,
             }

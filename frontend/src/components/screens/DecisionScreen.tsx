@@ -16,8 +16,9 @@ import {
 import { ValidationTable } from "@/components/sections/ValidationTable";
 import { SupplierGrid } from "@/components/sections/SupplierGrid";
 import { AuditSummary } from "@/components/sections/AuditSummary";
+import { NegotiationChats } from "@/components/sections/NegotiationChats";
 import { getDealCardUrl } from "@/lib/api";
-import type { DemoResult } from "@/lib/types";
+import type { ConversationLog, DemoResult } from "@/lib/types";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
@@ -29,7 +30,19 @@ interface Props {
   onSelectSeller: (id: string) => void;
 }
 
-export function DecisionScreen({ result, decision, onDecide }: Props) {
+export function DecisionScreen({ result, decision, onDecide, activeSeller, onSelectSeller }: Props) {
+  const chatsBySeller = groupBySeller(result.conversation_logs);
+  const sellerNames = Object.fromEntries(
+    result.matched_suppliers.map((s) => [s.seller_id, s.seller_name]),
+  );
+
+  // Resolve the winning seller so the report only shows the approved negotiation.
+  const winnerId = resolveWinningSellerId(result);
+  const winnerChats =
+    winnerId && chatsBySeller[winnerId]
+      ? { [winnerId]: chatsBySeller[winnerId] }
+      : chatsBySeller;
+
   return (
     <div className="flex flex-col gap-4">
       <RecommendationCard
@@ -48,7 +61,19 @@ export function DecisionScreen({ result, decision, onDecide }: Props) {
         </div>
       </AccordionSection>
 
-      <AccordionSection title="Supplier Comparison" dotColor="bg-success" defaultOpen>
+      <AccordionSection title="Winning Negotiation" dotColor="bg-purple-500" defaultOpen>
+        <div className="pt-4">
+          <NegotiationChats
+            chatsBySeller={winnerChats}
+            sellerNames={sellerNames}
+            activeSeller={activeSeller}
+            onSelectSeller={onSelectSeller}
+          />
+        </div>
+      </AccordionSection>
+
+      {/* Detailed breakdowns collapsed by default — the report leads with summaries. */}
+      <AccordionSection title="Supplier Comparison" dotColor="bg-success">
         <div className="pt-4">
           <SupplierGrid
             suppliers={result.matched_suppliers}
@@ -57,7 +82,7 @@ export function DecisionScreen({ result, decision, onDecide }: Props) {
         </div>
       </AccordionSection>
 
-      <AccordionSection title="Validation Results" dotColor="bg-warning" defaultOpen>
+      <AccordionSection title="Validation Results" dotColor="bg-warning">
         <div className="pt-4">
           <ValidationTable
             results={result.validation_results}
@@ -67,6 +92,27 @@ export function DecisionScreen({ result, decision, onDecide }: Props) {
       </AccordionSection>
     </div>
   );
+}
+
+/** Best-effort winning seller_id: negotiation outcome first, else match by recommended name. */
+function resolveWinningSellerId(result: DemoResult): string | null {
+  const fromOutcome = result.negotiation_outcome?.winning_seller_id;
+  if (fromOutcome) return fromOutcome;
+  const recName = result.final_recommendation?.recommended_seller;
+  if (recName) {
+    const match = result.matched_suppliers.find((s) => s.seller_name === recName);
+    if (match) return match.seller_id;
+  }
+  return null;
+}
+
+function groupBySeller(logs: ConversationLog[]): Record<string, ConversationLog[]> {
+  const groups: Record<string, ConversationLog[]> = {};
+  for (const log of logs) {
+    if (!log.seller_id) continue;
+    (groups[log.seller_id] ??= []).push(log);
+  }
+  return groups;
 }
 
 // ─── Recommendation Hero Card ───────────────────────────────────────────────

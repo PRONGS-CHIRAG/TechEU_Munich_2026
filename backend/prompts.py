@@ -13,7 +13,7 @@ Return valid JSON matching this exact schema — no extra keys, no markdown fenc
   "product_type": "<type of product being purchased, e.g. GPU, office chair, industrial sensor, server>",
   "product_keywords": ["<lowercase buyer product noun or synonyms, e.g. gpu, graphics card>"],
   "use_case": "<inferred use case, e.g. AI workstation, ML training, office workspace, industrial monitoring>",
-  "budget_eur": <number euros>,
+  "budget_eur": <number euros, or null if the buyer did not state a budget>,
   "max_delivery_days": <integer days>,
   "warranty_required": <boolean>,
   "minimum_warranty_years": <number years>,
@@ -39,8 +39,16 @@ Rules:
 - Use extra_constraints for any other product-specific numeric constraint the buyer states
   (e.g. "load rating at least 120kg" → field=load_rating_kg, operator=>=, limit=120, unit=kg).
 - extra_constraints may be an empty array [] when no additional constraints are stated.
-- Defaults if not mentioned: budget_eur 650, max_delivery_days 7, warranty_required true, minimum_warranty_years 1.
-- All numeric fields must be numbers (not strings). Never return null.
+- A bare number with no unit and no other clear meaning (e.g. "office chair 150", "GPU 600") is
+  the buyer's budget_eur — not a quantity, weight, or other constraint. Only treat a number as
+  something other than budget when it has an explicit unit or qualifier (kg, mm, W, days, years,
+  "at least", "load rating", etc.).
+- budget_eur is dynamic and comes only from the buyer's own words. If the buyer states ANY price
+  or budget number, use that exact value — never substitute a different number. If the buyer does
+  NOT mention a budget or price at all, set budget_eur to null (meaning unlimited budget). Never
+  default budget_eur to 650 or any other fixed value.
+- Defaults if not mentioned: max_delivery_days 7, warranty_required true, minimum_warranty_years 1.
+- All numeric fields must be numbers (not strings), except budget_eur which may be null.
 """
 
 NEGOTIATION_BUYER_SYSTEM = """\

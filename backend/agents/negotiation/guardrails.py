@@ -9,14 +9,19 @@ def get_system_constraints(requirements: dict) -> str:
     GPU-specific dimensions (length, power) are presence-gated.
     extra_constraints are appended generically.
     """
-    budget = requirements.get("budget_eur", 650)
+    budget = requirements.get("budget_eur")
     max_days = requirements.get("max_delivery_days", 7)
     min_warranty = requirements.get("minimum_warranty_years", 1)
     product_type = requirements.get("product_type", "product")
 
+    price_line = (
+        "- Price ceiling: none (no fixed budget — negotiate for the best overall value)"
+        if budget is None
+        else f"- Price ceiling: €{budget * 1.1:.0f} (10 % flex for escalation; final deal must not exceed €{budget})"
+    )
     lines = [
         "HARD GUARDRAILS — never concede beyond these in negotiation:",
-        f"- Price ceiling: €{budget * 1.1:.0f} (10 % flex for escalation; final deal must not exceed €{budget})",
+        price_line,
         f"- Maximum delivery: {max_days + 2} days (±2-day buffer; flag to human above {max_days} days)",
         f"- Minimum warranty: {min_warranty} years",
     ]

@@ -39,9 +39,10 @@ def evaluate_constraints(requirements: dict, offer: dict) -> list[str]:
     failed = []
 
     # Universal constraints (always checked)
-    if offer.get("price_eur", 0) > requirements.get("budget_eur", 650):
+    budget = requirements.get("budget_eur")
+    if budget is not None and offer.get("price_eur", 0) > budget:
         failed.append(
-            f"Price €{offer['price_eur']} exceeds €{requirements['budget_eur']} budget"
+            f"Price €{offer['price_eur']} exceeds €{budget} budget"
         )
 
     if offer.get("delivery_days", 99) > requirements.get("max_delivery_days", 7):
@@ -134,16 +135,20 @@ def _extract_with_regex(raw_request: str) -> dict:
         "product_type": product_type,
         "product_keywords": _product_keywords(product_type),
         "use_case": use_case,
-        "budget_eur": 650.0,
+        "budget_eur": None,  # unlimited unless a budget is found below
         "max_delivery_days": 7,
         "warranty_required": True,
         "minimum_warranty_years": 1,
         "extra_constraints": [],
     }
 
-    budget_match = re.search(r"€(\d+)", raw_request)
+    budget_match = re.search(r"€\s*(\d+)|(\d+)\s*€|(\d+)\s*(?:eur|euros)\b", raw_request, re.IGNORECASE)
+    if not budget_match:
+        # Bare number with no unit/qualifier (e.g. "office chair 150") is treated as the budget.
+        budget_match = re.search(r"(?<![€$])\b(\d+)\b(?!\s*(?:kg|mm|cm|m|w|watt|day|year|hour|minute|%|pcs|units?)\b)", raw_request, re.IGNORECASE)
     if budget_match:
-        requirements["budget_eur"] = float(budget_match.group(1))
+        value = next(g for g in budget_match.groups() if g is not None)
+        requirements["budget_eur"] = float(value)
 
     delivery_match = re.search(r"(\d+)\s*day", raw_request, re.IGNORECASE)
     if delivery_match:
@@ -217,10 +222,12 @@ def _infer_product_phrase(raw_request: str) -> str:
 def _coerce_requirements(parsed: dict) -> dict | None:
     """Coerce Gemini JSON output to correct Python types. Returns None on failure."""
     try:
+        raw_budget = parsed.get("budget_eur")
         result: dict = {
             "product_type": str(parsed.get("product_type", "product")),
             "use_case": str(parsed.get("use_case", "business use")),
-            "budget_eur": float(str(parsed.get("budget_eur", 650))),
+            # No budget mentioned by the buyer -> unlimited (None), not a hardcoded default.
+            "budget_eur": float(str(raw_budget)) if raw_budget is not None else None,
             "max_delivery_days": int(float(str(parsed.get("max_delivery_days", 7)))),
             "warranty_required": bool(parsed.get("warranty_required", True)),
             "minimum_warranty_years": float(str(parsed.get("minimum_warranty_years", 1))),
@@ -290,9 +297,10 @@ def extract_requirements(request) -> dict:
 # ── Scoring and validation ────────────────────────────────────────────────────
 
 def compute_value_score(requirements: dict, offer: dict) -> int:
-    budget = requirements.get("budget_eur", 650) or 1
+    budget = requirements.get("budget_eur")
     max_delivery = requirements.get("max_delivery_days", 7) or 1
-    price_ratio = min(offer.get("price_eur", 0) / budget, 1.0)
+    # No budget stated -> unlimited, so price doesn't count against the score.
+    price_ratio = min(offer.get("price_eur", 0) / budget, 1.0) if budget else 0.0
     delivery_ratio = min(offer.get("delivery_days", 0) / max_delivery, 1.0)
     return int(round(100.0 - (price_ratio * 15.0) - (delivery_ratio * 10.0)))
 

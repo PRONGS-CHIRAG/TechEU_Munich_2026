@@ -78,7 +78,7 @@ def judge_candidate(requirements: dict, cluster: dict) -> dict:
         }
 
     # Build spec-delta prompt for Gemini
-    budget = requirements.get("budget_eur", 650)
+    budget = requirements.get("budget_eur")
     max_days = requirements.get("max_delivery_days", 7)
     min_warranty = requirements.get("minimum_warranty_years", 1)
 
@@ -86,12 +86,14 @@ def judge_candidate(requirements: dict, cluster: dict) -> dict:
     delivery = representative.get("delivery_days", 0)
     warranty = representative.get("warranty_years", 0)
 
-    def _fmt_delta(val: float, limit: float, unit: str, higher_is_better: bool = False) -> str:
+    def _fmt_delta(val: float | None, limit: float, unit: str, higher_is_better: bool = False) -> str:
         """Format value vs limit for the Gemini prompt.
 
         higher_is_better=True (warranty): below minimum is bad.
         higher_is_better=False (price/length/power/delivery): over limit is bad.
         """
+        if val is None:
+            return f"not specified by product (required vs {limit}{unit})"
         delta = val - limit
         if higher_is_better:
             if delta < 0:
@@ -101,8 +103,13 @@ def judge_candidate(requirements: dict, cluster: dict) -> dict:
             return f"{val}{unit} — OVER limit by {delta:.4g}{unit}"
         return f"{val}{unit} — within limit by {abs(delta):.4g}{unit}"
 
+    budget_line = (
+        f"- Budget: unlimited | Price: €{price}"
+        if budget is None
+        else f"- Budget: €{budget} | Price: {_fmt_delta(price, budget, '€')}"
+    )
     spec_lines = [
-        f"- Budget: €{budget} | Price: {_fmt_delta(price, budget, '€')}",
+        budget_line,
         f"- Max delivery: {max_days} d | Delivery: {_fmt_delta(delivery, max_days, ' d')}",
         f"- Min warranty: {min_warranty} yr | Warranty: {_fmt_delta(warranty, min_warranty, ' yr', higher_is_better=True)}",
     ]
@@ -110,12 +117,12 @@ def judge_candidate(requirements: dict, cluster: dict) -> dict:
     # GPU-specific dims — only when present in requirements
     max_len = requirements.get("max_length_mm")
     if max_len is not None:
-        length = representative.get("length_mm", 0)
+        length = representative.get("length_mm")
         spec_lines.insert(1, f"- Max length: {max_len} mm | Length: {_fmt_delta(length, max_len, ' mm')}")
 
     max_pwr = requirements.get("max_power_watts")
     if max_pwr is not None:
-        power = representative.get("power_watts", 0)
+        power = representative.get("power_watts")
         spec_lines.insert(2 if max_len is not None else 1, f"- Max power: {max_pwr} W | Power: {_fmt_delta(power, max_pwr, ' W')}")
 
     # Extra product-specific constraints

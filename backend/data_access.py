@@ -144,17 +144,8 @@ def get_products_for_requirements(requirements: dict, limit: int = 200) -> list[
     return merged
 
 
-def get_all_products_flat() -> list[dict]:
-    """Flat product list from seller_inventory (demo curated, 25 rows). Use get_products_for_requirements() for live buyer matching."""
-    client = _get_client()
-    if client is not None:
-        try:
-            res = client.table("seller_inventory").select("*").execute()
-            if res.data:
-                return res.data
-        except Exception:
-            pass
-    # Local fallback: flatten nested JSON
+def _flatten_local_products() -> list[dict]:
+    """Flatten the nested local seller_inventory.json into flat product dicts."""
     nested = get_seller_inventory_nested()
     products: list[dict] = []
     for merchant in nested.get("merchants", []):
@@ -167,6 +158,33 @@ def get_all_products_flat() -> list[dict]:
                 flat["seller_name"] = seller_name
                 products.append(flat)
     return products
+
+
+def get_all_products_flat() -> list[dict]:
+    """Flat product list from seller_inventory (demo curated, 25 rows). Use get_products_for_requirements() for live buyer matching."""
+    client = _get_client()
+    if client is not None:
+        try:
+            res = client.table("seller_inventory").select("*").execute()
+            if res.data:
+                # The Supabase import is lossy: category-specific spec columns
+                # (range_m, ip_rating, load_rating_kg, seat_width_mm, …) were
+                # dropped, keeping only GPU-universal fields. Backfill those
+                # missing specs from the curated local JSON, matched by `id`, so
+                # non-GPU categories validate correctly against their constraints.
+                local_by_id = {p.get("id"): p for p in _flatten_local_products()}
+                for row in res.data:
+                    local = local_by_id.get(row.get("id"))
+                    if not local:
+                        continue
+                    for key, value in local.items():
+                        if row.get(key) is None and value is not None:
+                            row[key] = value
+                return res.data
+        except Exception:
+            pass
+    # Local fallback: flatten nested JSON
+    return _flatten_local_products()
 
 
 def get_seller_inventory() -> list:
@@ -210,5 +228,113 @@ def write_demo_session(session_id: str, result: dict) -> None:
             "session_id": session_id,
             "result": result,
         }).execute()
+    except Exception:
+        pass
+
+    _write_session_breakdown(client, session_id, result)
+
+
+def _write_session_breakdown(client, session_id: str, result: dict) -> None:
+    """Write normalized per-session breakdown rows alongside demo_sessions."""
+    try:
+        conv_rows = [
+            {
+                "session_id": session_id,
+                "seller_id": log.get("seller_id", ""),
+                "seller_name": log.get("seller_name", ""),
+                "speaker": log.get("speaker", ""),
+                "message": log.get("message", ""),
+                "round": log.get("round", 0),
+                "event_kind": log.get("event_kind", ""),
+                "pioneer_labels": log.get("pioneer_labels", []),
+                "risk_level": log.get("risk_level", ""),
+                "extracted_fields": log.get("extracted_fields", {}),
+            }
+            for log in result.get("conversation_logs", [])
+        ]
+        if conv_rows:
+            client.table("conversation_logs").insert(conv_rows).execute()
+    except Exception:
+        pass
+
+    try:
+        val_rows = [
+            {
+                "session_id": session_id,
+                "seller_id": v.get("seller_id", ""),
+                "seller_name": v.get("seller_name", ""),
+                "status": v.get("status", ""),
+                "failed_constraints": v.get("failed_constraints", []),
+                "score": v.get("score", 0),
+                "next_action": v.get("next_action", ""),
+                "product": v.get("product", ""),
+                "price_eur": v.get("price_eur", 0),
+                "delivery_days": v.get("delivery_days", 0),
+                "warranty_years": v.get("warranty_years", 0),
+            }
+            for v in result.get("validation_results", [])
+        ]
+        if val_rows:
+            client.table("validation_results").insert(val_rows).execute()
+    except Exception:
+        pass
+
+    try:
+        escalation = result.get("escalation_result") or {}
+        if escalation:
+            client.table("escalation_results").upsert({
+                "session_id": session_id,
+                "escalate": escalation.get("escalate", False),
+                "trigger": escalation.get("trigger", ""),
+                "reason": escalation.get("reason", ""),
+                "question_for_human": escalation.get("question_for_human", ""),
+                "best_offer": escalation.get("best_offer"),
+                "human_response": escalation.get("human_response"),
+            }).execute()
+    except Exception:
+        pass
+
+    try:
+        rec = result.get("final_recommendation") or {}
+        if rec:
+            client.table("final_recommendations").upsert({
+                "session_id": session_id,
+                "recommended_seller": rec.get("recommended_seller", ""),
+                "recommended_product": rec.get("recommended_product", ""),
+                "price_eur": rec.get("price_eur", 0),
+                "delivery_days": rec.get("delivery_days", 0),
+                "technical_status": rec.get("technical_status", ""),
+                "risk_level": rec.get("risk_level", ""),
+                "reason": rec.get("reason", ""),
+                "human_approval_required": rec.get("human_approval_required", False),
+                "human_decision": rec.get("human_decision"),
+            }).execute()
+    except Exception:
+        pass
+
+    try:
+        summary = result.get("audit_summary") or ""
+        if summary:
+            client.table("audit_summaries").upsert({
+                "session_id": session_id,
+                "summary": summary,
+            }).execute()
+    except Exception:
+        pass
+
+    try:
+        pioneer_rows = [
+            {
+                "session_id": session_id,
+                "message": log.get("message", ""),
+                "labels": log.get("pioneer_labels", []),
+                "risk_level": log.get("risk_level", ""),
+                "extracted_fields": log.get("extracted_fields", {}),
+            }
+            for log in result.get("conversation_logs", [])
+            if log.get("speaker") == "seller" and log.get("pioneer_labels")
+        ]
+        if pioneer_rows:
+            client.table("pioneer_inference_examples").insert(pioneer_rows).execute()
     except Exception:
         pass

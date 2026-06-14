@@ -14,9 +14,11 @@ def search_external_supplier(requirements: dict) -> dict:
         client = TavilyClient(api_key=TAVILY_API_KEY)
         product_type = requirements.get("product_type", "product")
         use_case = requirements.get("use_case", "business use")
-        budget = requirements.get("budget_eur", 650)
+        budget = requirements.get("budget_eur")
         query = (
             f"{product_type} for {use_case} under €{budget} supplier Europe"
+            if budget is not None
+            else f"{product_type} for {use_case} supplier Europe"
         )
         result = client.search(query=query, max_results=3)
         return {"source": "tavily", "results": result.get("results", []), "query": query}

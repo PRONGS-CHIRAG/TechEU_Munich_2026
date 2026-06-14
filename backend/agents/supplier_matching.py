@@ -52,6 +52,12 @@ def match_suppliers(requirements: dict) -> list:
         by_seller.setdefault(sid, []).append(item)
 
     if not by_seller:
+        # No products match the requested category (e.g. an unrecognized product
+        # type like "industrial tablet" against a GPU/chair/sensor catalog).
+        # Return no suppliers rather than surfacing unrelated vendors — pretending
+        # GPU/chair sellers can supply tablets is misleading. The orchestrator
+        # handles the empty list (no-internal-match cluster + external discovery /
+        # no-compatible-offer escalation).
         return []
 
     # Fetch registry entries only for sellers that have matching products

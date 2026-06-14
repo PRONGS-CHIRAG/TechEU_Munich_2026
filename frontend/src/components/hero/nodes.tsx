@@ -17,9 +17,14 @@ import {
   Truck,
   ShieldCheck,
   Warning,
+  CheckCircle,
+  XCircle,
+  ArrowsCounterClockwise,
 } from "@phosphor-icons/react";
-import { useEffect, useRef } from "react";
-import type { ConversationLog } from "@/lib/types";
+import { useEffect, useRef, useState } from "react";
+import type { ConversationLog, EscalationResult } from "@/lib/types";
+
+type EscalationDecision = "approved" | "rejected" | "renegotiate" | "restart";
 
 type NodeProps<T = unknown> = { data: T };
 type StateProps = { active: boolean; done: boolean };
@@ -668,6 +673,8 @@ export function SellerNode({
   selected?: boolean;
   interactive?: boolean;
   chatLines?: ConversationLog[];
+  escalation?: EscalationResult | null;
+  onEscalationDecide?: (d: EscalationDecision, note?: string) => void;
 }>) {
   const chatLines = data.chatLines ?? [];
   const hasChatLines = chatLines.length > 0;
@@ -685,10 +692,19 @@ export function SellerNode({
       : ringState(data);
 
   return (
+    <div className="relative" style={{ width: 260 }}>
+    {data.escalation && (
+      <NodeEscalationPopover
+        data={data.escalation}
+        onDecide={data.onEscalationDecide}
+      />
+    )}
     <motion.div
       {...SPAWN}
       style={{ width: 260 }}
       className={`group relative overflow-hidden rounded-xl bg-white ${ringBase} ${ring} ${
+        data.escalation ? "ring-2 ring-amber-400 shadow-[0_0_0_4px_rgba(245,158,11,0.15)]" : ""
+      } ${
         data.interactive ? "cursor-pointer active:scale-[0.98]" : ""
       }`}
     >
@@ -798,6 +814,124 @@ export function SellerNode({
           </motion.div>
         )}
       </AnimatePresence>
+    </motion.div>
+    </div>
+  );
+}
+
+// ─── Node-anchored Escalation Popover ──────────────────────────────────────────
+// Floats above the seller node it concerns — replaces the old full-screen modal.
+
+function NodeEscalationPopover({
+  data,
+  onDecide,
+}: {
+  data: EscalationResult;
+  onDecide?: (d: EscalationDecision, note?: string) => void;
+}) {
+  const [showNoteInput, setShowNoteInput] = useState(false);
+  const [note, setNote] = useState("");
+
+  const noOffer = data.trigger === "no_compatible_offer";
+  const canRenegotiate = !noOffer && !data.renegotiate_used && data.has_winning_offer !== false;
+
+  const decide = (d: EscalationDecision, renegotiateNote?: string) => onDecide?.(d, renegotiateNote);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.22, ease: EASE_OUT }}
+      // nodrag/nowheel keep React Flow from hijacking pointer events inside the card
+      className="nodrag nowheel absolute bottom-full left-1/2 z-50 mb-3 w-[300px] -translate-x-1/2 overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
+    >
+      <div className="h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400" />
+
+      <div className="px-4 pb-3 pt-3.5">
+        <div className="flex items-center gap-2">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-amber-100 text-warning">
+            <Warning weight="fill" className="h-4 w-4" />
+          </span>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-warning">
+            {noOffer ? "No Match Found" : "Decision Required"}
+          </div>
+        </div>
+
+        <p className="mt-2.5 text-[12px] leading-relaxed text-text-2">
+          {noOffer
+            ? "No supplier could meet your requirements."
+            : data.question_for_human || data.reason}
+        </p>
+
+        {showNoteInput && !noOffer && (
+          <textarea
+            autoFocus
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="e.g. I can go up to €700, but need delivery in 3 days."
+            rows={2}
+            className="mt-2.5 w-full resize-none rounded-lg border border-border bg-surface px-2.5 py-2 text-[11px] leading-relaxed text-text-1 placeholder:text-text-3 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        )}
+      </div>
+
+      <div className="flex gap-2 border-t border-border px-3 py-2.5">
+        {noOffer ? (
+          <button
+            onClick={() => decide("restart")}
+            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent text-[12px] font-semibold text-white transition-all hover:brightness-95 active:scale-[0.97]"
+          >
+            <MagnifyingGlass weight="bold" className="h-3.5 w-3.5" />
+            New Search
+          </button>
+        ) : showNoteInput ? (
+          <>
+            <button
+              onClick={() => { setShowNoteInput(false); setNote(""); }}
+              className="flex h-9 flex-1 items-center justify-center rounded-lg border border-border bg-surface text-[12px] font-semibold text-text-2 transition-all hover:bg-surface-2 active:scale-[0.97]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => decide("renegotiate", note.trim())}
+              disabled={!note.trim()}
+              className="flex h-9 flex-[1.4] items-center justify-center gap-1.5 rounded-lg bg-accent text-[12px] font-semibold text-white transition-all hover:brightness-95 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ArrowsCounterClockwise weight="bold" className="h-3.5 w-3.5" />
+              Send
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => decide("rejected")}
+              className="flex h-9 flex-1 items-center justify-center gap-1 rounded-lg border border-red-200 bg-white text-[12px] font-semibold text-danger transition-all hover:bg-danger-soft active:scale-[0.97]"
+            >
+              <XCircle weight="bold" className="h-3.5 w-3.5" />
+              Reject
+            </button>
+            {canRenegotiate && (
+              <button
+                onClick={() => setShowNoteInput(true)}
+                className="flex h-9 flex-1 items-center justify-center gap-1 rounded-lg border border-border bg-surface text-[12px] font-semibold text-text-2 transition-all hover:border-accent hover:text-accent active:scale-[0.97]"
+              >
+                <ArrowsCounterClockwise weight="bold" className="h-3.5 w-3.5" />
+                Counter
+              </button>
+            )}
+            <button
+              onClick={() => decide("approved")}
+              className="flex h-9 flex-1 items-center justify-center gap-1 rounded-lg bg-accent text-[12px] font-semibold text-white transition-all hover:brightness-95 active:scale-[0.97]"
+            >
+              <CheckCircle weight="bold" className="h-3.5 w-3.5" />
+              Approve
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Pointer arrow toward the node below */}
+      <span className="absolute left-1/2 top-full h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-amber-200 bg-white" />
     </motion.div>
   );
 }

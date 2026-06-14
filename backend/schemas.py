@@ -26,7 +26,8 @@ class StructuredRequirements(TypedDict, total=False):
     product_type: str
     product_keywords: List[str]
     use_case: str
-    budget_eur: float
+    # None means no budget was stated by the buyer -> treat as unlimited.
+    budget_eur: Optional[float]
     max_delivery_days: int
     warranty_required: bool
     minimum_warranty_years: float
@@ -109,7 +110,7 @@ class HumanAlert(TypedDict):
     question: str
     trigger: str
     best_offer: Optional[dict]
-    budget_eur: float
+    budget_eur: Optional[float]
 
 
 class ProductCluster(TypedDict):

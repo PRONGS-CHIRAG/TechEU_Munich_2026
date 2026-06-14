@@ -108,7 +108,10 @@ function Row({
         <td className="py-3 pr-4 text-text-2">{r.product}</td>
         <Spec value={`${r.length_mm}mm`} fail={r.length_mm > requirements.max_length_mm} />
         <Spec value={`${r.power_watts}W`} fail={r.power_watts > requirements.max_power_watts} />
-        <Spec value={`€${r.price_eur}`} fail={r.price_eur > requirements.budget_eur} />
+        <Spec
+          value={`€${r.price_eur}`}
+          fail={requirements.budget_eur != null && r.price_eur > requirements.budget_eur}
+        />
         <Spec value={`${r.delivery_days}d`} fail={r.delivery_days > requirements.max_delivery_days} />
         <Spec
           value={`${r.warranty_years}yr`}
@@ -183,8 +186,8 @@ function FailedDrawer({
     {
       label: "Price",
       actual: `€${r.price_eur}`,
-      limit: `≤ €${requirements.budget_eur}`,
-      fail: r.price_eur > requirements.budget_eur,
+      limit: requirements.budget_eur == null ? "unlimited" : `≤ €${requirements.budget_eur}`,
+      fail: requirements.budget_eur != null && r.price_eur > requirements.budget_eur,
     },
     {
       label: "Delivery",

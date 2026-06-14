@@ -120,10 +120,16 @@ def _generate_buyer_turn(
     if _DEMO_MODE:
         price_note = f" We are targeting €{target_price:.0f}." if target_price > 0 else ""
         if round_num == 1:
+            budget = requirements.get("budget_eur")
+            budget_clause = (
+                "We don't have a fixed budget cap"
+                if budget is None
+                else f"Our budget is €{budget}"
+            )
             return (
                 f"Hello {seller.get('seller_name', '')}. We are looking for a "
                 f"{product_type} for {requirements.get('use_case', 'our operations')}. "
-                f"Our budget is €{requirements.get('budget_eur', 650)}, and we need delivery "
+                f"{budget_clause}, and we need delivery "
                 f"within {requirements.get('max_delivery_days', 7)} days.{price_note}"
             )
         return (

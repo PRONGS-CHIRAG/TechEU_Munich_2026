@@ -15,7 +15,7 @@ import { StageStrip } from "@/components/shell/StageStrip";
 import { AgentNetwork } from "@/components/hero/AgentNetwork";
 import { RequestForm } from "@/components/input/RequestForm";
 import { ActivityFeed, type FeedItem } from "@/components/feed/ActivityFeed";
-import { EscalationModal } from "@/components/modals/EscalationModal";
+import { NegotiationChats } from "@/components/sections/NegotiationChats";
 import { DecisionScreen } from "@/components/screens/DecisionScreen";
 import {
   initialStatus,
@@ -61,6 +61,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
   // Dynamic node visibility driven by real events
   const [visibleNodeIds, setVisibleNodeIds] = useState<Set<string>>(new Set());
   const [nodeChatLines, setNodeChatLines] = useState<Record<string, ConversationLog[]>>({});
+  const [chatsCollapsed, setChatsCollapsed] = useState(false);
   // Live supplier/candidate lists built as stream events arrive (not waiting for done)
   const [liveSuppliers, setLiveSuppliers] = useState<MatchedSupplier[]>([]);
   const [liveJudgedCandidates, setLiveJudgedCandidates] = useState<JudgedCandidate[]>([]);
@@ -139,11 +140,12 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
           setRequestLabel(`${d.product_type as string}${budget}`);
           setStatus((s) => ({ ...s, stageIndex: 0 }));
           reveal(STAGE_REVEALS["intel"]);
+          const budgetLabel = d.budget_eur ? `budget €${d.budget_eur as number}` : "unlimited budget";
           pushFeed({
             id: `req-${Date.now()}`,
             agent: "orchestrator",
             title: `Requirements extracted — ${d.product_type as string}`,
-            detail: `budget €${d.budget_eur as number} · ${d.max_delivery_days as number}d delivery`,
+            detail: `${budgetLabel} · ${d.max_delivery_days as number}d delivery`,
           });
         } else {
           pushFeed({
@@ -218,7 +220,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
           pushFeed({
             id: `fallback-${Date.now()}`,
             agent: "escalation",
-            vendor: displayName(log.seller_name),
+            vendor: displayName(log.seller_name ?? ""),
             title: log.message,
             variant: "fallback",
           });
@@ -229,7 +231,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
           pushFeed({
             id: `reject-${log.seller_id}-${Date.now()}`,
             agent: "seller",
-            vendor: displayName(log.seller_name),
+            vendor: displayName(log.seller_name ?? ""),
             title: `Rejected — ${log.message.slice(0, 80)}${log.message.length > 80 ? "…" : ""}`,
             variant: "rejection",
           });
@@ -270,7 +272,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
         pushFeed({
           id: `chat-${log.seller_id}-r${log.round}-${log.speaker}-${Date.now()}`,
           agent: log.speaker === "buyer" ? "buyer" : "seller",
-          vendor: displayName(log.seller_name),
+          vendor: displayName(log.seller_name ?? ""),
           title: `"${log.message.length > 90 ? log.message.slice(0, 90) + "…" : log.message}"`,
           detail: `Round ${log.round}`,
         });
@@ -314,7 +316,13 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
             question_for_human: d.question ?? "",
             renegotiate_used: d.renegotiate_used,
             has_winning_offer: d.has_winning_offer,
+            seller_id: d.seller_id,
           };
+          // Surface the escalated seller on the network so the popover anchors to it.
+          if (d.seller_id) {
+            setActiveSeller(d.seller_id);
+            setVisibleNodeIds((prev) => new Set([...prev, d.seller_id as string]));
+          }
           setEscalationAlert(escalation);
           setStatus((s) => ({ ...s, phase: "awaiting_approval", stageIndex: Math.max(s.stageIndex, 4) }));
           reveal(STAGE_REVEALS["escalate"]);
@@ -638,6 +646,8 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
                 chatLines={nodeChatLines}
                 requestLabel={requestLabel}
                 judgedCandidates={result?.judged_candidates ?? liveJudgedCandidates}
+                escalation={decision === null ? escalationAlert : null}
+                onEscalationDecide={(d, note) => handleDecide(d, note)}
               />
             </div>
 
@@ -648,13 +658,45 @@ export function BuyerWorkspace({ onLogout, accountLabel = "Horizon Analytics Gmb
             </div>
           </div>
 
-          {/* Escalation modal — shown on approval_required alert */}
-          {escalationAlert && decision === null && (
-            <EscalationModal
-              data={escalationAlert}
-              onDecide={(d, note) => handleDecide(d, note)}
-            />
+          {/* Live negotiation chats — side-by-side per seller (collapsible) */}
+          {Object.values(nodeChatLines).some((lines) => lines.length > 0) && (
+            <div className="shrink-0 border-t border-border bg-surface">
+              <button
+                onClick={() => setChatsCollapsed((v) => !v)}
+                className="flex w-full items-center justify-between px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-text-3 transition-colors hover:text-text-1"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
+                  Live Negotiation Chats
+                  <span className="font-mono text-[10px] text-text-3">
+                    ({Object.values(nodeChatLines).filter((l) => l.length > 0).length})
+                  </span>
+                </span>
+                <motion.span
+                  animate={{ rotate: chatsCollapsed ? 0 : 180 }}
+                  transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                  className="text-text-2"
+                >
+                  ▾
+                </motion.span>
+              </button>
+              {!chatsCollapsed && (
+                <div className="max-h-64 overflow-y-auto px-3 pb-3">
+                  <NegotiationChats
+                    chatsBySeller={nodeChatLines}
+                    sellerNames={Object.fromEntries(
+                      (result?.matched_suppliers ?? liveSuppliers).map((s) => [s.seller_id, s.seller_name]),
+                    )}
+                    activeSeller={activeSeller}
+                    onSelectSeller={setActiveSeller}
+                  />
+                </div>
+              )}
+            </div>
           )}
+
+          {/* Escalation is rendered as a popover anchored to the seller node
+              inside AgentNetwork — see the `escalation` prop above. */}
 
           <div className="flex h-12 shrink-0 items-center justify-between border-t border-border bg-white px-8">
             <button

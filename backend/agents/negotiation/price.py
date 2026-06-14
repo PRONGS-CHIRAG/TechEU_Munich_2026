@@ -1,7 +1,12 @@
 def get_price_context(requirements: dict, product: dict, seller: dict) -> str:
-    budget = requirements.get("budget_eur", 650)
+    budget = requirements.get("budget_eur")
     price = product.get("price_eur", 0)
     style = seller.get("negotiation_style", "flexible")
+    if budget is None:
+        return (
+            f"Price is €{price}. No fixed budget constraint — focus on getting the best "
+            f"possible value (price, delivery, warranty). Seller style is {style}."
+        )
     delta = price - budget
     if delta > 0:
         style_note = "be firm and reference competing offers" if style == "aggressive" else "they may have flexibility"
