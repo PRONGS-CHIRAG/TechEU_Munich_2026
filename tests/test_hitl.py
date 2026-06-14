@@ -95,27 +95,23 @@ def test_run_demo_events_waits_at_human_alert(monkeypatch):
     monkeypatch.setattr("backend.orchestrator.judge_candidate", lambda _req, _cluster: candidate)
     monkeypatch.setattr("backend.orchestrator.match_suppliers", lambda _req: [supplier])
     monkeypatch.setattr("backend.orchestrator.get_seller_inventory", lambda **_kw: [product])
-    monkeypatch.setattr(
-        "backend.orchestrator.negotiate_one_supplier",
-        lambda _req, _supplier, _inventory, _judged: iter(
-            [
-                (
-                    {
-                        "seller_id": "vendor_f",
-                        "seller_name": "Chair Vendor",
-                        "speaker": "seller",
-                        "message": "We can offer the Ergo Chair.",
-                        "round": 1,
-                        "event_kind": "turn",
-                        "pioneer_labels": [],
-                        "risk_level": "low",
-                        "extracted_fields": {},
-                    },
-                    product,
-                )
-            ]
-        ),
-    )
+    def negotiate_round(_req, _supplier, _inventory, _judged, **kwargs):
+        yield (
+            {
+                "seller_id": "vendor_f",
+                "seller_name": "Chair Vendor",
+                "speaker": "seller",
+                "message": "We can offer the Ergo Chair.",
+                "round": kwargs.get("round_num", 1),
+                "event_kind": "turn",
+                "pioneer_labels": [],
+                "risk_level": "low",
+                "extracted_fields": {},
+            },
+            product,
+        )
+
+    monkeypatch.setattr("backend.orchestrator.negotiate_supplier_round", negotiate_round)
     monkeypatch.setattr(
         "backend.orchestrator.validate_offer",
         lambda _req, offer: {
@@ -193,3 +189,140 @@ def test_run_demo_events_waits_at_human_alert(monkeypatch):
     assert done["negotiation_outcome"]["user_choice"] == "approved"
     assert isinstance(done["negotiation_outcome"]["all_offers"], list)
     assert len(done["negotiation_outcome"]["all_offers"]) > 0
+
+
+def test_counter_message_continues_parallel_negotiation_and_caps_suppliers(monkeypatch):
+    requirements = {
+        "product_type": "GPU",
+        "use_case": "AI workstation",
+        "budget_eur": 700,
+        "max_delivery_days": 7,
+        "warranty_required": True,
+        "minimum_warranty_years": 1,
+        "extra_constraints": [],
+    }
+    suppliers = [
+        {
+            "seller_id": f"vendor_{idx}",
+            "seller_name": f"Vendor {idx}",
+            "match_score": 1 - idx * 0.1,
+            "reason": "match",
+        }
+        for idx in range(4)
+    ]
+    products = [
+        {
+            "seller_id": supplier["seller_id"],
+            "seller_name": supplier["seller_name"],
+            "product": f"GPU {supplier['seller_id']}",
+            "price_eur": 650,
+            "delivery_days": 5,
+            "warranty_years": 2,
+            "availability": "in_stock",
+        }
+        for supplier in suppliers
+    ]
+    clusters = [
+        {
+            "cluster_id": "cluster_1",
+            "products": products,
+            "similarity_score": 1,
+            "representative_specs": {"avg_price_eur": 650},
+        }
+    ]
+    candidate = {
+        "cluster_id": "cluster_1",
+        "seller_id": "vendor_0",
+        "product": "GPU vendor_0",
+        "verdict": "good",
+        "reason": "Fits.",
+        "score": 90,
+    }
+
+    monkeypatch.setattr("backend.orchestrator.extract_requirements", lambda _request: requirements)
+    monkeypatch.setattr("backend.orchestrator.get_all_products_flat", lambda **_kw: products)
+    monkeypatch.setattr("backend.orchestrator.cluster_products", lambda _req, _products: clusters)
+    monkeypatch.setattr("backend.orchestrator.judge_candidate", lambda _req, _cluster: candidate)
+    monkeypatch.setattr("backend.orchestrator.match_suppliers", lambda _req: suppliers)
+    monkeypatch.setattr("backend.orchestrator.get_seller_inventory", lambda **_kw: products)
+    monkeypatch.setattr(
+        "backend.orchestrator.validate_offer",
+        lambda _req, offer: {
+            "seller_id": offer["seller_id"],
+            "status": "passed",
+            "failed_constraints": [],
+            "score": 0,
+        },
+    )
+    monkeypatch.setattr("backend.orchestrator.compute_value_score", lambda _req, _offer: 91)
+    monkeypatch.setattr(
+        "backend.orchestrator.check_escalation",
+        lambda _results, _req, _best: {
+            "escalate": False,
+            "trigger": "",
+            "reason": "",
+            "question_for_human": "",
+        },
+    )
+    monkeypatch.setattr(
+        "backend.orchestrator.classify_message",
+        lambda _message: {"labels": ["final_offer"], "risk_level": "low", "extracted_fields": {}},
+    )
+    monkeypatch.setattr("backend.orchestrator.search_external_supplier", lambda _req: {})
+    monkeypatch.setattr("backend.orchestrator.generate_summary", lambda *_args: "Audit text")
+    monkeypatch.setattr("backend.orchestrator.generate_deal_card", lambda _rec: "assets/fal_deal_card.png")
+
+    seen_rounds = []
+    seen_counter_messages = []
+
+    def negotiate_round(_req, supplier, _inventory, _judged, **kwargs):
+        seen_rounds.append((supplier["seller_id"], kwargs.get("round_num")))
+        if kwargs.get("buyer_message_override"):
+            seen_counter_messages.append((supplier["seller_id"], kwargs["buyer_message_override"]))
+        offer = next(p for p in products if p["seller_id"] == supplier["seller_id"])
+        yield (
+            {
+                "seller_id": supplier["seller_id"],
+                "seller_name": supplier["seller_name"],
+                "speaker": "seller",
+                "message": f"Offer from {supplier['seller_name']}",
+                "round": kwargs.get("round_num", 1),
+                "event_kind": "turn",
+                "pioneer_labels": [],
+                "risk_level": "low",
+                "extracted_fields": {},
+            },
+            offer,
+        )
+
+    monkeypatch.setattr("backend.orchestrator.negotiate_supplier_round", negotiate_round)
+
+    deal_alerts = [0]
+
+    def wait_for_human(_session_id, alert):
+        if alert["trigger"] == "strategy_selection":
+            return {"action": "select_strategy", "strategy": "medium"}
+        deal_alerts[0] += 1
+        if deal_alerts[0] == 1:
+            return {"action": "counter", "note": "Can you improve delivery and warranty?"}
+        return {"action": "approve", "selected_seller_id": "vendor_1"}
+
+    events = list(
+        run_demo_events(
+            {"request_id": "REQ-TEST", "raw_request": "Need GPUs", "region": "Germany", "priority": "technical_fit"},
+            session_id="session-counter",
+            wait_for_human=wait_for_human,
+        )
+    )
+
+    negotiated_sellers = {seller_id for seller_id, _round in seen_rounds}
+    assert negotiated_sellers == {"vendor_0", "vendor_1", "vendor_2"}
+    assert "vendor_3" not in negotiated_sellers
+    assert ("vendor_0", "Can you improve delivery and warranty?") in seen_counter_messages
+    assert ("vendor_1", "Can you improve delivery and warranty?") in seen_counter_messages
+    assert ("vendor_2", "Can you improve delivery and warranty?") in seen_counter_messages
+
+    done = events[-1]["data"]
+    assert done["negotiation_outcome"]["status"] == "accepted"
+    assert done["negotiation_outcome"]["selected_seller_id"] == "vendor_1"
+    assert set(done["negotiation_outcome"]["rejected_sellers"]) == {"vendor_0", "vendor_2"}

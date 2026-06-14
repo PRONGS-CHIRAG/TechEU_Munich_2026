@@ -55,7 +55,7 @@ class BuyerRequestIn(BaseModel):
 
 class HumanResponseIn(BaseModel):
     session_id: str
-    action: Optional[str] = None   # "approve" | "reject" | "adjust" | "select_strategy" | "reject_all"
+    action: Optional[str] = None   # "approve" | "reject" | "adjust" | "select_strategy" | "reject_all" | "counter"
     decision: Optional[str] = None  # frontend compatibility alias
     note: Optional[str] = None
     adjusted_budget_eur: Optional[float] = None

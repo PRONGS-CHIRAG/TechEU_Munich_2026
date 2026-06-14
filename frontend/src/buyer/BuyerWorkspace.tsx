@@ -294,7 +294,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
             id: `deal-comparison-${Date.now()}`,
             agent: "escalation",
             title: `Deal comparison ready — ${selectable} offer${selectable !== 1 ? "s" : ""} to review`,
-            detail: "Select a deal to approve or reject all",
+            detail: "Accept, reject all, or send a counter-message",
           });
         } else {
           // Escalation / approval alert (legacy path)
@@ -472,6 +472,19 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
     }
   }, []);
 
+  const handleDealCounter = useCallback(async (message: string) => {
+    setDealAlert(null);
+    setStatus((s) => ({ ...s, phase: "running" }));
+    const sid = sessionIdRef.current;
+    if (sid) {
+      try {
+        await sendDealChoice(sid, "counter", null, message);
+      } catch {
+        // non-fatal
+      }
+    }
+  }, []);
+
   const showSection = (id: SectionId) => status.revealedSections.has(id);
   const isIdle = status.phase === "idle";
   const isRunning = status.phase === "running";
@@ -629,6 +642,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
               rows={dealAlert.rows}
               onApprove={handleDealApprove}
               onRejectAll={handleDealRejectAll}
+              onCounter={handleDealCounter}
             />
           )}
 
@@ -652,7 +666,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
                 {strategyAlert
                   ? "⚙ Strategy selection required"
                   : dealAlert
-                    ? "⚖ Select a deal to approve"
+                    ? "⚖ Review offers or counter"
                     : status.phase === "running"
                       ? "● Processing…"
                       : status.phase === "awaiting_approval"

@@ -19,6 +19,79 @@ _KNOWN_CATEGORY_ALIASES = {
     "laptop": ("laptop", "laptops", "notebook", "notebooks"),
 }
 
+_GPU_MODEL_RE = re.compile(
+    r"\b("
+    r"rtx|gtx|geforce|quadro|tesla|nvidia|radeon|"
+    r"rx\s*\d{3,4}|arc\s+a\d{3,4}|graphics\s+card|video\s+card|gpu"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_GPU_ACCESSORY_RE = re.compile(
+    r"\b("
+    r"hdmi|vga|displayport|dvi|adapter|adaptor|cable|connector|converter|"
+    r"splitter|switch|extender|mount|bracket|riser|holder|dock|docking|"
+    r"enclosure|case|cover|sleeve|heatsink|thermal\s+pad|screw|tool"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_CHAIR_PRODUCT_RE = re.compile(
+    r"\b(office\s+chair|ergonomic\s+chair|desk\s+chair|task\s+chair|"
+    r"conference\s+chair|mesh\s+chair|executive\s+chair|drafting\s+chair|"
+    r"work\s+chair|computer\s+chair)\b",
+    re.IGNORECASE,
+)
+
+_CHAIR_ACCESSORY_RE = re.compile(
+    r"\b("
+    r"cap|caps|tip|tips|caster|wheel|wheels|mat|cover|covers|pad|pads|"
+    r"strap|straps|banner|earrings|pillow|cushion|plug|brace|bracket|"
+    r"liner|placemat|feet|sock|socks|protector|protectors|replacement"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_SENSOR_PRODUCT_RE = re.compile(
+    r"\b(sensor|sensors|proximity|photoelectric|ultrasonic|infrared|inductive|"
+    r"detector|detection|transducer)\b",
+    re.IGNORECASE,
+)
+
+_SENSOR_ACCESSORY_RE = re.compile(
+    r"\b(cable|connector|mount|bracket|holder|adapter|case|cover|battery)\b",
+    re.IGNORECASE,
+)
+
+_LAPTOP_PRODUCT_RE = re.compile(
+    r"\b(laptop|notebook|ultrabook|chromebook|macbook|thinkpad|ideapad|"
+    r"elitebook|latitude|xps|pavilion|vivobook|zenbook|surface\s+laptop)\b",
+    re.IGNORECASE,
+)
+
+_LAPTOP_ACCESSORY_RE = re.compile(
+    r"\b("
+    r"case|cover|sleeve|bag|backpack|charger|adapter|adaptor|cable|dock|"
+    r"docking|stand|mount|battery|keyboard|mouse|screen\s+protector|"
+    r"replacement|skin|sticker|cooling\s+pad|privacy\s+filter|laptop\s+gpu"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_SERVER_PRODUCT_RE = re.compile(
+    r"\b(server|rack\s+server|blade\s+server|tower\s+server|workstation|"
+    r"nas|storage\s+server|compute\s+node)\b",
+    re.IGNORECASE,
+)
+
+_SERVER_ACCESSORY_RE = re.compile(
+    r"\b("
+    r"rail|rails|rack\s+mount|mounting\s+kit|bracket|cable|adapter|drive\s+tray|caddy|"
+    r"bezel|cover|fan|heatsink|power\s+supply|psu|memory|ram"
+    r")\b",
+    re.IGNORECASE,
+)
+
 
 def _tokens(*values: object) -> set[str]:
     tokens: set[str] = set()
@@ -57,27 +130,32 @@ def product_matches_requirement(product: dict, requirements: dict) -> bool:
     overlap with inventory names.
     """
     name = str(product.get("product", "")).lower()
-    keys = set(product.keys())
     category = _requested_category(requirements)
+    stored_category = str(product.get("category", "")).strip().lower()
+
+    if category and stored_category and stored_category != category:
+        return False
 
     if category == "gpu":
-        return bool({"length_mm", "power_watts"} & keys) or any(
-            token in name for token in ("rtx", "gpu", "radeon")
-        )
+        return bool(_GPU_MODEL_RE.search(name)) and not bool(_GPU_ACCESSORY_RE.search(name))
 
     if category == "chair":
-        return bool({"load_rating_kg", "seat_width_mm"} & keys) or "chair" in name
+        has_chair_specs = any(product.get(key) is not None for key in ("load_rating_kg", "seat_width_mm"))
+        return (has_chair_specs or bool(_CHAIR_PRODUCT_RE.search(name))) and not bool(
+            _CHAIR_ACCESSORY_RE.search(name)
+        )
 
     if category == "sensor":
-        return bool({"ip_rating", "range_m"} & keys) or any(
-            token in name for token in ("sensor", "proxima")
+        has_sensor_specs = any(product.get(key) is not None for key in ("ip_rating", "range_m"))
+        return (has_sensor_specs or bool(_SENSOR_PRODUCT_RE.search(name))) and not bool(
+            _SENSOR_ACCESSORY_RE.search(name)
         )
 
     if category == "server":
-        return "server" in name
+        return bool(_SERVER_PRODUCT_RE.search(name)) and not bool(_SERVER_ACCESSORY_RE.search(name))
 
     if category == "laptop":
-        return "laptop" in name or "notebook" in name
+        return bool(_LAPTOP_PRODUCT_RE.search(name)) and not bool(_LAPTOP_ACCESSORY_RE.search(name))
 
     requested_tokens = _tokens(
         requirements.get("product_type", ""),

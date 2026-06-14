@@ -131,7 +131,7 @@ class JudgedCandidate(TypedDict):
 
 
 class DealComparisonRow(TypedDict):
-    """One row in the deal comparison table shown to the buyer after all negotiations complete."""
+    """One row in the deal comparison table shown between parallel negotiation rounds."""
     seller_id: str
     seller_name: str
     product: str

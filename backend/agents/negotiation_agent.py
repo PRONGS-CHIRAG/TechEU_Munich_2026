@@ -4,6 +4,9 @@ Public API:
   negotiate_one_supplier(requirements, supplier, inventory, judged_candidates)
     → generator of (log_dict, offer_dict | None)
 
+  negotiate_supplier_round(requirements, supplier, inventory, judged_candidates, ...)
+    → generator of one buyer/seller exchange for parallel orchestration
+
   run_negotiation(requirements, matched_suppliers, judged_candidates)
     → (logs, raw_offers)  — non-streaming wrapper kept for tests/fallback
 
@@ -382,6 +385,139 @@ def negotiate_one_supplier(
     if inventory is None:
         inventory = get_seller_inventory(requirements=requirements)
     yield from _negotiate_supplier(requirements, supplier, inventory, judged_candidates or [])
+
+
+def negotiate_supplier_round(
+    requirements: dict,
+    supplier: dict,
+    inventory: list | None = None,
+    judged_candidates: list | None = None,
+    round_num: int = 1,
+    previous_seller_message: str = "",
+    buyer_message_override: str | None = None,
+):
+    """Yield one buyer/seller exchange for a supplier.
+
+    This is used by the orchestrator's parallel negotiation loop. It keeps the
+    same pricing guardrail as the full generator, but returns an offer after
+    every successful seller turn so the buyer can accept, reject, or counter
+    between rounds.
+    """
+    if inventory is None:
+        inventory = get_seller_inventory(requirements=requirements)
+
+    seller_id = supplier["seller_id"]
+    seller_name = supplier["seller_name"]
+    product = _get_seller_best_product(seller_id, requirements, inventory)
+
+    if product is None:
+        yield (
+            {
+                "seller_id": seller_id,
+                "seller_name": seller_name,
+                "speaker": "seller",
+                "message": "We currently have no compatible products in stock.",
+                "round": round_num,
+                "event_kind": "seller_rejection",
+                "is_rejection": True,
+                "pioneer_labels": ["missing_information"],
+                "risk_level": "medium",
+                "extracted_fields": {},
+            },
+            None,
+        )
+        return
+
+    product = {**product, "seller_id": seller_id, "seller_name": seller_name}
+    listed_price = float(product.get("price_eur", 0))
+    floor_price = listed_price * (1.0 - SELLER_MAX_DISCOUNT_PCT)
+
+    strategy = requirements.get("negotiation_strategy", "medium")
+    cfg = STRATEGY_CONFIG.get(strategy, STRATEGY_CONFIG["medium"])
+    target_price = _buyer_target_price(
+        listed_price,
+        cfg["step_pct"],
+        cfg["target_discount_pct"],
+        round_num,
+    )
+
+    buyer_msg = (
+        _trim(buyer_message_override)
+        if buyer_message_override
+        else _generate_buyer_turn(
+            requirements,
+            supplier,
+            product,
+            round_num,
+            previous_seller_message=previous_seller_message,
+            target_price=target_price,
+        )
+    )
+
+    yield (
+        {
+            "seller_id": seller_id,
+            "seller_name": seller_name,
+            "speaker": "buyer",
+            "message": buyer_msg,
+            "round": round_num,
+            "event_kind": "turn",
+            "pioneer_labels": [],
+            "risk_level": "low",
+            "extracted_fields": {},
+        },
+        None,
+    )
+
+    if target_price < floor_price:
+        rejection_msg = (
+            f"We cannot accept an offer below €{floor_price:.0f} "
+            f"(our floor on the listed price of €{listed_price:.0f}). "
+            f"We must decline this negotiation."
+        )
+        yield (
+            {
+                "seller_id": seller_id,
+                "seller_name": seller_name,
+                "speaker": "seller",
+                "message": rejection_msg,
+                "round": round_num,
+                "event_kind": "seller_rejection",
+                "is_rejection": True,
+                "pioneer_labels": ["final_offer"],
+                "risk_level": "high",
+                "extracted_fields": {},
+            },
+            None,
+        )
+        return
+
+    seller_msg = _generate_seller_turn(
+        requirements,
+        supplier,
+        product,
+        round_num,
+        buyer_msg,
+        target_price=target_price,
+    )
+    negotiated_product = {**product, "price_eur": target_price}
+    yield (
+        {
+            "seller_id": seller_id,
+            "seller_name": seller_name,
+            "speaker": "seller",
+            "message": seller_msg,
+            "round": round_num,
+            "event_kind": "turn",
+            "pioneer_labels": [],
+            "risk_level": "low",
+            "extracted_fields": {
+                "price_eur": target_price,
+                "delivery_days": product.get("delivery_days"),
+            },
+        },
+        negotiated_product,
+    )
 
 
 def run_negotiation(

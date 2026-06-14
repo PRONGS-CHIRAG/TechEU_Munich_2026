@@ -179,7 +179,7 @@ export interface NegotiationOutcome {
   rejected_sellers: string[];
   all_offers?: SellerProduct[];
   selected_seller_id?: string;
-  user_choice?: "approved" | "rejected_all" | "auto_selected";
+  user_choice?: "approved" | "rejected_all" | "auto_selected" | "countered" | "no_offer";
 }
 
 export interface DealComparisonRow {
@@ -259,6 +259,7 @@ export interface HumanAlertData {
   budget_eur?: number;
   // deal_comparison fields
   comparison_table?: DealComparisonRow[];
+  allow_counter?: boolean;
 }
 
 export type HumanResponseDecision = "approve" | "reject" | "adjust";

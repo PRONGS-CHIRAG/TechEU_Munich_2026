@@ -63,8 +63,9 @@ export async function sendStrategyChoice(
 
 export async function sendDealChoice(
   sessionId: string,
-  action: "approve" | "reject_all",
+  action: "approve" | "reject_all" | "counter",
   selectedSellerId?: string | null,
+  note?: string,
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/human-response`, {
     method: "POST",
@@ -73,6 +74,7 @@ export async function sendDealChoice(
       session_id: sessionId,
       action,
       selected_seller_id: selectedSellerId ?? null,
+      note: note ?? "",
     }),
   });
   if (!res.ok) {

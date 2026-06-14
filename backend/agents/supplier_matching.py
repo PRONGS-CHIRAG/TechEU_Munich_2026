@@ -21,9 +21,9 @@ def _score_seller(seller: dict, inventory: list, requirements: dict) -> tuple[fl
     compatible = [i for i in seller_items if _is_compatible(i, requirements)]
 
     if not compatible:
-        base_score = 0.4
-    else:
-        base_score = 0.7 + (len(compatible) / max(len(seller_items), 1)) * 0.3
+        return 0.0, []
+
+    base_score = 0.7 + (len(compatible) / max(len(seller_items), 1)) * 0.3
 
     reliability = seller.get("reliability_score", 0.5)
     score = round(min(1.0, base_score * (0.7 + reliability * 0.3)), 2)

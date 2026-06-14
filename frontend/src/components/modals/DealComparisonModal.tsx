@@ -8,6 +8,7 @@ interface Props {
   rows: DealComparisonRow[];
   onApprove: (sellerId: string) => void;
   onRejectAll: () => void;
+  onCounter: (message: string) => void;
 }
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -18,10 +19,11 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   no_offer:            { label: "Declined",    cls: "bg-neutral-100 text-neutral-500" },
 };
 
-export function DealComparisonModal({ rows, onApprove, onRejectAll }: Props) {
+export function DealComparisonModal({ rows, onApprove, onRejectAll, onCounter }: Props) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [counterText, setCounterText] = useState("");
 
   useEffect(() => {
     const backdrop = backdropRef.current;
@@ -52,6 +54,12 @@ export function DealComparisonModal({ rows, onApprove, onRejectAll }: Props) {
     exit(() => onRejectAll());
   };
 
+  const handleCounter = () => {
+    const message = counterText.trim();
+    if (!message) return;
+    exit(() => onCounter(message));
+  };
+
   const selectableCount = rows.filter((r) => !r.is_rejected).length;
 
   return (
@@ -72,11 +80,11 @@ export function DealComparisonModal({ rows, onApprove, onRejectAll }: Props) {
             Deal Comparison
           </div>
           <h3 className="text-[16px] font-semibold leading-snug text-text-1">
-            Select your preferred negotiated deal
+            Choose a deal or continue negotiation
           </h3>
           <p className="mt-1 text-[12.5px] text-text-3">
             {selectableCount} offer{selectableCount !== 1 ? "s" : ""} available.
-            Declined rows cannot be selected.
+            Send a counter-message to all active sellers.
           </p>
         </div>
 
@@ -158,12 +166,31 @@ export function DealComparisonModal({ rows, onApprove, onRejectAll }: Props) {
           </div>
         </div>
 
+        {/* Counter message */}
+        <div className="px-6 pb-3">
+          <textarea
+            value={counterText}
+            onChange={(event) => setCounterText(event.target.value)}
+            rows={2}
+            placeholder="Ask for a better term, faster delivery, extra warranty..."
+            className="w-full resize-none rounded-xl border border-border bg-surface px-3 py-2 text-[12px] leading-relaxed text-text-1 outline-none transition-colors placeholder:text-text-3 focus:border-accent"
+          />
+        </div>
+
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border px-6 py-3">
           <p className="text-[11px] text-text-3">
             Your selection resumes the agent feed.
           </p>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCounter}
+              disabled={!counterText.trim()}
+              className="rounded-full border border-accent/30 bg-accent-soft px-4 py-1.5 text-[12px] font-semibold text-accent transition-all hover:border-accent hover:bg-accent/10 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Send Counter
+            </button>
             <button
               type="button"
               onClick={handleRejectAll}
