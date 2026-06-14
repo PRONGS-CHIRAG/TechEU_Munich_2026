@@ -2,17 +2,22 @@
 
 import { Handle, Position } from "@xyflow/react";
 import { AnimatePresence, motion } from "motion/react";
-import { FileText, Handshake } from "@phosphor-icons/react";
+import {
+  FileText,
+  Handshake,
+  Brain,
+  GitBranch,
+  MagnifyingGlass,
+  Scales,
+} from "@phosphor-icons/react";
 import { useEffect, useRef } from "react";
 import type { ConversationLog } from "@/lib/types";
 
 type NodeProps<T = unknown> = { data: T };
 type StateProps = { active: boolean; done: boolean };
 
-// Emil: custom ease-out — built-in easings are too weak
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
-// Emil: scale from 0.95, not 0 — nothing in the real world appears from nothing
 const SPAWN = {
   initial: { opacity: 0, scale: 0.95, y: 6 },
   animate: { opacity: 1, scale: 1, y: 0 },
@@ -76,7 +81,7 @@ export function RequestNode({
 
 const STAGE_TASKS: Record<number, string> = {
   0: "Extracting requirements…",
-  1: "Ranking suppliers…",
+  1: "Clustering & ranking…",
   2: "Orchestrating negotiation…",
   3: "Running validation…",
   4: "Checking escalation…",
@@ -121,7 +126,6 @@ export function OrchestratorNode({
         </div>
       </div>
 
-      {/* Emil: mode="wait" + key=stageIndex → crossfade between task labels */}
       <AnimatePresence mode="wait" initial={false}>
         {data.active ? (
           <motion.div
@@ -155,15 +159,247 @@ export function OrchestratorNode({
   );
 }
 
-// ─── Buyer Agent Node ──────────────────────────────────────────────────────────
+// ─── Procurement Intelligence Node ────────────────────────────────────────────
 
-export function BuyerAgentNode({
+export function ProcurementIntelNode({ data }: NodeProps<StateProps>) {
+  return (
+    <motion.div
+      {...SPAWN}
+      style={{ minWidth: 200 }}
+      className={`rounded-xl bg-white px-5 py-4 ${ringBase} ${ringState(data)}`}
+    >
+      <Handle type="target" position={Position.Left} className="!opacity-0" />
+      <Handle type="source" position={Position.Right} className="!opacity-0" />
+      <div className="flex items-center gap-3">
+        <span
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg transition-colors duration-200 ${
+            data.active || data.done ? "bg-accent-soft text-accent" : "bg-surface text-text-3"
+          }`}
+        >
+          <Brain weight="duotone" className="h-5 w-5" />
+        </span>
+        <div className="leading-tight">
+          <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-text-3">Agent</div>
+          <div className="text-[14px] font-semibold tracking-tight text-text-1">Procurement Intel</div>
+        </div>
+      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        {data.active ? (
+          <motion.div
+            key="active"
+            initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: EASE_OUT }}
+            className="mt-2 flex items-center gap-1.5 text-[10px] text-text-2"
+          >
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent" />
+            Extracting requirements…
+          </motion.div>
+        ) : data.done ? (
+          <motion.div
+            key="done"
+            initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.16, ease: EASE_OUT }}
+            className="mt-2 flex items-center gap-1.5 text-[10px] text-emerald-600"
+          >
+            <span className="text-[9px]">✓</span> Requirements extracted
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── Product Clustering Node ───────────────────────────────────────────────────
+
+export function ClusteringNode({ data }: NodeProps<StateProps & { count?: number }>) {
+  return (
+    <motion.div
+      {...SPAWN}
+      style={{ minWidth: 185 }}
+      className={`rounded-xl bg-white px-4 py-3.5 ${ringBase} ${ringState(data)}`}
+    >
+      <Handle type="target" position={Position.Left} className="!opacity-0" />
+      <Handle type="source" position={Position.Right} className="!opacity-0" />
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors duration-200 ${
+            data.active || data.done ? "bg-accent-soft text-accent" : "bg-surface text-text-3"
+          }`}
+        >
+          <GitBranch weight="duotone" className="h-[18px] w-[18px]" />
+        </span>
+        <div className="leading-tight">
+          <div className="text-[9px] font-medium uppercase tracking-[0.14em] text-text-3">Agent</div>
+          <div className="text-[13px] font-semibold tracking-tight text-text-1">Product Clustering</div>
+        </div>
+      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        {data.active ? (
+          <motion.div key="active" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="mt-2 flex items-center gap-1.5 text-[10px] text-text-2"
+          >
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent" />
+            Grouping by similarity…
+          </motion.div>
+        ) : data.done ? (
+          <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="mt-2 flex items-center gap-1.5 text-[10px] text-emerald-600"
+          >
+            <span className="text-[9px]">✓</span>
+            {data.count != null ? `${data.count} cluster${data.count !== 1 ? "s" : ""}` : "Clusters ready"}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── Supplier Matching Node ────────────────────────────────────────────────────
+
+export function MatchingNode({ data }: NodeProps<StateProps & { supplierCount?: number }>) {
+  return (
+    <motion.div
+      {...SPAWN}
+      style={{ minWidth: 185 }}
+      className={`rounded-xl bg-white px-4 py-3.5 ${ringBase} ${ringState(data)}`}
+    >
+      <Handle type="target" position={Position.Left} className="!opacity-0" />
+      <Handle type="source" position={Position.Right} className="!opacity-0" />
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors duration-200 ${
+            data.active || data.done ? "bg-accent-soft text-accent" : "bg-surface text-text-3"
+          }`}
+        >
+          <MagnifyingGlass weight="duotone" className="h-[18px] w-[18px]" />
+        </span>
+        <div className="leading-tight">
+          <div className="text-[9px] font-medium uppercase tracking-[0.14em] text-text-3">Agent</div>
+          <div className="text-[13px] font-semibold tracking-tight text-text-1">Supplier Matching</div>
+        </div>
+      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        {data.active ? (
+          <motion.div key="active" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="mt-2 flex items-center gap-1.5 text-[10px] text-text-2"
+          >
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent" />
+            Scoring vendors…
+          </motion.div>
+        ) : data.done ? (
+          <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="mt-2 flex items-center gap-1.5 text-[10px] text-emerald-600"
+          >
+            <span className="text-[9px]">✓</span>
+            {data.supplierCount != null ? `${data.supplierCount} supplier${data.supplierCount !== 1 ? "s" : ""}` : "Suppliers matched"}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── Judging Wall Node ─────────────────────────────────────────────────────────
+// Visual gate between the intelligence phase and negotiation.
+// Amber colour scheme + taller height makes it read as a barrier.
+
+export function JudgingWallNode({
+  data,
+}: NodeProps<StateProps & { good: number; borderline: number; bad: number }>) {
+  const total = data.good + data.borderline + data.bad;
+  const hasCounts = total > 0;
+
+  const borderColor = data.active
+    ? "border-amber-400"
+    : data.done
+      ? "border-amber-300"
+      : "border-amber-200";
+
+  const ringColor = data.active
+    ? "ring-2 ring-amber-400/60"
+    : data.done
+      ? "ring-1 ring-amber-300/50"
+      : "ring-1 ring-amber-200/60";
+
+  return (
+    <motion.div
+      {...SPAWN}
+      style={{ minWidth: 200, minHeight: 160 }}
+      className={`relative rounded-xl bg-amber-50 border-l-4 px-5 py-4 ${ringBase} ${ringColor} ${borderColor}`}
+    >
+      <Handle type="target" position={Position.Left} className="!opacity-0" />
+      <Handle type="source" position={Position.Right} className="!opacity-0" />
+
+      <span className="absolute right-3 top-3 rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest text-amber-600">
+        Gate
+      </span>
+
+      <div className="flex items-center gap-3">
+        <span
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg transition-colors duration-200 ${
+            data.active || data.done ? "bg-amber-100 text-amber-600" : "bg-amber-50 text-amber-400"
+          }`}
+        >
+          <Scales weight="duotone" className="h-5 w-5" />
+        </span>
+        <div className="leading-tight">
+          <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-500">Agent</div>
+          <div className="text-[14px] font-semibold tracking-tight text-text-1">Judging Agent</div>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {hasCounts ? (
+          <motion.div
+            key="verdicts"
+            initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+            className="mt-3 flex flex-col gap-1.5"
+          >
+            {data.good > 0 && (
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="font-medium text-emerald-700">{data.good} passed</span>
+              </div>
+            )}
+            {data.borderline > 0 && (
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                <span className="font-medium text-amber-700">{data.borderline} borderline</span>
+              </div>
+            )}
+            {data.bad > 0 && (
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className="h-2 w-2 rounded-full bg-red-400 shrink-0" />
+                <span className="font-medium text-red-700">{data.bad} rejected</span>
+              </div>
+            )}
+          </motion.div>
+        ) : data.active ? (
+          <motion.div
+            key="active"
+            initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: EASE_OUT }}
+            className="mt-3 flex items-center gap-1.5 text-[10px] text-amber-600"
+          >
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-amber-500" />
+            Evaluating candidates…
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── Negotiation Agent Node ────────────────────────────────────────────────────
+
+export function NegotiationNode({
   data,
 }: NodeProps<{ active: boolean; done: boolean; round?: number }>) {
   return (
     <motion.div
       {...SPAWN}
-      style={{ minWidth: 220 }}
+      style={{ minWidth: 210 }}
       className={`rounded-xl bg-white px-5 py-4 ${ringBase} ${ringState(data)}`}
     >
       <Handle type="target" position={Position.Left} className="!opacity-0" />
@@ -177,12 +413,8 @@ export function BuyerAgentNode({
           <Handshake weight="duotone" className="h-5 w-5" />
         </span>
         <div className="leading-tight">
-          <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-text-3">
-            Buyer Agent
-          </div>
-          <div className="text-[14px] font-semibold tracking-tight text-text-1">
-            Negotiates
-          </div>
+          <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-text-3">Agent</div>
+          <div className="text-[14px] font-semibold tracking-tight text-text-1">Negotiation Agent</div>
         </div>
       </div>
 
@@ -199,10 +431,23 @@ export function BuyerAgentNode({
             Round {data.round} / 2
           </motion.div>
         )}
+        {data.active && data.round == null && (
+          <motion.div
+            key="generating"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="mt-2 flex items-center gap-1.5 text-[10px] text-text-2"
+          >
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent" />
+            Generating dialogue…
+          </motion.div>
+        )}
       </AnimatePresence>
     </motion.div>
   );
 }
+
+// Backwards-compat alias — nothing outside this file should need it
+export { NegotiationNode as BuyerAgentNode };
 
 // ─── Seller Node ───────────────────────────────────────────────────────────────
 
@@ -222,7 +467,6 @@ export function SellerNode({
   const hasChatLines = chatLines.length > 0;
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat to latest message
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -250,7 +494,6 @@ export function SellerNode({
       )}
       <Handle type="target" position={Position.Left} className="!opacity-0" />
 
-      {/* Header row */}
       <div className="flex items-center gap-2.5 px-4 py-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface font-mono text-[13px] font-semibold text-text-2">
           α
@@ -279,7 +522,6 @@ export function SellerNode({
         </div>
       </div>
 
-      {/* ── Live chat panel — streams in as negotiation runs ── */}
       <AnimatePresence initial={false}>
         {hasChatLines && (
           <motion.div
@@ -296,7 +538,6 @@ export function SellerNode({
               {chatLines.map((log, i) => (
                 <motion.div
                   key={i}
-                  // Emil: 180ms, ease-out, tight 40ms stagger per message
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.18, ease: EASE_OUT }}
@@ -334,7 +575,6 @@ export function SellerNode({
         )}
       </AnimatePresence>
 
-      {/* Shimmer skeleton — active but no messages yet */}
       <AnimatePresence initial={false}>
         {data.active && !hasChatLines && (
           <motion.div

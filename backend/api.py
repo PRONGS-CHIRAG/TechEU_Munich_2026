@@ -6,6 +6,7 @@ Usage:
 
 import asyncio
 import json
+import os
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -14,6 +15,7 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend.data_access import (
@@ -26,6 +28,10 @@ from backend.hitl_sessions import close_session, create_session, submit_response
 from backend.orchestrator import DEMO_MODE, run_demo, run_demo_events
 
 app = FastAPI(title="Pactum API")
+
+_assets_dir = os.path.join(os.path.dirname(__file__), "../assets")
+os.makedirs(_assets_dir, exist_ok=True)
+app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
 
 app.add_middleware(
     CORSMiddleware,

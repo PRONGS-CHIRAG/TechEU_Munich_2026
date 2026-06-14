@@ -89,8 +89,10 @@ def run_demo_events(
     yield evt("requirements", "intel", structured_requirements)
 
     # ── Stage: intel — clustering + judging ───────────────────────────────────
+    yield evt("agent_status", "intel", {"agent": "clustering", "message": "Product Clustering Agent grouping inventory by spec similarity…"})
     all_products = get_all_products_flat()
     clusters = cluster_products(structured_requirements, all_products)
+    yield evt("agent_status", "intel", {"agent": "clustering", "message": f"Found {len(clusters)} product cluster(s) across internal inventory"})
 
     judged_candidates: list = []
     if not clusters:
@@ -109,6 +111,22 @@ def run_demo_events(
             },
         )
     for cluster in clusters:
+        # Emit a "working" event BEFORE the Gemini call so the feed shows the
+        # judging agent actively evaluating — not just a result appearing from nowhere.
+        rep = cluster.get("products", [{}])[0]
+        yield evt(
+            "judging_start",
+            "intel",
+            {
+                "cluster_id": cluster.get("cluster_id", ""),
+                "product": rep.get("product", ""),
+                "seller_name": rep.get("seller_name", ""),
+                "price_eur": rep.get("price_eur", 0),
+                "budget_eur": structured_requirements.get("budget_eur", 0),
+                "delivery_days": rep.get("delivery_days", 0),
+                "max_delivery_days": structured_requirements.get("max_delivery_days", 0),
+            },
+        )
         candidate = judge_candidate(structured_requirements, cluster)
         judged_candidates.append(candidate)
         # Emit cluster event with judging verdict embedded so the feed shows
@@ -116,42 +134,48 @@ def run_demo_events(
         yield evt("cluster", "intel", {**cluster, "judged_candidate": candidate})
 
     # ── Stage: match ──────────────────────────────────────────────────────────
+    yield evt("agent_status", "match", {"agent": "supplier_matching", "message": "Supplier Matching Agent scoring seller registry against requirements…"})
     matched_suppliers = match_suppliers(structured_requirements)
     for supplier in matched_suppliers:
         yield evt("match", "match", supplier)
 
     if len(matched_suppliers) < 2 and not demo_mode:
+        yield evt("agent_status", "match", {"agent": "tavily", "message": f"Only {len(matched_suppliers)} internal supplier(s) found — Tavily searching for external suppliers…"})
         tavily_raw = search_external_supplier(structured_requirements)
     else:
         tavily_raw = fallback_tavily_result(structured_requirements) if demo_mode else {}
 
-    # ── Stage: negotiate — gate on good/borderline clusters ───────────────────
-    # Only negotiate with suppliers whose products appear in good/borderline clusters.
-    # This bounds live Gemini calls (~2-4 suppliers × 2-4 turns vs all 5+ suppliers).
-    good_cluster_ids = {
-        jc["cluster_id"] for jc in judged_candidates
-        if jc.get("verdict") in ("good", "borderline")
-    }
-    good_seller_ids: set = set()
-    for cluster in clusters:
-        if cluster.get("cluster_id") in good_cluster_ids:
-            for p in cluster.get("products", []):
-                good_seller_ids.add(p.get("seller_id", ""))
-
-    negotiation_suppliers = [s for s in matched_suppliers if s["seller_id"] in good_seller_ids]
-    if not negotiation_suppliers:
-        negotiation_suppliers = matched_suppliers  # fallback: never skip all suppliers
-
+    # ── Stage: negotiate — all matched suppliers ──────────────────────────────
+    # Negotiate with every matched supplier so the demo shows multi-vendor
+    # competition. Judging verdicts still influence the final recommendation.
     conversation_logs: list = []
     raw_offers: list = []
 
-    for log, offer in run_negotiation_stream(structured_requirements, negotiation_suppliers, judged_candidates):
+    active_seller_id: str | None = None
+    for log, offer in run_negotiation_stream(structured_requirements, matched_suppliers, judged_candidates):
+        # Emit a start marker the first time we see each new seller so the feed
+        # clearly shows which vendor the negotiation agent is contacting.
+        if log.get("seller_id") != active_seller_id:
+            active_seller_id = log["seller_id"]
+            jc = next((c for c in judged_candidates if c.get("seller_id") == active_seller_id), None)
+            yield evt(
+                "negotiation_start",
+                "negotiate",
+                {
+                    "seller_id": active_seller_id,
+                    "seller_name": log.get("seller_name", active_seller_id),
+                    "verdict": jc.get("verdict", "") if jc else "",
+                    "score": jc.get("score", 0) if jc else 0,
+                },
+            )
         conversation_logs.append(log)
         yield evt("negotiation_turn", "negotiate", dict(log))
         if offer is not None:
             raw_offers.append(offer)
 
     # Pioneer labeling on seller turns (mutates logs in place for the done event)
+    seller_turn_count = sum(1 for log in conversation_logs if log["speaker"] == "seller")
+    yield evt("agent_status", "negotiate", {"agent": "pioneer", "message": f"Pioneer Inference Agent classifying {seller_turn_count} seller message(s) for risk + intent labels…"})
     pioneer_labels: list = []
     for log in conversation_logs:
         if log["speaker"] == "seller":
@@ -164,6 +188,7 @@ def run_demo_events(
             pioneer_labels.append(label_result)
 
     # ── Stage: validate ───────────────────────────────────────────────────────
+    yield evt("agent_status", "validate", {"agent": "validation", "message": f"Validator running deterministic constraint checks on {len(raw_offers)} offer(s)…"})
     validation_results = [validate_offer(structured_requirements, offer) for offer in raw_offers]
 
     for offer, result in zip(raw_offers, validation_results):
@@ -265,6 +290,7 @@ def run_demo_events(
     yield evt("recommendation", "recommend", final_recommendation)
 
     # ── Audit ─────────────────────────────────────────────────────────────────
+    yield evt("agent_status", "audit", {"agent": "audit", "message": "Audit Agent calling Gemini to write procurement narrative…"})
     audit_summary = generate_summary(
         structured_requirements, matched_suppliers, conversation_logs,
         validation_results, escalation_result, raw_offers,

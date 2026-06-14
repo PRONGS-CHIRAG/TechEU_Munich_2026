@@ -11,12 +11,17 @@ import {
 import { useEffect, useRef, useMemo } from "react";
 import {
   BuyerAgentNode,
+  ClusteringNode,
+  JudgingWallNode,
+  MatchingNode,
+  NegotiationNode,
   OrchestratorNode,
+  ProcurementIntelNode,
   RequestNode,
   SellerNode,
 } from "./nodes";
 import { MessageEdge } from "./MessageEdge";
-import type { ConversationLog, MatchedSupplier } from "@/lib/types";
+import type { ConversationLog, JudgedCandidate, MatchedSupplier } from "@/lib/types";
 
 interface Props {
   stageIndex: number;
@@ -27,11 +32,19 @@ interface Props {
   suppliers: MatchedSupplier[];
   visibleNodeIds: Set<string>;
   chatLines: Record<string, ConversationLog[]>;
+  requestLabel?: string;
+  judgedCandidates?: JudgedCandidate[];
 }
 
 const nodeTypes = {
   request: RequestNode,
   orchestrator: OrchestratorNode,
+  procurement: ProcurementIntelNode,
+  clustering: ClusteringNode,
+  matching: MatchingNode,
+  judging: JudgingWallNode,
+  negotiation: NegotiationNode,
+  // backwards-compat alias kept in case anything references it by string
   buyerAgent: BuyerAgentNode,
   seller: SellerNode,
 };
@@ -49,13 +62,29 @@ export function AgentNetwork({
   suppliers,
   visibleNodeIds,
   chatLines,
+  requestLabel = "New Request",
+  judgedCandidates = [],
 }: Props) {
   const { nodes, edges } = useMemo(() => {
-    const requestActive = stageIndex === 0;
-    const orchActive = stageIndex >= 0 && stageIndex <= 1;
-    const orchDone = stageIndex > 1;
+    const orchActive = stageIndex >= 0 && stageIndex < 6;
+    const orchDone = stageIndex >= 6;
+
+    const procActive = stageIndex === 0;
+    const procDone = stageIndex > 0;
+
+    const clusterMatchActive = stageIndex === 1;
+    const clusterMatchDone = stageIndex > 1;
+
+    // Judging is active during the match stage (stage 1) and done once negotiate starts
+    const judgingActive = stageIndex === 1;
+    const judgingDone = stageIndex > 1;
+
     const negotiateActive = stageIndex === 2;
     const negotiateDone = stageIndex > 2;
+
+    const goodCount = judgedCandidates.filter(c => c.verdict === "good").length;
+    const borderlineCount = judgedCandidates.filter(c => c.verdict === "borderline").length;
+    const badCount = judgedCandidates.filter(c => c.verdict === "bad").length;
 
     const bestSellerId = suppliers.length
       ? [...suppliers].sort((a, b) => b.match_score - a.match_score)[0].seller_id
@@ -65,48 +94,79 @@ export function AgentNetwork({
       a.seller_id.localeCompare(b.seller_id),
     );
 
-    // Current round from chat lines (max round seen)
     const maxRound = Object.values(chatLines).reduce((max, lines) => {
       const r = lines.reduce((m, l) => Math.max(m, l.round), 0);
       return Math.max(max, r);
     }, 0);
 
-    const COL = { request: 20, orchestrator: 280, buyer: 570, sellers: 860 };
-    const ROW_CENTER = 300;
-    // 280px spacing: accommodates 60px header + 180px chat + 40px gap
-    const SELLER_SPACING = 280;
-    const sellersTopY = ROW_CENTER - ((sellers.length - 1) * SELLER_SPACING) / 2;
+    // Horizontal pipeline layout — each agent in its own column
+    const CY = 260; // centre y for the main row
+    const COL = {
+      request:      0,
+      orchestrator: 300,
+      procurement:  570,
+      clusterMatch: 840,   // clustering top, matching bottom stacked in this column
+      judging:      1120,
+      negotiation:  1400,
+      sellers:      1690,
+    };
+    const SELLER_SPACING = 300; // vertical gap between stacked seller nodes
+    const sellersTopY = CY - ((sellers.length - 1) * SELLER_SPACING) / 2;
 
     const allNodes: Node[] = [
       {
         id: "request",
         type: "request",
-        position: { x: COL.request, y: ROW_CENTER },
-        data: {
-          label: "GPU · €650",
-          active: requestActive,
-          done: stageIndex > 0,
-        },
+        position: { x: COL.request, y: CY },
+        data: { label: requestLabel, active: stageIndex === 0, done: stageIndex > 0 },
         draggable: false,
         selectable: false,
       },
       {
         id: "orchestrator",
         type: "orchestrator",
-        position: { x: COL.orchestrator, y: ROW_CENTER - 24 },
+        position: { x: COL.orchestrator, y: CY - 24 },
         data: { active: orchActive, done: orchDone, stageIndex },
         draggable: false,
         selectable: false,
       },
       {
-        id: "buyerAgent",
-        type: "buyerAgent",
-        position: { x: COL.buyer, y: ROW_CENTER },
-        data: {
-          active: negotiateActive,
-          done: negotiateDone,
-          round: negotiateActive && maxRound > 0 ? maxRound : undefined,
-        },
+        id: "procurement",
+        type: "procurement",
+        position: { x: COL.procurement, y: CY },
+        data: { active: procActive, done: procDone },
+        draggable: false,
+        selectable: false,
+      },
+      {
+        id: "clustering",
+        type: "clustering",
+        position: { x: COL.clusterMatch, y: CY - 80 },
+        data: { active: clusterMatchActive, done: clusterMatchDone, count: suppliers.length > 0 ? suppliers.length : undefined },
+        draggable: false,
+        selectable: false,
+      },
+      {
+        id: "matching",
+        type: "matching",
+        position: { x: COL.clusterMatch, y: CY + 55 },
+        data: { active: clusterMatchActive, done: clusterMatchDone, supplierCount: suppliers.length > 0 ? suppliers.length : undefined },
+        draggable: false,
+        selectable: false,
+      },
+      {
+        id: "judging",
+        type: "judging",
+        position: { x: COL.judging, y: CY - 55 },
+        data: { active: judgingActive, done: judgingDone, good: goodCount, borderline: borderlineCount, bad: badCount },
+        draggable: false,
+        selectable: false,
+      },
+      {
+        id: "negotiation",
+        type: "negotiation",
+        position: { x: COL.negotiation, y: CY },
+        data: { active: negotiateActive, done: negotiateDone, round: negotiateActive && maxRound > 0 ? maxRound : undefined },
         draggable: false,
         selectable: false,
       },
@@ -142,18 +202,53 @@ export function AgentNetwork({
         source: "request",
         target: "orchestrator",
         type: "smoothstep",
-        style: liveStyle(stageIndex >= 0 && stageIndex <= 1),
+        style: liveStyle(stageIndex >= 0),
       },
       {
-        id: "o-ba",
+        id: "o-proc",
         source: "orchestrator",
-        target: "buyerAgent",
+        target: "procurement",
         type: "smoothstep",
-        style: liveStyle(stageIndex >= 1 && stageIndex <= 2),
+        style: liveStyle(stageIndex >= 0),
+      },
+      {
+        id: "proc-cluster",
+        source: "procurement",
+        target: "clustering",
+        type: "smoothstep",
+        style: liveStyle(stageIndex >= 1),
+      },
+      {
+        id: "proc-match",
+        source: "procurement",
+        target: "matching",
+        type: "smoothstep",
+        style: liveStyle(stageIndex >= 1),
+      },
+      {
+        id: "cluster-judge",
+        source: "clustering",
+        target: "judging",
+        type: "smoothstep",
+        style: liveStyle(stageIndex >= 1),
+      },
+      {
+        id: "match-judge",
+        source: "matching",
+        target: "judging",
+        type: "smoothstep",
+        style: liveStyle(stageIndex >= 1),
+      },
+      {
+        id: "judge-neg",
+        source: "judging",
+        target: "negotiation",
+        type: "smoothstep",
+        style: liveStyle(stageIndex >= 2),
       },
       ...sellers.map<Edge>((s, i) => ({
-        id: `ba-${s.seller_id}`,
-        source: "buyerAgent",
+        id: `neg-${s.seller_id}`,
+        source: "negotiation",
         target: s.seller_id,
         type: "message",
         style: liveStyle(negotiateActive),
@@ -161,15 +256,24 @@ export function AgentNetwork({
       })),
     ];
 
-    // Filter to only currently visible nodes; edges only if both endpoints visible
-    const nodes = allNodes.filter((n) => visibleNodeIds.has(n.id));
-    const visibleSet = new Set(nodes.map((n) => n.id));
+    // Only show nodes that have been revealed; only draw edges where both ends are visible
+    const nodes = allNodes.filter(n => visibleNodeIds.has(n.id));
+    const visibleSet = new Set(nodes.map(n => n.id));
     const edges = allEdges.filter(
-      (e) => visibleSet.has(e.source) && visibleSet.has(e.target),
+      e => visibleSet.has(e.source) && visibleSet.has(e.target),
     );
 
     return { nodes, edges };
-  }, [stageIndex, activeSeller, canInteract, suppliers, visibleNodeIds, chatLines]);
+  }, [
+    stageIndex,
+    activeSeller,
+    canInteract,
+    suppliers,
+    visibleNodeIds,
+    chatLines,
+    requestLabel,
+    judgedCandidates,
+  ]);
 
   const totalChatLines = useMemo(
     () => Object.values(chatLines).reduce((sum, lines) => sum + lines.length, 0),
@@ -193,7 +297,7 @@ export function AgentNetwork({
         zoomOnDoubleClick={false}
         proOptions={{ hideAttribution: true }}
         fitView
-        fitViewOptions={{ padding: 0.18, minZoom: 0.35, maxZoom: 1.4 }}
+        fitViewOptions={{ padding: 0.1, minZoom: 0.1, maxZoom: 1.2 }}
         onNodeClick={(_event, node) => {
           if (canInteract && node.type === "seller") {
             onSelectSeller(node.id);
@@ -214,11 +318,13 @@ export function AgentNetwork({
           Live Agent Network
         </div>
         <div className="text-[13px] font-medium tracking-tight text-text-1">
-          {nodes.length === 0 ? "Starting pipeline…" : `${nodes.length} node${nodes.length !== 1 ? "s" : ""} active`}
+          {nodes.length === 0
+            ? "Starting pipeline…"
+            : `${nodes.length} node${nodes.length !== 1 ? "s" : ""} active`}
         </div>
       </div>
 
-      <LiveTicker stageIndex={stageIndex} phase={phase} />
+      <LiveTicker stageIndex={stageIndex} phase={phase} supplierCount={suppliers.length} />
     </div>
   );
 }
@@ -237,7 +343,7 @@ function FlowAutoFit({
   useEffect(() => {
     if (nodeCount !== prevCount.current) {
       prevCount.current = nodeCount;
-      const t = setTimeout(() => fitView({ padding: 0.18, duration: 350 }), 60);
+      const t = setTimeout(() => fitView({ padding: 0.1, duration: 350 }), 60);
       return () => clearTimeout(t);
     }
   }, [nodeCount, fitView]);
@@ -245,7 +351,7 @@ function FlowAutoFit({
   useEffect(() => {
     if (totalChatLines !== prevChat.current) {
       prevChat.current = totalChatLines;
-      const t = setTimeout(() => fitView({ padding: 0.18, duration: 400 }), 200);
+      const t = setTimeout(() => fitView({ padding: 0.1, duration: 400 }), 200);
       return () => clearTimeout(t);
     }
   }, [totalChatLines, fitView]);
@@ -256,21 +362,23 @@ function FlowAutoFit({
 type Tone = "neutral" | "accent" | "warning" | "success" | "danger";
 
 const TONE_STYLES: Record<Tone, { dot: string; text: string; bg: string; border: string }> = {
-  neutral:  { dot: "bg-text-3",            text: "text-text-2",  bg: "bg-white",        border: "border-border" },
-  accent:   { dot: "bg-accent animate-pulse", text: "text-accent", bg: "bg-accent-soft", border: "border-accent-border" },
-  warning:  { dot: "bg-warning animate-pulse", text: "text-warning", bg: "bg-warning-soft", border: "border-amber-200" },
-  success:  { dot: "bg-success",           text: "text-success", bg: "bg-success-soft",  border: "border-emerald-200" },
-  danger:   { dot: "bg-danger",            text: "text-danger",  bg: "bg-danger-soft",   border: "border-red-200" },
+  neutral: { dot: "bg-text-3", text: "text-text-2", bg: "bg-white", border: "border-border" },
+  accent: { dot: "bg-accent animate-pulse", text: "text-accent", bg: "bg-accent-soft", border: "border-accent-border" },
+  warning: { dot: "bg-warning animate-pulse", text: "text-warning", bg: "bg-warning-soft", border: "border-amber-200" },
+  success: { dot: "bg-success", text: "text-success", bg: "bg-success-soft", border: "border-emerald-200" },
+  danger: { dot: "bg-danger", text: "text-danger", bg: "bg-danger-soft", border: "border-red-200" },
 };
 
 function LiveTicker({
   stageIndex,
   phase,
+  supplierCount,
 }: {
   stageIndex: number;
   phase: Props["phase"];
+  supplierCount: number;
 }) {
-  const msg = tickerMessage(stageIndex, phase);
+  const msg = tickerMessage(stageIndex, phase, supplierCount);
   const tone: Tone =
     phase === "approved" ? "success" :
     phase === "rejected" ? "danger" :
@@ -299,13 +407,14 @@ function LiveTicker({
 function tickerMessage(
   stageIndex: number,
   phase: Props["phase"],
+  supplierCount: number,
 ): { title: string; detail?: string } {
-  if (phase === "approved") return { title: "Deal approved", detail: "Vendor B · €640" };
+  if (phase === "approved") return { title: "Deal approved" };
   if (phase === "rejected") return { title: "Deal rejected" };
   if (phase === "awaiting_approval") return { title: "Awaiting approval", detail: "escalation triggered" };
   if (stageIndex < 0) return { title: "Ready", detail: "submit a request to begin" };
   if (stageIndex === 0) return { title: "Extracting requirements" };
-  if (stageIndex === 1) return { title: "Ranking suppliers", detail: "5 candidates" };
+  if (stageIndex === 1) return { title: "Clustering & judging candidates", detail: `${supplierCount} supplier${supplierCount !== 1 ? "s" : ""}` };
   if (stageIndex === 2) return { title: "Negotiating with sellers", detail: "live" };
   if (stageIndex === 3) return { title: "Validating offers" };
   if (stageIndex === 4) return { title: "Escalation check" };

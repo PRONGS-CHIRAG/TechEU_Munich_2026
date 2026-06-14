@@ -19,24 +19,18 @@ import { EscalationModal } from "@/components/modals/EscalationModal";
 import { DecisionScreen } from "@/components/screens/DecisionScreen";
 import {
   initialStatus,
-  STAGE_DURATION_MS,
-  STAGE_REVEALS,
   STAGES,
   type DemoStatus,
   type SectionId,
 } from "@/lib/demoMachine";
-import { runDemo } from "@/lib/api";
-import type { ConversationLog, DemoResult } from "@/lib/types";
+import { streamDemo } from "@/lib/stream";
+import type { ConversationLog, DemoResult, MatchedSupplier } from "@/lib/types";
 
 interface BuyerWorkspaceProps {
   onLogout: () => void;
   accountLabel?: string;
 }
 
-// Negotiate stage animation timing
-const SELLER_SPAWN_INTERVAL = 220; // ms between each seller node appearing
-const CHAT_START_DELAY = 450;      // ms after last seller before first chat message
-const CHAT_INTERVAL = 520;         // ms between each chat message
 
 export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: BuyerWorkspaceProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -48,22 +42,27 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
   const [decision, setDecision] = useState<"approved" | "rejected" | null>(null);
   const [activeSeller, setActiveSeller] = useState<string>("");
   const [result, setResult] = useState<DemoResult | null>(null);
+  const [requestLabel, setRequestLabel] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  // Dynamic node visibility — empty on start, nodes spawn progressively
+  // Progressive supplier list — populated from `match` stream events before `done`
+  const [streamedSuppliers, setStreamedSuppliers] = useState<MatchedSupplier[]>([]);
+
+  // Dynamic node visibility — empty on start, nodes pop in as each agent event arrives
   const [visibleNodeIds, setVisibleNodeIds] = useState<Set<string>>(new Set());
-  // Live chat lines per seller, dripped in during negotiate stage
+  // Live chat lines per seller, dripped in as negotiation_turn events arrive
   const [nodeChatLines, setNodeChatLines] = useState<Record<string, ConversationLog[]>>({});
 
-  const timeoutsRef = useRef<number[]>([]);
+  const streamCleanupRef = useRef<(() => void) | null>(null);
   const stepRef = useRef<HTMLDivElement>(null);
 
-  const clearTimers = useCallback(() => {
-    timeoutsRef.current.forEach((id) => window.clearTimeout(id));
-    timeoutsRef.current = [];
+  const closeStream = useCallback(() => {
+    streamCleanupRef.current?.();
+    streamCleanupRef.current = null;
   }, []);
 
-  useEffect(() => clearTimers, [clearTimers]);
+  // Close stream on unmount
+  useEffect(() => closeStream, [closeStream]);
 
   // GSAP curtain-wipe between steps
   useLayoutEffect(() => {
@@ -92,7 +91,7 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
   }, []);
 
   const reset = useCallback(() => {
-    clearTimers();
+    closeStream();
     setStep(1);
     setStatus({ phase: "idle", stageIndex: -1, revealedSections: new Set() });
     setFeed([]);
@@ -100,9 +99,10 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
     setResult(null);
     setError(null);
     setActiveSeller("");
+    setStreamedSuppliers([]);
     setVisibleNodeIds(new Set());
     setNodeChatLines({});
-  }, [clearTimers]);
+  }, [closeStream]);
 
   const logout = useCallback(() => {
     reset();
@@ -110,139 +110,259 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
   }, [onLogout, reset]);
 
   const start = useCallback(
-    async (req: { raw_request: string; region: string; priority: string }) => {
-      clearTimers();
+    (req: { raw_request: string; region: string; priority: string }) => {
+      closeStream();
       setFeed([]);
       setDecision(null);
       setError(null);
       setResult(null);
       setActiveSeller("");
+      setStreamedSuppliers([]);
       setVisibleNodeIds(new Set());
       setNodeChatLines({});
-      setStatus({ phase: "running", stageIndex: 0, revealedSections: new Set() });
+
+      // Immediate label from raw request; refined when requirements event arrives
+      const words = req.raw_request.trim().split(/\s+/);
+      setRequestLabel(words.slice(0, 5).join(" ") + (words.length > 5 ? "…" : ""));
+      setStatus({ phase: "running", stageIndex: -1, revealedSections: new Set() });
       setStep(2);
 
-      let demo: DemoResult;
-      try {
-        demo = await runDemo(req);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to run demo");
-        setStatus({ ...initialStatus, revealedSections: new Set() });
-        return;
-      }
+      // Show Request + Orchestrator immediately — no waiting
+      setVisibleNodeIds(new Set(["request", "orchestrator"]));
 
-      setResult(demo);
-      setActiveSeller(
-        [...demo.matched_suppliers].sort((a, b) => b.match_score - a.match_score)[0]
-          ?.seller_id ?? "",
-      );
+      // Track first seller seen so we can auto-select it
+      let firstSellerId = "";
 
-      // Dynamic negotiate duration — long enough for all chat to drip in
-      const negotiateDuration = Math.max(
-        demo.matched_suppliers.length * SELLER_SPAWN_INTERVAL
-          + CHAT_START_DELAY
-          + demo.conversation_logs.length * CHAT_INTERVAL
-          + 600,
-        3000,
-      );
+      streamCleanupRef.current = streamDemo(
+        req,
+        (event) => {
+          switch (event.type) {
 
-      const stageDurations: Record<string, number> = {
-        ...STAGE_DURATION_MS,
-        negotiate: negotiateDuration,
-      };
+            case "requirements": {
+              const d = event.data as Record<string, unknown>;
+              if (d.product_type) {
+                const budget = d.budget_eur ? ` · €${d.budget_eur}` : "";
+                setRequestLabel(`${d.product_type}${budget}`);
+              }
+              setStatus(s => ({ ...s, stageIndex: 0 }));
+              setVisibleNodeIds(prev => new Set([...prev, "procurement"]));
+              if (d.status === "extracting") {
+                pushFeed({ id: "req-start", agent: "cluster", title: "Extracting requirements…" });
+              } else {
+                reveal(["requirements"]);
+                pushFeed({ id: "req-done", agent: "cluster", title: "Requirements extracted", detail: String(d.product_type ?? "") });
+              }
+              break;
+            }
 
-      // All schedules are registered at ~t=0 from start() so ms values are absolute
-      const schedule = (ms: number, fn: () => void) => {
-        const id = window.setTimeout(fn, ms);
-        timeoutsRef.current.push(id);
-      };
+            case "agent_status": {
+              const as_ = event.data as Record<string, unknown>;
+              const agentMap: Record<string, FeedItem["agent"]> = {
+                clustering: "cluster",
+                supplier_matching: "orchestrator",
+                tavily: "tavily",
+                pioneer: "pioneer",
+                validation: "validation",
+                audit: "audit",
+              };
+              const agentKey = String(as_.agent ?? "system");
+              pushFeed({
+                id: `status-${agentKey}-${Date.now()}`,
+                agent: agentMap[agentKey] ?? "system",
+                title: String(as_.message ?? ""),
+              });
+              break;
+            }
 
-      // Pre-compute stage start times
-      const matchStart = stageDurations.intel;
-      const negotiateStart = matchStart + stageDurations.match;
+            case "judging_start": {
+              setVisibleNodeIds(prev => new Set([...prev, "judging"]));
+              const d = event.data as Record<string, unknown>;
+              const priceDelta = Number(d.price_eur ?? 0) - Number(d.budget_eur ?? 0);
+              const deliveryDelta = Number(d.delivery_days ?? 0) - Number(d.max_delivery_days ?? 0);
+              const priceStr = priceDelta > 0 ? `€${priceDelta} over budget` : `€${Math.abs(priceDelta)} under budget`;
+              const deliveryStr = deliveryDelta > 0 ? `${deliveryDelta}d over limit` : `${Math.abs(deliveryDelta)}d buffer`;
+              pushFeed({
+                id: `judging-start-${d.cluster_id}`,
+                agent: "judging",
+                title: `Judging Agent → Gemini: evaluating ${String(d.product ?? "")}`,
+                detail: `${priceStr} · ${deliveryStr}`,
+              });
+              break;
+            }
 
-      // ── Node reveal schedule ─────────────────────────────────────────────
-      // Request spawns immediately (stage 0)
-      schedule(0, () => setVisibleNodeIds(new Set(["request"])));
-      // Orchestrator spawns at match stage start
-      schedule(matchStart, () =>
-        setVisibleNodeIds((prev) => new Set([...prev, "orchestrator"])),
-      );
-      // BuyerAgent spawns at negotiate stage start
-      schedule(negotiateStart, () =>
-        setVisibleNodeIds((prev) => new Set([...prev, "buyerAgent"])),
-      );
-      // Sellers spawn one by one, best match first
-      [...demo.matched_suppliers]
-        .sort((a, b) => b.match_score - a.match_score)
-        .forEach((s, i) => {
-          schedule(negotiateStart + SELLER_SPAWN_INTERVAL * (i + 1), () => {
-            setVisibleNodeIds((prev) => new Set([...prev, s.seller_id]));
-          });
-        });
+            case "cluster": {
+              setStatus(s => ({ ...s, stageIndex: 1 }));
+              setVisibleNodeIds(prev => new Set([...prev, "clustering", "judging"]));
+              const cand = (event.data as Record<string, unknown>).judged_candidate as Record<string, unknown> | undefined;
+              if (cand) {
+                const verdict = String(cand.verdict ?? "");
+                const score = Number(cand.score ?? 0);
+                // Verdict row — product + score in detail, verdict prominent in title
+                pushFeed({
+                  id: `judge-verdict-${cand.cluster_id}`,
+                  agent: "judging",
+                  title: `Verdict: ${verdict.toUpperCase()} (score ${score})`,
+                  detail: String(cand.product ?? ""),
+                });
+                // Reasoning row — the full Gemini sentence goes in title so it's readable
+                const reason = String(cand.reason ?? "");
+                if (reason) {
+                  pushFeed({
+                    id: `judge-reason-${cand.cluster_id}`,
+                    agent: "judging",
+                    title: `"${reason}"`,
+                  });
+                }
+              }
+              break;
+            }
 
-      // ── Chat drip — one message at a time into each seller node ──────────
-      const chatStart =
-        negotiateStart
-        + demo.matched_suppliers.length * SELLER_SPAWN_INTERVAL
-        + CHAT_START_DELAY;
+            case "match": {
+              const supplier = event.data as MatchedSupplier;
+              setStreamedSuppliers(prev =>
+                prev.some(s => s.seller_id === supplier.seller_id) ? prev : [...prev, supplier],
+              );
+              setVisibleNodeIds(prev => new Set([...prev, "matching"]));
+              reveal(["suppliers", "tavily"]);
+              pushFeed({ id: `match-${supplier.seller_id}`, agent: "orchestrator", title: `Matched: ${supplier.seller_name}`, detail: supplier.reason });
+              break;
+            }
 
-      demo.conversation_logs.forEach((log, i) => {
-        schedule(chatStart + i * CHAT_INTERVAL, () => {
-          // Update canvas node chat
-          setNodeChatLines((prev) => ({
-            ...prev,
-            [log.seller_id]: [...(prev[log.seller_id] ?? []), log],
-          }));
-          // Mirror to activity feed
-          const vendor =
-            demo.matched_suppliers.find((s) => s.seller_id === log.seller_id)
-              ?.seller_name ?? log.seller_id;
-          pushFeed({
-            id: `chat-${i}`,
-            agent: log.speaker === "buyer" ? "buyer" : "seller",
-            vendor,
-            title: `"${log.message.length > 90 ? log.message.slice(0, 90) + "…" : log.message}"`,
-          });
-          if (log.speaker === "seller" && log.pioneer_labels.length > 0) {
-            const fields = Object.entries(log.extracted_fields ?? {})
-              .map(([k, v]) => `${k}: ${v}`)
-              .join(" · ");
-            pushFeed({
-              id: `pioneer-${i}`,
-              agent: "pioneer",
-              vendor,
-              title: `Labeled: ${log.pioneer_labels.join(", ")}`,
-              detail: fields || undefined,
-            });
+            case "negotiation_start": {
+              const ns = event.data as Record<string, unknown>;
+              const verdictTag = ns.verdict ? ` · judged ${String(ns.verdict).toUpperCase()}` : "";
+              pushFeed({
+                id: `neg-start-${ns.seller_id}`,
+                agent: "buyer",
+                vendor: String(ns.seller_name ?? ns.seller_id ?? ""),
+                title: `Negotiation Agent opening with ${String(ns.seller_name ?? "")}${verdictTag}`,
+              });
+              break;
+            }
+
+            case "negotiation_turn": {
+              const log = event.data as ConversationLog;
+              setStatus(s => ({ ...s, stageIndex: 2 }));
+              setVisibleNodeIds(prev => new Set([...prev, "negotiation", log.seller_id]));
+              reveal(["negotiation"]);
+              if (!firstSellerId) {
+                firstSellerId = log.seller_id;
+                setActiveSeller(log.seller_id);
+              }
+              setNodeChatLines(prev => ({
+                ...prev,
+                [log.seller_id]: [...(prev[log.seller_id] ?? []), log],
+              }));
+              // When the buyer agent fires round 1, show which sub-agents it consulted
+              if (log.speaker === "buyer" && log.round === 1) {
+                pushFeed({
+                  id: `subagents-${log.seller_id}`,
+                  agent: "orchestrator",
+                  vendor: log.seller_name,
+                  title: "Sub-agents consulted: Price · Delivery · Warranty · Risk",
+                  detail: "building negotiation context for Gemini prompt",
+                });
+              }
+              pushFeed({
+                id: `chat-${log.seller_id}-${log.round}-${log.speaker}`,
+                agent: log.speaker === "buyer" ? "buyer" : "seller",
+                vendor: log.seller_name ?? log.seller_id,
+                title: `"${log.message.length > 90 ? log.message.slice(0, 90) + "…" : log.message}"`,
+              });
+              if (log.speaker === "seller" && log.pioneer_labels?.length > 0) {
+                const fields = Object.entries(log.extracted_fields ?? {}).map(([k, v]) => `${k}: ${v}`).join(" · ");
+                pushFeed({
+                  id: `pioneer-${log.seller_id}-${log.round}`,
+                  agent: "pioneer",
+                  vendor: log.seller_name ?? log.seller_id,
+                  title: `Labeled: ${log.pioneer_labels.join(", ")}`,
+                  detail: fields || undefined,
+                });
+              }
+              break;
+            }
+
+            case "validation": {
+              setStatus(s => ({ ...s, stageIndex: 3 }));
+              reveal(["validation"]);
+              const vr = event.data as Record<string, unknown>;
+              const passed = vr.status === "passed";
+              const fails = (vr.failed_constraints as string[] | undefined) ?? [];
+              pushFeed({
+                id: `val-${vr.seller_id}`,
+                agent: "validation",
+                vendor: String(vr.seller_name ?? vr.seller_id ?? ""),
+                title: `${passed ? "PASSED" : "FAILED"} — ${String(vr.product ?? "")}`,
+                detail: fails.length > 0 ? fails.join(" · ") : "all constraints satisfied",
+              });
+              break;
+            }
+
+            case "escalation": {
+              setStatus(s => ({ ...s, stageIndex: 4 }));
+              reveal(["escalation"]);
+              const er = event.data as Record<string, unknown>;
+              pushFeed({
+                id: "escalation-result",
+                agent: "escalation",
+                title: er.escalate ? `Escalation triggered: ${String(er.trigger ?? "")}` : "No escalation required",
+                detail: String(er.reason ?? ""),
+              });
+              break;
+            }
+
+            case "recommendation": {
+              reveal(["recommendation"]);
+              const rec = event.data as Record<string, unknown>;
+              if (rec.recommended_seller) {
+                pushFeed({
+                  id: "recommendation",
+                  agent: "recommendation",
+                  title: `Recommended: ${String(rec.recommended_seller)} — ${String(rec.recommended_product ?? "")}`,
+                  detail: `€${rec.price_eur} · ${rec.delivery_days}d delivery`,
+                });
+              }
+              break;
+            }
+
+            case "audit":
+              setStatus(s => ({ ...s, stageIndex: 5 }));
+              reveal(["audit"]);
+              pushFeed({ id: "audit", agent: "audit", title: "Audit summary generated" });
+              break;
+
+            case "done": {
+              const demo = event.data as DemoResult;
+              setResult(demo);
+              const sr = demo.structured_requirements;
+              if (sr?.product_type) {
+                const budget = sr.budget_eur ? ` · €${sr.budget_eur}` : "";
+                setRequestLabel(`${sr.product_type}${budget}`);
+              }
+              if (!firstSellerId && demo.matched_suppliers.length > 0) {
+                const best = [...demo.matched_suppliers].sort((a, b) => b.match_score - a.match_score)[0];
+                setActiveSeller(best.seller_id);
+              }
+              setStatus(s => ({ ...s, phase: "awaiting_approval", stageIndex: STAGES.length }));
+              break;
+            }
+
+            case "error": {
+              const msg = (event.data as Record<string, unknown>).message;
+              setError(typeof msg === "string" ? msg : "Pipeline error");
+              setStatus({ ...initialStatus, revealedSections: new Set() });
+              break;
+            }
           }
-        });
-      });
+        },
+        () => {
+          setError("Connection lost — is the backend running?");
+          setStatus(s => s.phase === "running" ? { ...initialStatus, revealedSections: new Set() } : s);
+        },
+      );
 
-      // ── Stage scheduling loop (standard orchestration) ───────────────────
-      let elapsed = 0;
-      STAGES.forEach((stage, i) => {
-        schedule(elapsed, () => {
-          setStatus((s) => ({ ...s, stageIndex: i }));
-          emitStageStart(i, demo, pushFeed);
-        });
-        const duration = stageDurations[stage.id] ?? STAGE_DURATION_MS[stage.id];
-        schedule(elapsed + duration, () => {
-          reveal(STAGE_REVEALS[stage.id]);
-          emitStageEnd(i, demo, pushFeed);
-        });
-        elapsed += duration;
-      });
-
-      schedule(elapsed + 200, () => {
-        setStatus((s) => ({
-          ...s,
-          phase: "awaiting_approval",
-          stageIndex: STAGES.length,
-        }));
-      });
     },
-    [clearTimers, pushFeed, reveal],
+    [closeStream, pushFeed, reveal],
   );
 
   const handleDecide = useCallback((d: "approved" | "rejected") => {
@@ -380,9 +500,11 @@ export function BuyerWorkspace({ onLogout, accountLabel = "NovaCompute GmbH" }: 
                 activeSeller={activeSeller}
                 onSelectSeller={setActiveSeller}
                 canInteract={showSection("negotiation")}
-                suppliers={result?.matched_suppliers ?? []}
+                suppliers={result?.matched_suppliers ?? streamedSuppliers}
                 visibleNodeIds={visibleNodeIds}
                 chatLines={nodeChatLines}
+                requestLabel={requestLabel}
+                judgedCandidates={result?.judged_candidates ?? []}
               />
             </div>
 

@@ -18,6 +18,8 @@ import { SupplierGrid } from "@/components/sections/SupplierGrid";
 import { AuditSummary } from "@/components/sections/AuditSummary";
 import type { DemoResult } from "@/lib/types";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
 interface Props {
@@ -84,7 +86,6 @@ function RecommendationCard({
     const confirm = confirmRef.current;
     if (!btns || !confirm) { onDecide(d); return; }
 
-    // Phase 1: fade + shrink buttons out
     gsap.to(btns, {
       opacity: 0,
       scale: 0.97,
@@ -92,7 +93,6 @@ function RecommendationCard({
       ease: "power2.in",
       onComplete: () => {
         onDecide(d);
-        // Phase 2: banner scales in
         gsap.fromTo(
           confirm,
           { opacity: 0, scale: 0.97, y: 4 },
@@ -121,7 +121,7 @@ function RecommendationCard({
 
       <div className="px-8 py-6">
         {/* Top meta row */}
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-5 flex items-center gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-text-3">
             Recommended Deal
           </span>
@@ -142,91 +142,104 @@ function RecommendationCard({
           </span>
         </div>
 
-        {/* Headline */}
-        <div className="flex flex-wrap items-baseline gap-3">
-          <h2 className="text-[28px] font-bold tracking-tight text-text-1 leading-tight">
-            {rec.recommended_seller}
-          </h2>
-          <span className="rounded-full bg-accent px-3 py-1 text-[13px] font-semibold text-white">
-            €{rec.price_eur}
-          </span>
-        </div>
-        <p className="mt-1 text-[15px] font-medium text-text-2">
-          {rec.recommended_product}
-        </p>
+        {/* fal deal card image */}
+        {result.deal_card_path && (
+          <div className="mb-5 overflow-hidden rounded-xl border border-border bg-surface-2/50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${API_URL}/assets/fal_deal_card.png`}
+              alt="AI-generated deal card"
+              className="max-h-64 w-full object-contain"
+            />
+          </div>
+        )}
 
-        {/* Chips row */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Chip icon={<Truck className="h-3.5 w-3.5" />} label={`${rec.delivery_days}d delivery`} />
-          <Chip
-            icon={<ShieldCheck className="h-3.5 w-3.5" />}
-            label={`${rec.warranty_years}yr warranty`}
-          />
-          <Chip
-            icon={<Gauge className="h-3.5 w-3.5" />}
-            label={
-              <span className={riskColor}>
-                {rec.risk_level} risk
+        {/* Details + action */}
+        <div className="flex flex-col">
+            {/* Headline */}
+            <div className="flex flex-wrap items-baseline gap-3">
+              <h2 className="text-[28px] font-bold tracking-tight text-text-1 leading-tight">
+                {rec.recommended_seller}
+              </h2>
+              <span className="rounded-full bg-accent px-3 py-1 text-[13px] font-semibold text-white">
+                €{rec.price_eur}
               </span>
-            }
-          />
-        </div>
+            </div>
+            <p className="mt-1 text-[15px] font-medium text-text-2">
+              {rec.recommended_product}
+            </p>
 
-        {/* Reason */}
-        <p className="mt-4 max-w-[68ch] text-[13px] leading-relaxed text-text-2">
-          {rec.reason}
-        </p>
+            {/* Chips row */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Chip icon={<Truck className="h-3.5 w-3.5" />} label={`${rec.delivery_days}d delivery`} />
+              <Chip
+                icon={<ShieldCheck className="h-3.5 w-3.5" />}
+                label={`${rec.warranty_years}yr warranty`}
+              />
+              <Chip
+                icon={<Gauge className="h-3.5 w-3.5" />}
+                label={
+                  <span className={riskColor}>
+                    {rec.risk_level} risk
+                  </span>
+                }
+              />
+            </div>
 
-        {/* Action area */}
-        <div className="relative mt-6">
-          {/* Confirmation banner — rendered under buttons, revealed by GSAP */}
-          <div
-            ref={confirmRef}
-            className={`absolute inset-0 flex items-center justify-center gap-3 rounded-xl px-5 py-3.5 opacity-0 ${
-              decision === "approved"
-                ? "bg-success-soft"
-                : decision === "rejected"
-                  ? "bg-danger-soft"
-                  : "bg-success-soft"
-            }`}
-          >
-            {decision === "approved" ? (
-              <>
-                <CheckCircle weight="fill" className="h-5 w-5 text-success" />
-                <span className="text-[14px] font-semibold text-success">
-                  Deal approved — order confirmed
-                </span>
-              </>
-            ) : (
-              <>
-                <XCircle weight="fill" className="h-5 w-5 text-danger" />
-                <span className="text-[14px] font-semibold text-danger">
-                  Deal rejected
-                </span>
-              </>
-            )}
-          </div>
+            {/* Reason */}
+            <p className="mt-4 text-[13px] leading-relaxed text-text-2">
+              {rec.reason}
+            </p>
 
-          {/* Buttons */}
-          <div
-            ref={buttonsRef}
-            className={`flex gap-3 ${decided ? "pointer-events-none invisible" : ""}`}
-          >
-            <button
-              onClick={() => handleDecide("approved")}
-              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-accent text-[14px] font-semibold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.97]"
-            >
-              <CheckCircle weight="bold" className="h-4 w-4" />
-              Approve Deal
-            </button>
-            <button
-              onClick={() => handleDecide("rejected")}
-              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white text-[14px] font-semibold text-danger transition-all hover:bg-danger-soft active:scale-[0.97]"
-            >
-              <XCircle weight="bold" className="h-4 w-4" />
-              Reject
-            </button>
-          </div>
+            {/* Action area */}
+            <div className="relative mt-6">
+              <div
+                ref={confirmRef}
+                className={`absolute inset-0 flex items-center justify-center gap-3 rounded-xl px-5 py-3.5 opacity-0 ${
+                  decision === "approved"
+                    ? "bg-success-soft"
+                    : decision === "rejected"
+                      ? "bg-danger-soft"
+                      : "bg-success-soft"
+                }`}
+              >
+                {decision === "approved" ? (
+                  <>
+                    <CheckCircle weight="fill" className="h-5 w-5 text-success" />
+                    <span className="text-[14px] font-semibold text-success">
+                      Deal approved — order confirmed
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle weight="fill" className="h-5 w-5 text-danger" />
+                    <span className="text-[14px] font-semibold text-danger">
+                      Deal rejected
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <div
+                ref={buttonsRef}
+                className={`flex gap-3 ${decided ? "pointer-events-none invisible" : ""}`}
+              >
+                <button
+                  onClick={() => handleDecide("approved")}
+                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-accent text-[14px] font-semibold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.97]"
+                >
+                  <CheckCircle weight="bold" className="h-4 w-4" />
+                  Approve Deal
+                </button>
+                <button
+                  onClick={() => handleDecide("rejected")}
+                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white text-[14px] font-semibold text-danger transition-all hover:bg-danger-soft active:scale-[0.97]"
+                >
+                  <XCircle weight="bold" className="h-4 w-4" />
+                  Reject
+                </button>
+              </div>
+            </div>
         </div>
       </div>
     </div>
