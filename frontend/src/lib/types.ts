@@ -41,10 +41,10 @@ export interface MatchedSupplier {
   seller_name: string;
   match_score: number;
   reason: string;
-  specialization: string;
-  region: string;
-  reliability_score: number;
-  negotiation_style: string;
+  specialization?: string;
+  region?: string;
+  reliability_score?: number;
+  negotiation_style?: string;
 }
 
 export interface SellerProductSpecifications {

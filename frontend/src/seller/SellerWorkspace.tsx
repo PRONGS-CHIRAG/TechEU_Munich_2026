@@ -11,13 +11,15 @@ import {
   WarningCircle,
   X,
 } from "@phosphor-icons/react";
-import {
-  conversationLogs,
-  matchedSuppliers,
-  sellerInventoryCatalog,
-  validationResults,
-} from "@/lib/mockData";
-import type { SellerInventoryProduct } from "@/lib/types";
+import { getInventory } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+import type {
+  ConversationLog,
+  DemoResult,
+  MatchedSupplier,
+  SellerInventoryProduct,
+  ValidationResult,
+} from "@/lib/types";
 
 // ── Avatar color palette (deterministic by index) ─────────────────────────────
 const AVATAR_PALETTES = [
@@ -29,8 +31,8 @@ const AVATAR_PALETTES = [
 ];
 const ACTIVE_BG = "#2f6fed";
 
-function avatarPalette(sellerId: string) {
-  const idx = matchedSuppliers.findIndex((s) => s.seller_id === sellerId);
+function avatarPalette(sellerId: string, suppliers: MatchedSupplier[]) {
+  const idx = suppliers.findIndex((s) => s.seller_id === sellerId);
   return AVATAR_PALETTES[(idx >= 0 ? idx : 0) % AVATAR_PALETTES.length];
 }
 
@@ -63,34 +65,95 @@ interface SellerWorkspaceProps {
 }
 
 export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: SellerWorkspaceProps) {
-  const [activeSellerId, setActiveSellerId] = useState(matchedSuppliers[0]?.seller_id ?? "");
-  const [inventoryBySeller, setInventoryBySeller] = useState<Record<string, SellerInventoryProduct[]>>(() => {
-    const map: Record<string, SellerInventoryProduct[]> = {};
-    for (const m of sellerInventoryCatalog)
-      map[m.seller_id] = m.inventories.flatMap((inv) => inv.products);
-    return map;
-  });
+  const [suppliers, setSuppliers] = useState<MatchedSupplier[]>([]);
+  const [liveLogs, setLiveLogs] = useState<ConversationLog[]>([]);
+  const [liveValidations, setLiveValidations] = useState<ValidationResult[]>([]);
+  const [activeSellerId, setActiveSellerId] = useState("");
+  const [inventoryBySeller, setInventoryBySeller] = useState<Record<string, SellerInventoryProduct[]>>({});
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const activeSeller = matchedSuppliers.find((s) => s.seller_id === activeSellerId) ?? matchedSuppliers[0];
+  // Fetch real inventory from backend on mount
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/inventory`)
+      .then((r) => r.json())
+      .then((data: { merchants?: any[] }) => {
+        const map: Record<string, SellerInventoryProduct[]> = {};
+        (data.merchants ?? []).forEach((merchant: any) => {
+          const products: SellerInventoryProduct[] = (merchant.inventories ?? []).flatMap((inv: any) =>
+            (inv.products ?? []).map((p: any): SellerInventoryProduct => ({
+              product_id: p.id ?? p.product_id ?? `${merchant.seller_id}-${p.product}`,
+              product: p.product,
+              category: p.category ?? "GPU",
+              price_eur: p.price_eur,
+              approximate_delivery_days: p.delivery_days ?? p.approximate_delivery_days ?? 0,
+              max_negotiation_percent: p.max_negotiation_percent ?? 5,
+              specifications: {
+                length_mm: p.length_mm ?? 0,
+                power_watts: p.power_watts ?? 0,
+                warranty_years: p.warranty_years ?? 0,
+                availability: (p.availability ?? "in_stock") as SellerInventoryProduct["specifications"]["availability"],
+                compatibility_notes: p.compatibility_notes ?? "",
+              },
+            }))
+          );
+          map[merchant.seller_id] = products;
+        });
+        setInventoryBySeller(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Supabase Realtime: seed from most recent run, then subscribe for live updates
+  useEffect(() => {
+    if (!supabase) return;
+
+    const applyResult = (result: DemoResult) => {
+      const newSuppliers = result.matched_suppliers ?? [];
+      setSuppliers(newSuppliers);
+      setLiveLogs(result.conversation_logs ?? []);
+      setLiveValidations(result.validation_results ?? []);
+      const firstId = newSuppliers[0]?.seller_id ?? "";
+      setActiveSellerId((prev) => prev || firstId);
+    };
+
+    supabase
+      .from("demo_sessions")
+      .select("result")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data?.[0]?.result) applyResult(data[0].result as DemoResult);
+      });
+
+    const channel = supabase
+      .channel("demo_sessions_changes")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "demo_sessions" }, (payload) => {
+        applyResult((payload.new as { result: DemoResult }).result);
+      })
+      .subscribe();
+
+    return () => { supabase?.removeChannel(channel); };
+  }, []);
+
+  const activeSeller = suppliers.find((s) => s.seller_id === activeSellerId) ?? suppliers[0];
   const activeProducts = inventoryBySeller[activeSellerId] ?? [];
 
   const negotiations = useMemo(() => {
-    const grouped: Record<string, typeof conversationLogs> = {};
-    for (const log of conversationLogs) {
+    const grouped: Record<string, ConversationLog[]> = {};
+    for (const log of liveLogs) {
       grouped[log.seller_id] = grouped[log.seller_id] ?? [];
       grouped[log.seller_id].push(log);
     }
     return grouped;
-  }, []);
+  }, [liveLogs]);
 
   const activeNegotiations = useMemo(() => {
     const logs = negotiations[activeSellerId] ?? [];
-    const seller = matchedSuppliers.find((s) => s.seller_id === activeSellerId);
-    const validation = validationResults.find((r) => r.seller_id === activeSellerId);
+    const seller = suppliers.find((s) => s.seller_id === activeSellerId);
+    const validation = liveValidations.find((r) => r.seller_id === activeSellerId);
     const roundCount = logs.length ? Math.max(...logs.map((l) => l.round)) : 0;
     return [{ sellerId: activeSellerId, seller, logs, lastMsg: logs[logs.length - 1], roundCount, validation }];
-  }, [negotiations, activeSellerId]);
+  }, [negotiations, activeSellerId, suppliers, liveValidations]);
 
   const totalProducts = Object.values(inventoryBySeller).flat().length;
 
@@ -117,7 +180,7 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
         <SellerWordmark accountLabel={accountLabel} />
         <div className="flex items-center gap-3">
           <span className="text-[12px] text-text-3">
-            <span className="font-semibold text-text-1">{matchedSuppliers.length}</span> suppliers
+            <span className="font-semibold text-text-1">{suppliers.length}</span> suppliers
             {" · "}
             <span className="font-semibold text-text-1">{Object.keys(negotiations).length}</span> negotiations
             {" · "}
@@ -150,18 +213,17 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
             <div className="flex items-center gap-2">
               <span className="text-[15px] font-bold text-text-1">Suppliers</span>
               <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold text-text-3">
-                {matchedSuppliers.length}
+                {suppliers.length}
               </span>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 px-3 pb-3">
-            {matchedSuppliers.map((seller) => {
+            {suppliers.map((seller) => {
               const active = seller.seller_id === activeSellerId;
-              const palette = avatarPalette(seller.seller_id);
+              const palette = avatarPalette(seller.seller_id, suppliers);
               const initial = seller.seller_name.trim()[0]?.toUpperCase() ?? "?";
               const products = inventoryBySeller[seller.seller_id] ?? [];
-              const sellerMerchant = sellerInventoryCatalog.find((m) => m.seller_id === seller.seller_id);
 
               return (
                 <motion.div
@@ -206,10 +268,10 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
                         <span
                           className={`ml-auto h-2 w-2 shrink-0 rounded-full ${
                             VALIDATION_DOT[
-                              validationResults.find((r) => r.seller_id === seller.seller_id)?.status ?? ""
+                              liveValidations.find((r) => r.seller_id === seller.seller_id)?.status ?? ""
                             ] ?? "bg-text-3"
                           }`}
-                          title={validationResults.find((r) => r.seller_id === seller.seller_id)?.status ?? "not evaluated"}
+                          title={liveValidations.find((r) => r.seller_id === seller.seller_id)?.status ?? "not evaluated"}
                         />
                       </div>
                     </div>
@@ -247,15 +309,15 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
                             <div className="space-y-0.5 text-[13px] text-text-2">
                               <div className="flex justify-between">
                                 <span>Region</span>
-                                <span className="font-semibold text-text-1">{seller.region}</span>
+                                <span className="font-semibold text-text-1">{seller.region ?? "—"}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Reliability</span>
-                                <span className="font-semibold text-text-1">{Math.round(seller.reliability_score * 100)}%</span>
+                                <span className="font-semibold text-text-1">{Math.round((seller.reliability_score ?? 0) * 100)}%</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Style</span>
-                                <span className="font-semibold capitalize text-text-1">{seller.negotiation_style}</span>
+                                <span className="font-semibold capitalize text-text-1">{seller.negotiation_style ?? "standard"}</span>
                               </div>
                             </div>
                           </DetailSection>
@@ -300,7 +362,7 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
                 {activeNegotiations[0]?.logs.length ?? 0} messages
               </span>
             </div>
-            {activeSeller && (
+            {activeSeller?.negotiation_style && (
               <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold capitalize ${
                 STYLE_PILL[activeSeller.negotiation_style] ?? "border-border bg-white text-text-2"
               }`}>
@@ -320,7 +382,7 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
                   <p className="text-[12px] text-text-3">Messages appear here as the pipeline runs.</p>
                 </div>
               );
-              const palette = avatarPalette(sellerId);
+              const palette = avatarPalette(sellerId, suppliers);
               const initial = seller?.seller_name.trim()[0]?.toUpperCase() ?? "?";
               return (
                 <article
@@ -430,7 +492,7 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
         <aside className="flex w-[320px] shrink-0 flex-col border-l border-border bg-white">
           {/* Supplier profile */}
           {activeSeller && (() => {
-            const palette = avatarPalette(activeSeller.seller_id);
+            const palette = avatarPalette(activeSeller.seller_id, suppliers);
             const initial = activeSeller.seller_name.trim()[0]?.toUpperCase() ?? "?";
             return (
               <div className="shrink-0 border-b border-border bg-gradient-to-b from-accent-soft/40 to-white px-5 pb-5 pt-5">
@@ -444,7 +506,7 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
                   <div className="min-w-0">
                     <p className="truncate text-[15px] font-bold leading-tight text-text-1">{activeSeller.seller_name}</p>
                     <p className="mt-0.5 text-[11px] capitalize text-text-3">
-                      {activeSeller.region} · {activeSeller.negotiation_style}
+                      {activeSeller.region ?? "—"} · {activeSeller.negotiation_style ?? "standard"}
                     </p>
                   </div>
                 </div>
@@ -455,7 +517,7 @@ export function SellerWorkspace({ onLogout, accountLabel = "Vendor Console" }: S
                   </div>
                   <div className="flex-1 rounded-lg border border-border bg-white/70 px-3 py-2">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-text-3">Reliable</div>
-                    <div className="mt-0.5 text-[14px] font-bold text-text-1">{Math.round(activeSeller.reliability_score * 100)}%</div>
+                    <div className="mt-0.5 text-[14px] font-bold text-text-1">{Math.round((activeSeller.reliability_score ?? 0) * 100)}%</div>
                   </div>
                 </div>
               </div>

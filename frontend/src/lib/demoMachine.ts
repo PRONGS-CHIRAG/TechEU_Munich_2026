@@ -57,3 +57,21 @@ export const initialStatus: DemoStatus = {
   stageIndex: -1,
   revealedSections: new Set(),
 };
+
+export const STAGE_DURATION_MS: Record<StageId, number> = {
+  intel: 2000,
+  match: 1500,
+  negotiate: 3000,
+  pioneer: 1000,
+  escalate: 1500,
+  audit: 2000,
+};
+
+export const STAGE_REVEALS: Record<StageId, SectionId[]> = {
+  intel: ["requirements"],
+  match: ["suppliers", "tavily"],
+  negotiate: ["negotiation"],
+  pioneer: ["validation"],
+  escalate: ["escalation"],
+  audit: ["recommendation", "audit"],
+};

@@ -20,6 +20,7 @@ from backend.data_access import (
     get_all_products_flat,
     get_buyer_scenarios,
     get_seller_inventory_nested,
+    write_demo_session,
 )
 from backend.hitl_sessions import close_session, create_session, submit_response, wait_for_response
 from backend.orchestrator import DEMO_MODE, run_demo, run_demo_events
@@ -32,9 +33,11 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:3002",
+        "http://localhost:3003",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
         "http://127.0.0.1:3002",
+        "http://127.0.0.1:3003",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
@@ -98,9 +101,10 @@ def config() -> dict:
 @app.post("/api/run-demo")
 def run_demo_endpoint(request: BuyerRequestIn) -> dict:
     payload = request.model_dump(exclude_none=True)
-    # run_demo() drains run_demo_events() which already adapts tavily_enrichment
-    # to the frontend shape (triggered/reason/results) — no further adaptation needed.
-    return run_demo(payload)
+    result = run_demo(payload)
+    session_id = result.get("session_id") or payload.get("request_id") or str(uuid.uuid4())
+    _executor.submit(write_demo_session, session_id, result)
+    return result
 
 
 @app.get("/api/run-demo/stream")
@@ -152,6 +156,8 @@ async def run_demo_stream(
             event = await queue.get()
             if event is None:
                 break
+            if event.get("type") == "done":
+                _executor.submit(write_demo_session, session_id, event.get("data", {}))
             yield f"data: {json.dumps(event)}\n\n"
 
     return StreamingResponse(
