@@ -30,11 +30,11 @@ The demo wins if a judge can clearly see:
 * A Judging Agent evaluates each candidate and **explains in natural language** why something is good, borderline, or bad.
 * Before negotiations start, a **mid-flow human alert pauses the stream** and asks the buyer to choose a negotiation strategy (Aggressive / Medium / Light).
 * The Negotiation Agent runs **multi-round Gemini dialogue** driven by the chosen strategy (5/3/2 rounds, 18%/8%/4% target discount). Messages are ≤2 sentences / 50 words — conversational, not formal.
-* The seller enforces a **deterministic 10% floor**: if the buyer pushes below 90% of listed price, the seller rejects (no Gemini call) and the system routes to the next-ranked supplier (waterfall fallback).
+* The system **negotiates with every matched seller in full** (no early stop). The seller enforces a **deterministic 10% floor**: if the buyer pushes below 90% of listed price, the seller rejects (no Gemini call) and is marked declined — but all other suppliers still complete their negotiation rounds.
+* After all negotiations finish, a **second mid-flow human alert pauses the stream** and presents a side-by-side comparison table of every negotiated quote (price, delivery, warranty, validation status, score). The buyer selects a deal or rejects all.
 * Pioneer labels seller messages and extracts offer fields.
 * Tavily enriches missing supplier/spec information when needed.
 * fal creates a visual procurement deal card.
-* A mid-process human alert pauses the flow inline — the user confirms or adjusts before the run continues.
 * The Audit/Summary Subagent explains the final recommendation.
 * The reviewer can open the backend code and see real LLM calls, not file reads.
 
@@ -96,10 +96,13 @@ Human Approval Dashboard (Next.js)
 Buyer request (Next.js form)
 → GET /api/run-demo/stream  (SSE)
 → events: requirements · cluster · match · negotiation_turn (per LLM line) ·
-          validation · human_alert (pauses) · escalation · recommendation · audit · done
+          validation · human_alert{trigger:"deal_comparison"} (pauses) · escalation ·
+          recommendation · audit · done
 → ActivityFeed renders events live as they arrive
+→ human_alert{trigger:"strategy_selection"} fires before negotiations; buyer picks strategy
+→ human_alert{trigger:"deal_comparison"} fires after ALL negotiations complete; buyer picks deal
 → done event carries full DemoResult → existing section components hydrate
-→ POST /api/human-response  (mid-flow resume)
+→ POST /api/human-response  (mid-flow resume — strategy choice OR deal selection)
 ```
 
 ### Custom prompt flow (now default)
@@ -167,9 +170,10 @@ Buyer request
 
 ### Data
 
-* Keep product and inventory data in `data/` as JSON (Supabase bypassed for registry/inventory — always reads local JSON directly).
+* Product/inventory data lives in `data/` as JSON (primary source of truth for the 7 hand-curated vendors). `data_access.py` now tries Supabase first for `seller_registry` and `seller_inventory_products` (populated after Amazon ingestion); falls back to local JSON automatically.
+* `data/sql/create_tables.sql` — run once in Supabase SQL editor to create `seller_registry`, `seller_inventory_products`, and `demo_sessions` tables.
 * **Delete all pre-written conversation/dialogue data** (see Section 11).
-* Seller inventory restructured to nested: `merchants[] → inventories[] → products[]`. Currently 34 products across 7 vendors.
+* Seller inventory restructured to nested: `merchants[] → inventories[] → products[]`. Currently 34 products across 7 vendors (hand-curated); Supabase may hold additional Amazon-sourced products after ingestion.
 * Buyer blueprints replace old buyer_scenarios (strip `structured_requirements` — extracted live now). Includes REQ-001–005.
 * Blueprint scenarios are still useful for QA / replay, but the main judge-facing flow should begin from a custom prompt.
 
@@ -434,6 +438,10 @@ FAL_KEY
 FAL_API_KEY
 SUPABASE_URL
 SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_DB_URL       # postgresql://... direct Postgres URL for bulk Amazon ingestion via psycopg2 COPY
+KAGGLE_USERNAME       # Kaggle credentials for Amazon dataset download
+KAGGLE_KEY
 GMAIL_ADDRESS         # stretch: email HITL
 GMAIL_APP_PASSWORD    # stretch: email HITL
 ```
@@ -486,9 +494,17 @@ error              — unrecoverable failure
 
 ### Mid-flow human response
 
+Two triggers use this endpoint — strategy selection and deal comparison selection.
+
 ```
 POST /api/human-response
-Body: { "session_id": "...", "action": "approve" | "reject" | "adjust", "note": "..." }
+Body (strategy selection):
+  { "session_id": "...", "action": "select_strategy", "strategy": "aggressive" | "medium" | "light" }
+
+Body (deal comparison):
+  { "session_id": "...", "action": "approve", "selected_seller_id": "vendor_b" }
+  { "session_id": "...", "action": "reject_all" }
+
 Returns: { "ok": true }
 ```
 
@@ -558,6 +574,25 @@ Note: `max_length_mm` and `max_power_watts` are **presence-gated** — only popu
 ```
 
 Verdict values: `good` · `borderline` · `bad`
+
+### Deal Comparison Row (Phase 7 — one row per supplier in the comparison table)
+
+```json
+{
+  "seller_id": "vendor_b",
+  "seller_name": "Vendor B",
+  "product": "RTX 4070 Super Compact",
+  "price_eur": 612.0,
+  "delivery_days": 5,
+  "warranty_years": 3,
+  "validation_status": "passed",
+  "score": 88,
+  "is_rejected": false
+}
+```
+
+`validation_status` values: `passed` · `rejected` · `negotiable` · `missing_information` · `no_offer`
+`is_rejected`: `true` for sellers that hit the 10% floor rejection or had no matching product — these rows are unselectable in the UI.
 
 ### Matched Supplier (unchanged — derived from clusters now)
 
@@ -652,12 +687,16 @@ Statuses: `passed` · `rejected` · `negotiable` · `missing_information`
     "status": "accepted",
     "strategy": "medium",
     "winning_seller_id": "vendor_b",
-    "rejected_sellers": []
+    "rejected_sellers": [],
+    "all_offers": [],
+    "selected_seller_id": "vendor_b",
+    "user_choice": "approved"
   }
 }
 ```
 
 `negotiation_strategy` and `negotiation_outcome` are additive — existing section components are unaffected.
+`user_choice` values: `"approved"` (buyer selected a deal) · `"rejected_all"` (buyer rejected every offer) · `"auto_selected"` (non-streaming path, best passing offer chosen automatically).
 
 ---
 
@@ -961,12 +1000,12 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 | `backend/agents/product_clustering.py` | ✅ Updated (Phase 3) | Greedy euclidean clustering with category-safe product filtering; preserves arbitrary product spec fields for generalized products. |
 | `backend/agents/product_utils.py` | ✅ Added (Phase 3) | Shared product-category filter keeps GPU, chair, and sensor requests matched to relevant inventory families. |
 | `backend/agents/supplier_matching.py` | ✅ Updated (Phase 3) | Category-safe supplier scoring from registry + local nested inventory. |
-| `backend/orchestrator.py` | ✅ Updated (Phase 6) | Strategy-selection `human_alert` before negotiation; rank-ordered supplier waterfall; `supplier_fallback` events; `negotiation_strategy` + `negotiation_outcome` in `done` payload. |
+| `backend/orchestrator.py` | ✅ Updated (Phase 7) | Negotiate all suppliers to completion (no waterfall break); builds `comparison_table`; emits `human_alert{trigger:"deal_comparison"}`; winning offer set from buyer selection; `negotiation_outcome` extended with `all_offers`, `selected_seller_id`, `user_choice`. |
 | `backend/hitl_sessions.py` | ✅ Added (Phase 3) | In-memory session queues for streamed human response pause/resume. |
 | `backend/api.py` | ✅ Updated (Phase 3) | `GET /api/run-demo/stream`, `POST /api/human-response`, `GET /api/inventory`, and `GET /api/config` are live. |
-| `frontend/src/lib/stream.ts` | ✅ Updated (Phase 6) | `sendStrategyChoice(sessionId, strategy)` added alongside existing `sendHumanResponse`. |
+| `frontend/src/lib/stream.ts` | ✅ Updated (Phase 7) | `sendStrategyChoice(sessionId, strategy)` + `sendDealChoice(sessionId, action, selectedSellerId?)` added. |
 | `frontend/src/lib/api.ts` | ✅ Updated (Phase 3) | Added `postHumanResponse()`, `getInventory()`, and `getConfig()` alongside existing replay/scenario calls. |
-| `frontend/src/lib/types.ts` | ✅ Updated (Phase 6) | `NegotiationStrategy`, `ConversationLogEventKind`, `NegotiationOutcome`, `StrategyOption`; `ConversationLog.event_kind` / `is_rejection`; `HumanAlertData` discriminated on `trigger`; `DemoResult` extended with strategy fields. |
+| `frontend/src/lib/types.ts` | ✅ Updated (Phase 7) | `NegotiationStrategy`, `ConversationLogEventKind`, `NegotiationOutcome`, `StrategyOption`, `DealComparisonRow`; `HumanAlertData` extended with `"deal_comparison"` trigger + `comparison_table`; `NegotiationOutcome` extended with `all_offers`, `selected_seller_id`, `user_choice`. |
 | `frontend/src/components/feed/ActivityFeed.tsx` | ✅ Updated (Phase 6) | `strategy` + `negotiation` agent types; `variant?: "rejection" \| "fallback"` with red/amber row styling. |
 | `frontend/src/components/modals/StrategyModal.tsx` | ✅ Added (Phase 6) | GSAP modal with three strategy cards (Aggressive/Medium/Light), round-count glyphs, per-strategy colour coding. |
 | `frontend/src/components/sections/SellerInventoryView.tsx` | ✅ Added (Phase 3) | Renders nested generalized product inventory for GPUs, chairs, sensors, and future spec fields. |
@@ -974,9 +1013,9 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 | `frontend/src/components/hero/MessageEdge.tsx` | ✅ Updated (Phase 3) | Edge labels and hover detail popups for negotiation/Pioneer communication data. |
 | `frontend/src/app/page.tsx` | ✅ Updated (Phase 3) | Three views, live/replay banner, scenario-driven streaming, inventory view, and human response wiring. |
 | `backend/agents/judging_agent.py` | ✅ Complete (Phase 2) | `judge_candidates()` — Gemini per-candidate reasoning; verdict: good/borderline/bad + natural language reason. |
-| `backend/agents/negotiation_agent.py` | ✅ Updated (Phase 6) | Strategy-driven multi-round loop (5/3/2 rounds); deterministic 10% seller floor; `negotiate_one_supplier` public generator; `_trim()` 50-word cap; `run_negotiation` waterfall. |
+| `backend/agents/negotiation_agent.py` | ✅ Updated (Phase 7) | Strategy-driven multi-round loop (5/3/2 rounds); deterministic 10% seller floor; `negotiate_one_supplier` public generator; `_trim()` 50-word cap; `run_negotiation` now collects all offers from all suppliers (no early break). |
 | `backend/agents/negotiation/` sub-agents | ✅ Complete (Phase 2) | price, delivery, warranty, risk, guardrails — all live. |
-| `backend/schemas.py` (`ExtraConstraint`) | ✅ Updated (Phase 2) | `ExtraConstraint` TypedDict + `evaluate_constraints()` as shared constraint evaluator; `max_length_mm`/`max_power_watts` now presence-gated. |
+| `backend/schemas.py` | ✅ Updated (Phase 7) | `ExtraConstraint`, `DealComparisonRow` TypedDicts; `evaluate_constraints()` shared evaluator; `max_length_mm`/`max_power_watts` presence-gated; `DemoResult.negotiation_outcome` extended. |
 | `backend/prompts.py` | ✅ Updated (Phase 6) | `BUYER_STRATEGY_PROMPTS` (aggressive/medium/light), `STRATEGY_OPTIONS`; buyer + seller system prompts rewritten for ≤2 sentences / 45 words conversational style. |
 | `data/seller_registry.json` | ✅ Updated (Phase 2) | 7 vendor profiles: original 5 + vendor_f (ergonomic chairs) + vendor_g (industrial sensors). |
 | `data/seller_inventory.json` | ✅ Updated (Phase 2) | 34 products across 7 vendors (added 5 chairs + 5 sensors). |
@@ -995,7 +1034,7 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 | `fal_client.py` | Stubbed | fal_client wrapper; fallback to PNG path. Keep as-is. |
 | `fallback_outputs.py` | Complete | Static fallbacks for all three APIs; Tavily fallback now mirrors the requested product family. |
 | `tests/test_validation.py` | ✅ Complete (Phase 2) | 10 passing tests — deterministic validation + generalized constraint evaluation. |
-| `tests/test_hitl.py` | ✅ Added (Phase 3) | Covers HITL session wait/submit and orchestrator pause/resume response propagation. |
+| `tests/test_hitl.py` | ✅ Updated (Phase 7) | Covers HITL session wait/submit; second alert is now `deal_comparison`; asserts `selected_seller_id`, `user_choice`, `all_offers` in `negotiation_outcome`. |
 | `tests/test_generalized_matching.py` | ✅ Updated (Phase 4) | Covers GPU/chair/sensor filtering plus the custom-product regression where unknown products used to fall back to demo categories. |
 | `.env` / `.env.example` | Complete | All env vars; `.env` is git-ignored. `DEMO_MODE=false`, `LLM_PROVIDER=gemini`. |
 
@@ -1005,13 +1044,13 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 | `frontend/src/lib/api.ts` | ✅ Updated (Phase 5) | Added `getInventory()` → `GET /api/inventory` and `getSellerInventory()` → `GET /api/seller-inventory`. |
 | `frontend/src/lib/types.ts` | ✅ Updated (Phase 5) | `MatchedSupplier` registry fields optional; `SellerInventoryMerchant` shape used by `getInventory()`. |
 | `frontend/src/seller/SellerWorkspace.tsx` | ✅ Updated (Phase 5) | Mock data imports removed; inventory from `/api/inventory`; Supabase Realtime subscription for live buyer→seller updates. |
-| `frontend/src/buyer/BuyerWorkspace.tsx` | ✅ Updated (Phase 6) | Migrated from blocking `runDemo()` + setTimeout drip to real `streamDemo()` SSE; all event types handled inline; `StrategyModal` on strategy alert; node visibility driven by real events. |
+| `frontend/src/buyer/BuyerWorkspace.tsx` | ✅ Updated (Phase 7) | Real `streamDemo()` SSE; `StrategyModal` on strategy alert; `DealComparisonModal` on `deal_comparison` alert; `handleDealApprove`/`handleDealRejectAll` send deal choice and set decision; footer shows "⚖ Select a deal" status. |
 | `frontend/src/components/auth/LoginScreen.tsx` | ✅ Added (Phase 5) | Demo login screen (root/buyer/seller hardcoded roles; no backend auth). |
 | `frontend/src/components/screens/DecisionScreen.tsx` | ✅ Added (Phase 5) | Final decision view showing validation, audit, suppliers, and recommendation. |
 | `frontend/src/components/modals/EscalationModal.tsx` | ✅ Added (Phase 5) | Inline escalation modal wired to human-alert flow. |
 | `frontend/src/app/seller/page.tsx` | ✅ Added (Phase 5) | Seller-role page route. |
-| `backend/api.py` | ✅ Updated (Phase 5) | CORS includes port 3003; both run-demo routes call `write_demo_session()` after completion. |
-| `backend/data_access.py` | ✅ Updated (Phase 5) | `write_demo_session()` — enriches matched_suppliers with registry and upserts to `demo_sessions`. |
+| `backend/api.py` | ✅ Updated (Phase 7) | CORS includes port 3003; `write_demo_session()` called after completion; `HumanResponseIn` has `selected_seller_id: Optional[str]` for deal comparison. |
+| `backend/data_access.py` | ✅ Updated (Phase 7) | `write_demo_session()` upserts to Supabase `demo_sessions`; `get_seller_registry()` + `get_products_for_category()` now try Supabase first, fall back to local JSON; Amazon ingestion read path added. |
 
 ### Phase 6 deliverables (COMPLETE — multi-round strategy negotiation)
 
@@ -1030,13 +1069,37 @@ The reviewer's core objection: everything is pre-written — the system reads fi
 **Strategy discount curves (deterministic):**
 - Light: rounds up to 2, 2%→4% off → always above 10% floor → deal accepted
 - Medium: rounds up to 3, 3%→8% off → always above 10% floor → deal accepted
-- Aggressive: rounds up to 5, 4%→12%+ off → **crosses 10% floor at round 3** → deterministic rejection → waterfall to next supplier → if all reject → `no-deal` recommendation
+- Aggressive: rounds up to 5, 4%→12%+ off → **crosses 10% floor at round 3** → deterministic rejection → marked declined — remaining suppliers still negotiate
 
-### What needs to be built (Phase 6 onward)
+### Phase 7 deliverables (COMPLETE — negotiate all sellers + deal comparison HITL)
+
+1. ✅ `backend/agents/negotiation_agent.py` — `run_negotiation()` removes the waterfall break; runs every supplier to completion; returns all offers sorted by value score descending
+2. ✅ `backend/orchestrator.py` — negotiation loop collects all offers from all suppliers; builds `comparison_table` (one row per supplier, left-joining offers + validation results); `supplier_fallback` events reworded to neutral (no "routing" language); `human_alert{trigger:"deal_comparison"}` replaces the approval pause; `action: "approve"+"selected_seller_id"` / `"reject_all"` / `"auto_continue"` (non-streaming timeout) drive `winning_offer`; `escalation_result["human_response"]` synthesized from deal choice; `negotiation_outcome` built after selection with `all_offers`, `selected_seller_id`, `user_choice`; `no-deal` reason distinguishes `rejected_all` from floor-rejected
+3. ✅ `backend/schemas.py` — `DealComparisonRow` TypedDict added; `DemoResult.negotiation_outcome` comment updated
+4. ✅ `backend/api.py` — `HumanResponseIn.selected_seller_id: Optional[str]` added; forwarded in `submit_response`
+5. ✅ `frontend/src/lib/types.ts` — `DealComparisonRow` interface; `HumanAlertData` extended with `"deal_comparison"` trigger + `comparison_table?: DealComparisonRow[]`; `NegotiationOutcome` extended with `all_offers?`, `selected_seller_id?`, `user_choice?`
+6. ✅ `frontend/src/lib/stream.ts` — `sendDealChoice(sessionId, action, selectedSellerId?)` added
+7. ✅ `frontend/src/components/modals/DealComparisonModal.tsx` — new GSAP modal; comparison table with radio-selectable rows; `is_rejected` rows dimmed and unselectable; status badges (passed/failed/negotiable/no_offer); "Approve Selected Deal" CTA (disabled until selection) + "Reject All" CTA
+8. ✅ `frontend/src/buyer/BuyerWorkspace.tsx` — `dealAlert` state; `human_alert{trigger:"deal_comparison"}` handler opens `DealComparisonModal`; `handleDealApprove(sellerId)` + `handleDealRejectAll()` set decision and call `sendDealChoice`; footer status shows "⚖ Select a deal to approve"
+9. ✅ `tests/test_hitl.py` — second human_alert asserted as `deal_comparison`; stub returns `{action:"approve", selected_seller_id:"vendor_f"}`; new assertions on `selected_seller_id`, `user_choice`, and `all_offers` in `negotiation_outcome`
+
+**Amazon data ingestion infrastructure (added on `more_data` branch):**
+10. ✅ `data/sql/create_tables.sql` — Supabase table DDL for `seller_registry`, `seller_inventory_products`, `demo_sessions` + indexes + realtime publication
+11. ✅ `scripts/ingest_amazon.py` — Kaggle dataset download → Gemini spec inference → psycopg2 COPY bulk load into Supabase
+12. ✅ `scripts/inspect_amazon.py` — inspect/preview ingested Amazon product data
+13. ✅ `backend/data_access.py` — `get_seller_registry()` and `get_products_for_category()` now Supabase-first with local JSON fallback; `get_seller_inventory()` category-filtered
+14. ✅ `backend/agents/supplier_matching.py` — `get_seller_inventory(requirements=requirements)` passed for category-aware inventory filtering
+15. ✅ `backend/prompts.py` — `AMAZON_SPEC_INFERENCE_SYSTEM` prompt for inferring delivery/warranty/length/power from Amazon listings
+16. ✅ `requirements.txt` — added `pandas>=2.0` and `kaggle>=1.6`
+17. ✅ `.env.example` — added `SUPABASE_DB_URL`, `KAGGLE_USERNAME`, `KAGGLE_KEY`
+18. ✅ `.gitignore` — added `data/raw/` and `data/inspection_notes.md`
+
+### What needs to be built (Phase 7 onward)
 
 | Component | Priority | Notes |
 |-----------|----------|-------|
-| Supabase `demo_sessions` table | REQUIRED | Run SQL from Phase 5 section above; without it, Realtime bridge is a no-op. |
+| Supabase tables created | REQUIRED | Run `data/sql/create_tables.sql` once in Supabase SQL editor; without it, Realtime bridge and Amazon ingestion are no-ops. |
+| Amazon data ingestion run | HIGH | Run `python scripts/ingest_amazon.py` with `KAGGLE_*` and `SUPABASE_DB_URL` set to populate `seller_inventory_products` from the Amazon dataset. |
 | `integrations/email_hitl.py` (Gmail, stretch) | STRETCH | — |
 | Aikido screenshot | MEDIUM | — |
 | Replay transcript save (DEMO_MODE=true full replay path) | MEDIUM | — |
